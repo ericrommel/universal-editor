@@ -13,45 +13,98 @@ The Human Product Owner (PO) is the final authority for product scope and module
 ## 2. Delivery Workflow
 
 ```text
-PLANNED
-   ↓
-ARCHITECTURE / DESIGN / TEST PREPARATION
-   ↓
-READY FOR DEVELOPMENT
-   ↓
-IN DEVELOPMENT
-   ↓
-CODE REVIEW
-   ↓
-READY FOR TESTING
-   ↓
-TESTING
-   ↓
-┌──────────────────────┐
-│                      │
-▼                      ▼
-CHANGES REQUIRED    TESTS GREEN
-│                      │
-└────→ DEVELOPMENT      ▼
-                    PO REVIEW
-                       │
-              ┌────────┴────────┐
-              ▼                 ▼
-       CHANGES REQUIRED      APPROVED
-              │                 │
-              └────────────→ GREEN
-                                │
-                                ▼
-                          NEXT MODULE
+PLANNED / BACKLOG
+       ↓
+IN PREPARATION
+       ↓
+READY FOR PO REVIEW
+       ↓
+   PO DECISION
+   ↙         ↘
+changes     approved
+   ↓           ↓
+IN PREPARATION
+               ↓
+      READY FOR DEVELOPMENT
+               ↓
+        IN DEVELOPMENT
+               ↓
+          CODE REVIEW
+               ↓
+      READY FOR TESTING
+               ↓
+           TESTING
+               ↓
+      READY FOR PO REVIEW
+               ↓
+          PO DECISION
+          ↙       ↘
+      changes    approved
+          ↓         ↓
+   appropriate    GREEN
+   prior state      ↓
+                NEXT MODULE
 ```
+
+The GitHub Project board is the operational source of truth for work status.
+
+Process gates and Project board statuses are related but are not required to map one-to-one.
+
+For example, CODE REVIEW is a required delivery gate but does not require a dedicated Project board status unless the team later determines that separate operational tracking is useful.
+
+Preparation work includes architecture, design, test planning, security analysis, DevOps planning, and other work required to satisfy the Definition of Ready.
+
+When preparation reaches a Product Owner decision gate, the work moves to READY FOR PO REVIEW. Only the Human Product Owner may authorize the transition to READY FOR DEVELOPMENT.
+
+The same READY FOR PO REVIEW status may be used at later Product Owner gates, including final module acceptance. The meaning of the review must be clear from the associated Issue and Pull Request.
+
+Repository documentation describes requirements and process but does not replace the project board as the operational record of current work state.
 
 Module N+1 must not enter implementation until Module N is GREEN and explicitly approved by the PO.
 
 Research, architecture work, design exploration, test design, or technical spikes for future needs may occur earlier when justified, but future product functionality must not be implemented prematurely.
 
 ---
+## 3. Operational Work Tracking
 
-## 3. Team
+GitHub Issues, Pull Requests, and the GitHub Project board form the persistent operational record of project work.
+
+Session output is not sufficient as the sole record of completed work, decisions, findings, verification, or handoff information.
+
+Work associated with an Issue must remain traceable through its lifecycle.
+
+When work begins:
+
+- move the Issue to the appropriate active state;
+- use the dedicated working branch required by `AGENTS.md`;
+- keep commits and Pull Requests traceable to the Issue.
+
+When work reaches a review gate:
+
+- ensure repository changes are available through a Pull Request;
+- post a concise completion summary to the associated Issue;
+- reference the Pull Request and relevant artifacts;
+- summarize what was completed;
+- identify verification performed;
+- identify relevant decisions and ADRs;
+- identify known limitations, risks, assumptions, and unresolved questions;
+- identify any decision required from the Human Product Owner;
+- move the Issue to `Ready for PO Review`;
+- stop if Product Owner approval is required.
+
+On the current Universal Visual Creation Platform board, the column for that gate is `Ready for PO`. There is no separate `Ready for PO Review` column. Do not use `Ready for Development` or `Done` for this transition.
+
+The Human Product Owner determines whether work at a PO gate:
+
+- requires changes;
+- may proceed to the next lifecycle state;
+- or, for final module review, is approved and GREEN.
+
+Agents must not change a work item to a state that implies Product Owner approval without explicit approval from the Human Product Owner.
+
+The project board status and the associated Issue/PR record must reflect the actual state of the work.
+
+## 4. Team
 
 The project uses the following roles:
 
@@ -71,7 +124,7 @@ Not every specialist must participate in every task. The PM and TL should involv
 
 ---
 
-## 4. Core Ownership Principle
+## 5. Core Ownership Principle
 
 > Developers own the quality, security, operability, and testability of the code they deliver. Specialist roles design, enable, review, measure, and challenge those qualities.
 
@@ -86,9 +139,9 @@ Specialists provide strategy, standards, infrastructure, expertise, review, and 
 
 ---
 
-## 5. Roles and Responsibilities
+## 6. Roles and Responsibilities
 
-### 5.1 Human Product Owner
+### 6.1 Human Product Owner
 
 The PO:
 
@@ -99,7 +152,7 @@ The PO:
 - accepts or rejects modules;
 - is the only authority that declares a module approved.
 
-### 5.2 AI Project Manager
+### 6.2 AI Project Manager
 
 The PM:
 
@@ -109,10 +162,13 @@ The PM:
 - ensures required specialists are involved;
 - prepares PO review packages;
 - prevents progression through a gate when required evidence is missing.
+- keeps GitHub Project work states aligned with actual delivery state;
+- ensures Issue and Pull Request handoffs contain the evidence required by the next gate;
+- ensures session-local conclusions that affect project delivery are persisted in the appropriate GitHub artifact.
 
 The PM cannot approve its own delivery.
 
-### 5.3 AI Tech Lead
+### 6.3 AI Tech Lead
 
 The TL:
 
@@ -127,7 +183,7 @@ The TL:
 
 The TL cannot change product requirements or waive acceptance criteria.
 
-### 5.4 Senior Product Designer / UX Architect
+### 6.4 Senior Product Designer / UX Architect
 
 The Designer owns the product interaction model and visual language.
 
@@ -150,7 +206,7 @@ The Designer designs interactions; engineers implement them.
 
 Cross-platform does not mean pixel-identical. The product should preserve a shared identity while respecting useful platform conventions.
 
-### 5.5 Senior Core / Platform Engineer
+### 6.5 Senior Core / Platform Engineer
 
 Primary responsibilities:
 
@@ -163,7 +219,7 @@ Primary responsibilities:
 - platform abstractions;
 - shared domain logic.
 
-### 5.6 Senior 2D / Editor Engineer
+### 6.6 Senior 2D / Editor Engineer
 
 Primary responsibilities:
 
@@ -174,7 +230,7 @@ Primary responsibilities:
 - implementation of approved interaction designs;
 - editor workflows and UI integration.
 
-### 5.7 Senior 3D / Rendering Engineer
+### 6.7 Senior 3D / Rendering Engineer
 
 Primary responsibilities:
 
@@ -186,7 +242,7 @@ Primary responsibilities:
 - rendering performance;
 - 3D interoperability.
 
-### 5.8 Functional Quality Engineer
+### 6.8 Functional Quality Engineer
 
 The Functional QE acts primarily as a quality consultant and test designer.
 
@@ -205,7 +261,7 @@ Responsibilities include:
 
 Developers normally implement the automated tests required for their work unless ownership of specific shared test infrastructure is explicitly assigned otherwise.
 
-### 5.9 Non-Functional Quality Engineer
+### 6.9 Non-Functional Quality Engineer
 
 The Non-Functional QE acts primarily as a quality consultant for measurable system qualities.
 
@@ -225,7 +281,7 @@ Responsibilities include:
 
 Performance claims must identify the environment, workload, measurement method, and threshold.
 
-### 5.10 Senior DevOps / Platform Engineer
+### 6.10 Senior DevOps / Platform Engineer
 
 Responsibilities include:
 
@@ -245,7 +301,7 @@ Responsibilities include:
 
 Developers remain responsible for keeping their changes compatible with the agreed build and CI system.
 
-### 5.11 Senior Application Security Engineer
+### 6.11 Senior Application Security Engineer
 
 The Security Engineer acts as an application-security specialist and consultant.
 
@@ -269,7 +325,7 @@ Security participation is risk-based. Security should be involved early in archi
 
 ---
 
-## 6. Preparation Before Development
+## 7. Preparation Before Development
 
 Quality, design, security, and operability are considered before implementation rather than inspected only after implementation.
 
@@ -288,7 +344,7 @@ The relevant preparation must be sufficient for developers to understand how the
 
 ---
 
-## 7. Definition of Ready
+## 8. Definition of Ready
 
 A module is READY FOR DEVELOPMENT only when:
 
@@ -307,7 +363,7 @@ A module is READY FOR DEVELOPMENT only when:
 
 ---
 
-## 8. Test Plan
+## 9. Test Plan
 
 Each implementation module should have a test plan appropriate to its scope.
 
@@ -334,7 +390,7 @@ QA is not expected to author every automated test. Developers implement the test
 
 ---
 
-## 9. Implementation
+## 10. Implementation
 
 Implementation is not complete when production code exists.
 
@@ -360,7 +416,7 @@ Future functionality must not be implemented merely because future requirements 
 
 ---
 
-## 10. Code Review
+## 11. Code Review
 
 Before READY FOR TESTING:
 
@@ -378,7 +434,7 @@ Blocking findings return the work to IN DEVELOPMENT.
 
 ---
 
-## 11. Ready for Testing
+## 12. Ready for Testing
 
 A module enters READY FOR TESTING when:
 
@@ -393,7 +449,7 @@ READY FOR TESTING does not mean QA now becomes responsible for the quality of th
 
 ---
 
-## 12. Testing
+## 13. Testing
 
 TESTING is the execution of the agreed verification strategy.
 
@@ -422,7 +478,7 @@ DevOps supports reproducible execution and release/build evidence where applicab
 
 ---
 
-## 13. Tests Green
+## 14. Tests Green
 
 A module may reach TESTS GREEN when all applicable conditions are satisfied:
 
@@ -441,7 +497,7 @@ TESTS GREEN does not itself mean the module is product-approved.
 
 ---
 
-## 14. Regression Policy
+## 15. Regression Policy
 
 Previously approved behavior remains part of the product contract.
 
@@ -456,7 +512,7 @@ A new module must not silently invalidate earlier approved behavior.
 
 ---
 
-## 15. Requirement Traceability
+## 16. Requirement Traceability
 
 Every module maintains traceability between requirements, implementation, tests, and review evidence.
 
@@ -472,7 +528,7 @@ A requirement is not considered implemented merely because related code exists.
 
 ---
 
-## 16. Design Quality and Platform Compliance
+## 17. Design Quality and Platform Compliance
 
 Design quality is continuous, not a final cosmetic pass.
 
@@ -484,7 +540,7 @@ Platform guidance may change over time. Relevant platform rules must therefore b
 
 ---
 
-## 17. Security Model
+## 18. Security Model
 
 Security is risk-based and continuous.
 
@@ -506,7 +562,7 @@ Developers own secure implementation. The Security Engineer provides threat mode
 
 ---
 
-## 18. PO Review Package
+## 19. PO Review Package
 
 Before PO review, the PM prepares a concise evidence package containing:
 
@@ -526,7 +582,7 @@ Before PO review, the PM prepares a concise evidence package containing:
 
 ---
 
-## 19. Module Completion
+## 20. Module Completion
 
 A module is GREEN only when:
 
@@ -544,7 +600,7 @@ Only then may implementation of the next module begin.
 
 ---
 
-## 20. Requirement Changes
+## 21. Requirement Changes
 
 Requirements may change because of:
 
@@ -561,7 +617,7 @@ Document the proposed change, its reason, and its impact. Product-level changes 
 
 ---
 
-## 21. Real-World Engineering Rule
+## 22. Real-World Engineering Rule
 
 This project is a real software product.
 
@@ -579,7 +635,7 @@ Real edge cases, failures, incorrect assumptions, architectural conflicts, secur
 
 ---
 
-## 22. Documentation Structure
+## 23. Documentation Structure
 
 Project documentation lives under `/docs`.
 

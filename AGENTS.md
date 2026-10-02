@@ -67,9 +67,20 @@ When a decision requires Product Owner approval, stop at the appropriate gate an
 
 ## Module Boundary
 
-Only the current approved module may be implemented.
+Implement only the module and scope explicitly authorized by the Human Product Owner for the current task.
 
-Future documentation may be consulted for architectural context but is not authorization to implement future functionality.
+Repository documentation describing future modules provides context, not implementation authorization.
+
+Do not infer authorization from:
+
+- the existence of a module specification;
+- roadmap or archived documentation;
+- dependencies on future functionality;
+- partially implemented future-facing abstractions.
+
+When future requirements affect an architectural decision, account for the known constraint without implementing the future functionality.
+
+If the authorized scope is unclear, stop and ask the Human Product Owner rather than expanding the scope.
 
 ## Engineering Principles
 
@@ -309,3 +320,58 @@ Do not:
 - hide warnings, failures, or incomplete verification.
 
 If verification cannot be performed, state exactly what was not verified and why.
+
+## Work Tracking
+
+GitHub Issues and the project board are the persistent operational record of project work.
+
+Do not rely on session output as the only record of completed work, decisions, findings, or verification.
+
+For work associated with a GitHub Issue:
+
+- move the issue to the appropriate active status when work begins;
+- perform repository changes on the task's dedicated branch;
+- keep the issue and related Pull Request traceable to each other;
+- when work reaches a review gate, post a concise completion summary to the issue;
+- include relevant decisions, artifacts, verification performed, known limitations, risks, and unresolved questions;
+- link or reference the Pull Request containing the proposed repository changes;
+- move the issue to the appropriate review status;
+- stop when Human Product Owner approval is required.
+
+Do not move work into a state that implies Product Owner approval.
+
+`Ready for Development` requires explicit Human Product Owner authorization when it represents a module implementation gate.
+
+`Done` must not be used for a module until the Human Product Owner has explicitly approved the module.
+
+## Repository Workflow
+
+All repository changes must be made on a dedicated branch.
+
+### Branch Safety
+
+- Never modify or commit directly to `main`.
+- Before making any repository change, verify the current branch.
+- If the current branch is `main`, create and switch to an appropriate working branch before modifying files.
+- Keep each branch scoped to the authorized task or coherent unit of work.
+- Do not mix unrelated changes into the same branch.
+- Do not force-push, rewrite shared history, or perform destructive Git operations unless explicitly authorized by the Human Product Owner.
+- Do not merge a branch into `main` without the required review and approval.
+- Do not bypass required CI, review, testing, or quality gates in order to merge.
+- Repository documentation changes follow the same branch and review rules as source-code changes.
+
+### Pull Requests
+
+Changes intended for `main` must be submitted through a Pull Request.
+
+A Pull Request should:
+
+- clearly describe the purpose and scope of the change;
+- reference the relevant module, requirement, issue, or architectural decision where applicable;
+- include the verification performed;
+- identify known limitations or unresolved findings;
+- remain limited to its stated scope.
+
+Agents may prepare branches, commits, and Pull Requests as part of authorized work, but must not treat creation of a Pull Request as approval to merge.
+
+Merging into `main` requires the applicable review and quality gates defined by the development process.
