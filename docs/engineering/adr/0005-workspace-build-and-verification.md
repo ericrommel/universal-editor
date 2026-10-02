@@ -5,6 +5,9 @@
 **Decider:** Tech Lead  
 **Consulted:** Senior DevOps / Platform Engineer, Functional Quality Engineer, Non-Functional Quality Engineer, Senior Application Security Engineer
 
+**Binding for Module 0:** the workspace, verify command, and CI in this ADR.  
+**Deferred:** macOS runners, desktop packaging, and any component-test runner.
+
 ## Context
 
 Module 0 needs a reproducible install, one verification command, CI that fails when that command fails, and mechanical dependency boundaries (M0-FR-004, M0-FR-005, M0-FR-007, M0-NFR-001, M0-NFR-004, M0-NFR-010). The remote is GitHub: `ericrommel/universal-editor`.

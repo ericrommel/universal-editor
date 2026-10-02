@@ -30,18 +30,9 @@ Failure injection:
 
 There is no selection field, tool enum, panel registry, command bus, or undo stack in Module 0 types. Empty fields would become an API.
 
-### Future handoff, not implemented
+### Notes for a later viewport, not a specification
 
-When a viewport is an approved feature:
-
-- React may create one host element. It does not render frames.
-- The editor attaches that element to the rendering boundary. Pointer input for manipulation is registered there, not as React state on pointer-move.
-- Chrome subscribes to coarse commits (selection, tool, panels), not to frame ticks.
-- Hit testing returns a domain id. It does not return a render object for the UI to mutate.
-- Selection, active tool, and panel visibility are editor session state, not scene fields, unless the Product Owner later wants them persisted. The recommendation is not to persist them in the creative document.
-- One UI package is mounted by the web host and by any desktop host.
-
-Changing this handoff requires a new ADR. Implementing it in Module 0 does not.
+A later module that adds a viewport writes its own decision. The notes that should not be lost, and that are not binding, are: do not put frame ticks in React state, and do not treat the Module 0 screen as the editor layout. How hit testing, selection, and a host element work is deferred.
 
 ## Alternatives
 
@@ -55,7 +46,7 @@ Gives a familiar picture and freezes an information architecture the Designer ha
 
 ### Redux or a global event bus for the shell
 
-Two startup commands do not need a store framework. Rejected. Editor session and the future undo stack stay in the editor package.
+Two startup commands do not need a store framework. Rejected for Module 0. Where a later undo stack lives is deferred.
 
 ### Ship `UVCP_FORCE_INIT_FAILURE` in the production bundle
 
@@ -65,8 +56,8 @@ Easier to flip in a packaged build, and it is a permanent test switch in user-fa
 
 - M0-AC-012 reviews a foundation screen, not an empty editor.
 - The frame-loop render-count test the editor review described is not a Module 0 test. The import rules and the headless editor tests are the boundary evidence instead.
-- A later module that adds a canvas must follow the handoff above and must not treat this ADR as already having built it.
+- A later viewport is not specified here and is not authorized by this ADR.
 
 ## Confirmation
 
-Product Owner confirmation 4 accepts the foundation screen copy and appearance assumptions. Confirmation 5 accepts one shared UI implementation for later desktop chrome. Neither confirmation adds a viewport to Module 0.
+Product Owner confirmation of the foundation-screen copy and appearance is confirmation 4 in the architecture proposal. It does not add a viewport and does not decide later desktop chrome.

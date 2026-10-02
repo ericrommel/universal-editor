@@ -1,9 +1,13 @@
-# ADR-0003: Render snapshot and WebGPU direction
+# ADR-0003: Module 0 render boundary
 
 **Status:** Proposed  
 **Date:** 2026-10-02  
 **Decider:** Tech Lead  
 **Consulted:** Senior 3D / Rendering Engineer, Senior Core / Platform Engineer, Senior Application Security Engineer
+
+**Binding for Module 0:** a snapshot value and a null renderer. No GPU backend.  
+**Revisitable:** the platform facts below, kept so a later renderer choice has the 2026-10-02 evidence.  
+**Deferred:** WebGPU, WebGL2, native `wgpu`, and any product scene graph.
 
 ## Context
 
@@ -18,47 +22,34 @@ Checked on 2026-10-02, and not executed on a GPU:
 
 ## Decision
 
-The renderer, when one exists, consumes a platform-neutral **render snapshot**.
+Module 0 ships a snapshot value and a null renderer. The snapshot is plain data with physical pixel size, the device-pixel ratio used to compute it, an sRGB clear color, and an empty draw list. The null renderer records that value and returns backend `null` and device `not-requested`. It does not emit a reserved `lost` status. A headless test covers a fractional device-pixel ratio.
 
-- Plain data. No GPU objects and no UI objects.
-- Produced after hierarchy and modifier evaluation. The renderer does not evaluate the document.
-- One draw list can contain both flat items and spatial items.
-- Physical pixel size, the device-pixel ratio used to compute it, and an sRGB clear color.
-- Stable ids so a later pick can return an id. The editor maps the id. The renderer does not select, undo, or save.
+No canvas in the shell. No clear-color probe. No shader. No image diff and no GPU golden test. No graphics API is selected.
 
-GPU caches keyed by id are allowed later. Device loss drops the cache and rebuilds from the snapshot. Derived geometry lives in CPU domain data, not only in GPU memory.
+The field list above is the Module 0 test double. It is not a promise that a later renderer receives that same object, draws both flat and spatial items from one list, or recovers from device loss by rebuilding caches. Those ideas were discussed and are not decided.
 
-The API shape the snapshot is aimed at is WebGPU. WebGL2 is a fallback backend with fewer capabilities, reported as such, not a second product and not the design of the snapshot. Module 0 implements neither backend.
-
-Module 0 ships:
-
-- a snapshot value with physical size, device-pixel ratio, sRGB clear color, and an empty draw list
-- a null renderer that records that snapshot and returns backend `null`, device `not-requested`, and does not emit a reserved `lost` status
-- a headless test, including a fractional device-pixel ratio
-
-No canvas in the shell. No clear-color probe. No shader. No image diff and no GPU golden test.
+Platform facts checked on 2026-10-02, and not run on a GPU, are in the context section. They explain why Module 0 does not treat a system webview as a finished viewport. They do not choose WebGPU, WebGL2, or `wgpu`.
 
 ## Alternatives
 
 ### Three.js or Babylon.js as the product renderer
 
-Both can draw with WebGPU. Both keep authority in their own scene graph. A drag, a material, or a tessellation that lives there becomes a second scene, and persistence and undo have to scrape an engine. Using either as a disposable cache behind the port is possible and is constant pressure in the wrong direction. Rejected as the product renderer. Not a Module 0 dependency. A later labeled spike may compare draw cost and must be deleted afterward. That spike is not Module 0 work.
+Both can draw. Both normally keep authority in their own scene graph. Not a Module 0 dependency. Whether a later module may use one as a disposable cache is not decided. A spike that compares them is not Module 0 work.
 
 ### WebGL2 as the primary design
 
-The widest common path on paper, including today's Linux system webviews. It cannot host compute, it does not fix a silent software GL path, and it splits shader authoring from a later WebGPU path. Rejected as the primary design. Retained as the fallback.
+The widest common path on paper, including today's Linux system webviews. It cannot host compute, and a software GL path can report success without a usable GPU. Not selected. Not rejected for a later module.
 
 ### Native wgpu in Module 0
 
-The useful Linux GPU path that WebKitGTK does not provide. It also pulls Rust, a window, and an in-process driver into a module whose tests must stay headless, and it puts GPU work in a privileged host. The security review blocks that placement for Module 0 (ADR-0007). Rejected as a Module 0 dependency. Remains the alternative desktop viewport if bundled Chromium is later rejected (ADR-0004), and only with a new security review.
+A real native WebGPU path. It also pulls Rust, a window, and an in-process driver into a module whose tests must stay headless. Rejected as a Module 0 dependency (ADR-0007). Not selected or rejected as a later viewport.
 
 ## Consequences
 
 - Core does not import the renderer. The null renderer does not import UI, a desktop SDK, Three.js, Babylon.js, or `wgpu`.
-- The first cube and the first 2D primitive, in a later module, are two items in one snapshot from one scene.
-- Linux GPU support is not solved by choosing a system webview.
 - No frame-time budget is set. There is no reference viewport workload.
+- Nothing in this ADR selects a later graphics API.
 
 ## Confirmation
 
-The Product Owner does not need to choose a rendering engine to authorize Module 0. The Product Owner does need to accept that Module 0 will not show a viewport. The later choice between Electron and a native surface is a separate confirmation, recorded in ADR-0004, and it does not block this module.
+The Product Owner does not choose a rendering engine to authorize Module 0. Confirmation that Module 0 shows no viewport is part of the shell confirmation in the architecture proposal. The later graphics API does not block this module.

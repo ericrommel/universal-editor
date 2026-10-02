@@ -13,7 +13,7 @@ Module 0 has no accounts, project parser, plugin host, AI client, or updater. Th
 
 ## Decision
 
-The Module 0 shell is the conditioned web shell in ADR-0004. No Electron and no Tauri are added, so their extra conditions are not implemented. They are recorded below so a later host cannot treat this ADR as permission to wrap the same page in an unrestricted desktop shell.
+The Module 0 shell is the conditioned web shell in ADR-0004. No Electron and no Tauri are added. The notes below are a shorter start for a later proposal. They are not a selection of either host, and they are not permission to wrap this page in a desktop shell. The threat model keeps the conditions this list does not repeat, including a null-`senderFrame` check, no Electron `file://` content, no `allowRunningInsecureContent`, no experimental features, no `enableBlinkFeatures`, no `ELECTRON_DISABLE_SECURITY_WARNINGS`, a non-elevated Tauri host, and no `std::process` or user-directory I/O in Rust. Omitting them here does not waive them.
 
 ### Boundaries in force
 
@@ -62,9 +62,9 @@ Module 0 builds and tests with no repository secrets, no organization secrets, a
 
 Signing secrets, when they exist, belong only in a protected release workflow on reviewed tags. They are not added to this workflow to "test signing." Prefer short-lived federation over a long-lived certificate password. A secret that reaches a log is treated as compromised.
 
-### If a later module selects Electron
+### If a later module proposes Electron
 
-All of the following become preconditions, not follow-up tasks. Unhardened Electron is rejected.
+Not a decision to use Electron. A proposal that does should start from these conditions rather than from an unrestricted shell. Unhardened Electron is not an acceptable reading of this ADR.
 
 - `contextIsolation: true`, `nodeIntegration` and its worker and subframe variants `false`, `sandbox: true`, `webSecurity` left on, `app.enableSandbox()` before ready, no `--no-sandbox`.
 - No remote content. No generic `ipcRenderer` bridge. Prefer no preload while the shell needs no privileged API.
@@ -73,7 +73,9 @@ All of the following become preconditions, not follow-up tasks. Unhardened Elect
 - Before a packaged binary ships, fuses end as: `runAsNode`, `nodeOptions`, `nodeCliInspect`, and `grantFileProtocolExtraPrivileges` disabled; `onlyLoadAppFromAsar` and `embeddedAsarIntegrityValidation` enabled. Record that end state before packaging. Do not flip `cookieEncryption` until macOS signing exists.
 - Name an owner and a cadence for moving to a current Electron stable after a Chromium security release.
 
-### If a later module selects Tauri
+### If a later module proposes Tauri
+
+Not a decision to use Tauri. A proposal that does should start from these conditions.
 
 - No shell, filesystem, HTTP, opener, or dialog plugin unless that module's requirements need it and the grant is reviewed.
 - Explicit capability list. No `windows: ["*"]`. No `remote.urls`.

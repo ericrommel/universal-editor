@@ -22,23 +22,21 @@ Second-pass reviews of the written proposal:
 | [reviews/editor-proposal-review.md](reviews/editor-proposal-review.md) | Senior 2D / Editor Engineer | Concur |
 | [reviews/design-proposal-review.md](reviews/design-proposal-review.md) | Senior Product Designer / UX Architect | Concur |
 | [reviews/functional-proposal-review.md](reviews/functional-proposal-review.md) | Functional Quality Engineer | Concur |
-| [reviews/project-manager-gate.md](reviews/project-manager-gate.md) | Project Manager | Concur. Not an authorization. |
-| [reviews/security-proposal-review.md](reviews/security-proposal-review.md) | Senior Application Security Engineer | Blocked SEC-M0-B-008. ADR-0007 was amended so every disjunct of an `OR` must be on the permissive list. |
+| [reviews/project-manager-gate.md](reviews/project-manager-gate.md) | Project Manager | Definition of Ready check. Not authorization. Does not claim this revision's specialist reviews are finished. |
+| [reviews/security-proposal-review.md](reviews/security-proposal-review.md) | Senior Application Security Engineer | Historical block on SEC-M0-B-008 remains. Concurs with the amended license rule only. |
 
 Tracking compliance against the updated work-tracking rules:
 
 | Review | Role | Result |
 | --- | --- | --- |
-| [reviews/project-manager-tracking-review.md](reviews/project-manager-tracking-review.md) | Project Manager | Concur on tracking only. Not an authorization. |
+| [reviews/project-manager-tracking-review.md](reviews/project-manager-tracking-review.md) | Project Manager | No new concurrence. Does not move the board. |
 
 No application code is created in this phase.
 
 ## Operational record
 
-GitHub issue [#1](https://github.com/ericrommel/universal-editor/issues/1), [pull request #2](https://github.com/ericrommel/universal-editor/pull/2), and the Universal Visual Creation Platform project board are the operational record. This directory is evidence. Session output is not a substitute.
-
-The board column for this Product Owner review gate is `Ready for PO`. `PO Approval` stays Pending until the Human Product Owner decides. Preparation does not set Ready for Development or Done.
+GitHub issue [#1](https://github.com/ericrommel/universal-editor/issues/1) and the Universal Visual Creation Platform project board are the operational record. This directory is evidence. It does not record the current board column. Session output is not a substitute.
 
 Reviews dated 2026-10-02 cite `development-process.md` section numbers from before Operational Work Tracking was inserted as section 3. From the Team section onward, current numbers are one higher. Definition of Ready is section 8. The PO review package is section 19. Requirement changes are section 21.
 
-The security proposal review records a block on SEC-M0-B-008. That file is the historical review. ADR-0007 was amended so every disjunct of an `OR` must be on the permissive list. That amendment is the disposition. It is not a later security concurrence, and it is not Product Owner approval.
+The security proposal review records the historical block on SEC-M0-B-008. ADR-0007 was amended so every disjunct of an `OR` must be on the permissive list. The security review concurs with that amended rule only. That is not a full concurrence with the architecture, not closure of M0-AC-011, and not Product Owner approval.

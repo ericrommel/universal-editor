@@ -13,11 +13,7 @@ No production application code is part of this proposal.
 
 ## Operational record
 
-GitHub issue [#1](https://github.com/ericrommel/universal-editor/issues/1) and the Universal Visual Creation Platform project board are the operational record for this module. This document does not replace them.
-
-Architecture preparation is at the Product Owner review gate. On that board the column for the gate is **Ready for PO**. There is no separate "Ready for PO Review" column. `PO Approval` stays **Pending** until the Human Product Owner decides. This proposal does not set **Ready for Development** or **Done**.
-
-The repository changes are on branch `docs/m0-architecture-preparation` and are submitted through [pull request #2](https://github.com/ericrommel/universal-editor/pull/2). They are not a commit on `main`. Merging that pull request does not authorize implementation.
+Work status for Module 0 is GitHub issue [#1](https://github.com/ericrommel/universal-editor/issues/1) and the Universal Visual Creation Platform project board. This document does not record the current board column. Merging it does not authorize implementation.
 
 ## Authority
 
@@ -30,95 +26,112 @@ Normative for this proposal:
 
 `docs/archive/product-engineering-specification-v1.0.md` is long-term context. It does not authorize later modules, and it does not override the operational Module 0 specification. Archive Module 0 identifiers are not the same as the operational identifiers.
 
-## Decision summary
+## Decision classes
 
-| Topic | Decision for Module 0 | Record |
+Product Owner review of the architecture proposal asked that later-module assumptions not be written as binding architecture. Every decision in this document and in ADR-0001 through ADR-0008 uses one of these labels.
+
+**Binding for Module 0.** Required to implement and verify this module. A change during Module 0 implementation needs an ADR revision.
+
+**Revisitable direction.** Analysis the foundation should not accidentally close. A later module may replace it when that module has requirements and evidence. It is not a commitment to build that shape.
+
+**Deferred.** Not decided.
+
+### Binding for Module 0
+
+| Topic | What this module implements | Record |
 | --- | --- | --- |
-| Language | TypeScript for core, persistence, editor, rendering port, UI, and shell | ADR-0001 |
-| UI | React for the foundation screen only | ADR-0002 |
-| Rendering | Snapshot port plus a null renderer. No GPU, no engine | ADR-0003 |
-| Desktop | Loopback web shell now. No Electron, Tauri, or native GPU library | ADR-0004 |
-| Scene, persistence, undo | Direction only, plus a provisional manifest codec and numeric canonicalizer | ADR-0006 |
-| Editor state | Startup session only. No viewport in the shell | ADR-0008 |
-| Workspace and CI | pnpm, TypeScript project references, Vite, Node test runner, Biome, GitHub Actions | ADR-0005 |
-| Security | Web-shell trust boundary, locked installs, secret-free CI | ADR-0007 |
+| Language of this module's code | TypeScript for the packages Module 0 creates | ADR-0001 |
+| Foundation screen | Client-side React. No component library, router, or scene ownership | ADR-0002 |
+| Rendering boundary | Snapshot value and null renderer. No GPU library and no canvas | ADR-0003 |
+| Shell | Loopback Vite app and a static build with a relative base. No Electron, Tauri, or native GPU stack | ADR-0004 |
+| Domain code present now | `DomainError` and finite-number canonicalizers | ADR-0006 |
+| Persistence present now | Provisional manifest codec and entry-name checks. Not a public format | ADR-0006 |
+| Editor state present now | Startup session only. No viewport API | ADR-0008 |
+| Workspace and CI | pnpm, project references, Biome, `node:test`, GitHub Actions | ADR-0005 |
+| Trust boundary | Web-shell controls, locked installs, secret-free CI, permissive license rule | ADR-0007 |
+
+### Revisitable direction
+
+- Module 0 domain code stays free of React, a renderer, and filesystem APIs, so later domain code can be tested without a window. The language of a later authoritative scene is not decided.
+- The Module 0 UI and null renderer do not hold a second document. The concrete scene model is not decided.
+- The Module 0 snapshot is size, device-pixel ratio, an sRGB clear, and an empty draw list. That is the test double, not a permanent renderer API. WebGPU, WebGL2, and a native surface were compared and none is selected.
+- ADR-0004 records studied desktop hosts. It does not select one. Module 0 only refuses to add a desktop host now.
+- A manifest plus a document plus assets was compared with other containers. No container is selected.
+- Inverse patches in editor memory were compared with other undo shapes. No undo strategy is selected.
+- Module 0 has one UI package because it has one screen. That does not decide the toolkit of a later desktop host.
+- A Python sidecar that exchanges validated bytes is a studied integration shape. No protocol is selected.
+
+### Deferred
+
+Scene schema, coordinate conventions, one scene or several, public format identity, container and hand-editing, undo, selection persistence, product graphics API, desktop viewport host, macOS distribution channel, browser-support matrix, reference hardware, product license, copyleft exceptions, and telemetry. Each waits for the module that has the requirements and the evidence.
 
 ## 1. Primary language
 
-TypeScript, types erased, one package shared by the web shell and any later desktop host. The core runs under Node's test runner with no browser and no DOM.
+Binding: the packages Module 0 creates are TypeScript, types erased, and the headless packages run under Node's test runner with no browser and no DOM.
 
-Rust as the authoritative scene, C# / Blazor, and Python as the client core were evaluated and rejected for Module 0. A later measured numeric kernel may be replaced by WebAssembly behind a pure function. Moving the authoritative scene out of TypeScript is a new architecture decision, not an optimization. Python, if it appears at all, is a future sidecar that exchanges validated bytes. See ADR-0001 and ADR-0006.
+Rust, C# / Blazor, and Python were evaluated as the language of this module and rejected for Module 0. Each would add a second runtime before this module has a scene that needs one. That rejection does not choose the language of a later authoritative scene. Moving that scene to another language, or replacing these packages, is a new ADR when rendering, performance, desktop, and domain evidence exists. A later measured numeric function may still move behind a narrow boundary without that being a language decision for the scene. See ADR-0001.
 
 ## 2. UI framework
 
-React, client-only, paints the foundation screen. It does not own scene state, schedule frames, or draw a viewport. There is no Next.js, no server components, no router, and no third-party component library.
+Binding: client-side React paints the foundation screen. It does not own scene state, schedule frames, or draw a viewport. There is no Next.js, no server components, no router, and no third-party component library.
 
-Solid is the realistic alternative and is not adopted. Svelte and a fully vanilla shell were also rejected. See ADR-0002.
+Solid is the realistic alternative and is not adopted for this screen. Svelte and a fully vanilla shell were also rejected for Module 0. Whether later editor chrome stays on React is revisitable. See ADR-0002.
 
 ## 3. Rendering technology
 
-The product scene, when it exists, is plain data in core. A renderer consumes a platform-neutral snapshot and does not keep a second scene graph. Three.js and Babylon.js are rejected as the product renderer. They are not Module 0 dependencies.
+Binding: Module 0 implements a snapshot value and a null renderer. The null renderer records pixel size, device-pixel ratio, an sRGB clear color, and an empty draw list. It does not open a window or request a GPU. Three.js, Babylon.js, and `wgpu` are not Module 0 dependencies.
 
-Module 0 implements only the port and a null renderer. The null renderer records pixel size, device-pixel ratio, an sRGB clear color, and an empty draw list. It does not open a window or request a GPU. See ADR-0003.
+The null renderer is not a second product document. The scene model and the product renderer are not decided. See ADR-0003.
 
-## 4. WebGPU strategy
+## 4. Graphics API comparison
 
-WebGPU is the graphics API the future snapshot is aimed at. WebGL2 is the fallback backend, not the design center. Neither backend is implemented in Module 0.
+Deferred. Module 0 implements no graphics backend.
 
-A system webview is not an acceptable sole GPU viewport for Windows, macOS, and Linux together. WebKitGTK has no shipped WebGPU as of the 2026-09-16 WebKitGTK 2.54 notes, and Tauri documents Linux WebGL paths that can succeed without a usable GPU. Chromium-class WebGPU is the preferred future viewport host. A native `wgpu` surface behind UI chrome is the alternative if bundled Chromium is later rejected. Both are deferred. See ADR-0003 and ADR-0004.
+WebGPU, WebGL2, and a native surface were compared on 2026-10-02 so the Module 0 shell would not treat a system webview as a portable GPU viewport. That comparison is evidence. It is not a selection. See ADR-0003 and ADR-0004.
 
-## 5. Desktop strategy
+## 5. Desktop host
 
-Module 0 launches a Vite dev server bound to loopback and a static production build of the same UI. That is the minimal shell required by M0-FR-001 in the primary development environment.
+Binding: Module 0 launches a Vite dev server bound to loopback and a static production build of the same UI. The static build uses a relative base. No Node native addon is introduced. Filesystem access stays out of core and out of the Module 0 shell. Electron, Tauri, and a native GPU library are not Module 0 dependencies.
 
-Desktop remains a product target. Module 0 does not package it. The static build uses a relative base so a later thin host can load the same assets. No Node native addon is introduced. Filesystem access stays out of core and out of the Module 0 shell. See ADR-0004.
-
-The future desktop viewport host is deliberately not locked by installing Electron or Tauri now. The ranking, when a later module actually presents a scene, is:
-
-1. Hardened Electron, because one Chromium canvas keeps pointer input and WebGPU together, subject to the conditions in ADR-0007.
-2. A native `wgpu` surface with the webview limited to chrome, only after a new security review. Module 0 forbids that native path.
-3. A Tauri system webview as the viewport. Not recommended. It requires an explicit Product Owner acceptance that Linux has no production GPU viewport.
+Desktop remains a product target. Module 0 does not package it. Which host presents a later viewport is deferred. ADR-0004 keeps the comparison. See ADR-0004.
 
 ## 6. Scene and domain direction
 
-There will be one authoritative scene. It is not implemented in Module 0.
+No scene is implemented in Module 0.
 
-When Module 1 is separately approved, the scene is plain data: nodes keyed by opaque id, parent order stored only as `childIds`, and a transform record. 2D and 3D are payloads in that one hierarchy. World matrices are derived. A renderer may cache GPU resources by id and must be able to rebuild them from a snapshot. It must not own hierarchy, lifetime, or persisted transforms.
+Binding code is `DomainError`, `canonicalizeFiniteNumber`, and `canonicalizeFiniteTriple`. Finite numbers pass. `-0` becomes `0`. `NaN`, infinities, and non-numbers throw `NON_FINITE_NUMBER`. There is no scene type, no vector library, and no id generator. Core does not read a clock, a random source, or the filesystem.
 
-Module 0 core contains only:
-
-- `DomainError`, with a stable code and a short message
-- `canonicalizeFiniteNumber` and `canonicalizeFiniteTriple`, which reject `NaN` and infinities and map `-0` to `0`
-
-No scene type, no vector library, and no id generator. Core does not read a clock, a random source, or the filesystem. See ADR-0006.
+A single plain-data hierarchy is revisitable direction taken from the product principles. It is not a schema. See ADR-0006.
 
 ## 7. Editor state
 
-Three owners:
+Three owners in Module 0:
 
 | State | Owner | Module 0 |
 | --- | --- | --- |
-| Domain document | `core`, later | Not present |
+| Domain document | `core` | Not present |
 | Editor session | `editor` | `starting`, `ready`, `failed` |
 | Ephemeral widget state | `ui` | Details disclosure only |
 
-The shell creates the editor, runs startup, and passes plain view-model values into the UI. UI does not import core or editor. Editor does not import React. There is no selection, tool, panel, undo stack, or viewport-attach API in Module 0. Those future session facts stay out of the document. See ADR-0008.
+The shell creates the editor, runs startup, and passes plain view-model values into the UI. UI does not import core or editor. Editor does not import React. Module 0 has no selection, tool, panel, undo stack, or viewport-attach API. Whether a later module persists any of those is deferred. See ADR-0008.
 
-## 8. Persistence strategy
+## 8. Persistence
 
-The long-term project is a logical package: a manifest, a domain document, and asset entries addressed by id. The user-facing container recommended for later is one zip file of that package. SQLite, a single JSON project file, and a custom binary document were rejected as the working format. None of the container is built in Module 0.
-
-Module 0 persistence implements a closed manifest codec and pure package-entry name checks. Canonical manifest bytes are exactly:
+Binding: a closed provisional manifest codec and pure entry-name checks. Canonical bytes are exactly:
 
 ```text
 {"formatId":"universal-visual-creation-project","schemaVersion":1}
 ```
 
-`formatId` is provisional until the Product Owner confirms it, and until a user-facing save exists. Module 0 has no save command and no file extension. Migrations, zip reading, and scene JSON wait. Malformed manifests are rejected whole. See ADR-0006.
+Those bytes are the Module 0 test contract. `formatId` is not a public format promise. Module 0 has no save command, file extension, zip library, migration, or scene document. Malformed manifests are rejected whole.
+
+A manifest plus a document plus asset entries was compared with one JSON file, SQLite, and a custom binary document. No container is selected. See ADR-0006.
 
 ## 9. Undo direction
 
-Not built in Module 0. The later shape is an immutable document and `apply(document, operation) -> { document, inversePatch }`, with undo and redo stacks held in editor session memory. The project file stores the committed document, not the history. Full-document snapshots and event sourcing as the file format were rejected as the default. See ADR-0006.
+Not built in Module 0, and no undo API is added.
+
+Inverse patches in editor memory, full-document snapshots, and an event log were compared so the Module 0 manifest would not be mistaken for a history log. No undo strategy is selected. See ADR-0006.
 
 ## 10. Repository structure
 
@@ -237,7 +250,9 @@ Section 10 is the rule. M0-NFR-002 is enforced by the boundary script, not by re
 
 ## 19. Future Python or backend integration
 
-Out of Module 0. The allowed later shape is a sidecar started by the editor, speaking a versioned envelope that persistence or a dedicated validator checks before any domain operation. Core does not import Python. Pyodide and an embedded CPython are rejected as the client core. No port, socket, or protocol is built now. See ADR-0001 and ADR-0006.
+Deferred. Module 0 does not import Python and does not build a port, socket, or protocol.
+
+Pyodide and an embedded CPython were rejected as the Module 0 runtime. A sidecar that submits bytes for validation is revisitable direction, not a selected integration. See ADR-0001 and ADR-0006.
 
 ## 20. Cross-platform build and release
 
@@ -256,9 +271,9 @@ Web hosting, installers, signing, notarization, and auto-update are out of scope
 
 Not executed in Module 0. No Apple secret, certificate, or runner.
 
-When desktop distribution is in scope, the recommended first macOS channel is direct distribution: Developer ID Application certificate, Hardened Runtime, secure timestamp, `notarytool`, and stapling. The Mac App Store is a second channel and adds the App Sandbox. Those certificates are not interchangeable. New Developer ID certificates must use the G2 intermediate; the previous Developer ID intermediate expires on 2027-02-01 (Apple notice, 2026-10-01).
+The macOS channel is deferred. Direct Developer ID distribution and the Mac App Store were both identified. They are not interchangeable: the store channel adds the App Sandbox. New Developer ID certificates must use the G2 intermediate; the previous Developer ID intermediate expires on 2027-02-01 (Apple notice, 2026-10-01). Neither channel is selected.
 
-The Module 0 rule that filesystem I/O is not in core or persistence is what keeps both channels possible. The Product Owner chooses the channel before any Mac build is signed, not before Module 0.
+Filesystem I/O stays out of core and persistence in Module 0, which leaves both channels possible. The Product Owner chooses a channel before any Mac build is signed, not before Module 0.
 
 The shell follows the Module 0 design intent for contrast, text size, reduced motion, and system chrome. It does not claim App Store readiness. See the design review cited below.
 
@@ -286,9 +301,9 @@ See ADR-0007. The threat model in the security review remains the Module 0 threa
 
 | Risk | Mitigation in this proposal |
 | --- | --- |
-| A later module adopts Three.js or Babylon as the scene | ADR-0003 forbids a second authoritative graph. The null renderer is the only implementation now. |
-| Tauri is chosen later for size, and Linux cannot host the viewport | ADR-0004 rejects the system webview as the sole GPU viewport unless the Product Owner explicitly accepts that cut. |
-| Desktop cannot host the TypeScript package | Any future host must execute this package. A host that cannot do that reopens ADR-0001 before Module 1. |
+| A later module puts the document inside a renderer or UI framework | Module 0 does not take that dependency. Choosing it later is a new ADR, not a decision already made here. |
+| A desktop host is chosen before a viewport exists | Module 0 adds no desktop host. ADR-0004 keeps the comparison and does not select one. |
+| Module 0 TypeScript is read as the permanent scene language | ADR-0001 binds TypeScript for this module's packages only. The later scene language is deferred. |
 | `JSON.stringify` becomes the project writer | The Module 0 writer emits one closed byte string. Non-finite numbers are rejected, not written as `null`. |
 | The manifest bytes are mistaken for a public format promise | `formatId` is provisional until a user-facing save exists. |
 | Import rules are documented and not enforced | The boundary script is part of `pnpm verify`. |
@@ -306,7 +321,7 @@ Adopted as written, including the foundation screen, the exact strings, the ligh
 
 Amendments:
 
-- The shell has no viewport, canvas, toolbar, hierarchy, or frame probe. The editor review's viewport-first frame is not adopted. The future rule is recorded in ADR-0008 and is not a Module 0 widget.
+- The shell has no viewport, canvas, toolbar, hierarchy, or frame probe. The editor review's viewport-first frame is not adopted. A later viewport is deferred. ADR-0008 does not specify its API.
 - `UVCP_FORCE_INIT_FAILURE` is not a control on the screen.
 
 The native window title is `Foundation`. The on-screen heading is `Universal Visual Creation Platform`. There is no icon asset and no placeholder logo.
@@ -361,9 +376,9 @@ The deliberate failing test for M0-AC-004 is a short-lived branch, never the app
 
 | Topic | Positions | Decision |
 | --- | --- | --- |
-| Viewport in the Module 0 shell | Editor: mount a host element and a frame probe. Designer: no viewport and no editor frame. Rendering: no canvas and no GPU probe. | No viewport and no canvas. Record the future handoff. Do not implement it. |
+| Viewport in the Module 0 shell | Editor: mount a host element and a frame probe. Designer: no viewport and no editor frame. Rendering: no canvas and no GPU probe. | Binding for Module 0: no viewport and no canvas. A later handoff is deferred. |
 | Who may import whom | Core forbade UI from importing editor and allowed editor to import UI. Editor forbade editor from importing React and wanted UI to hold an editor client. DevOps allowed several wider edges, including UI to core. | Shell passes a plain view model. UI imports no workspace package. Editor imports core and persistence only. |
-| Desktop host | Rendering prefers Electron later and rejects Tauri as the only GPU viewport. Security's privilege order is web, then conditional Tauri, then conditional Electron, and blocks a native GPU fallback in Module 0. DevOps would not decide in Module 0 and leans Tauri if forced. | Web shell now. No desktop dependency. Tauri is not the future viewport assumption. Electron versus `wgpu` waits for the first viewport module and a Product Owner decision. |
+| Desktop host | Rendering prefers Electron later and rejects Tauri as the only GPU viewport. Security's privilege order is web, then conditional Tauri, then conditional Electron, and blocks a native GPU fallback in Module 0. DevOps would not decide in Module 0 and leans Tauri if forced. | Binding for Module 0: web shell only, no desktop dependency. The later host is deferred. The comparison stays in ADR-0004 and is not a selection. |
 | Failure injection | Non-functional quality: an environment variable and a non-zero process exit. Functional quality: a test double, not a shipped backdoor. | Injected initializer in tests and in the headless script. Environment variable only in `pnpm dev`. Absent from the production bundle. |
 | Test runner | Editor suggested Vitest and Testing Library for chrome. DevOps and functional quality recommend `node:test` and no Playwright. | `node:test` only. |
 | Persistence depth | Core: a real manifest codec. DevOps: an empty boundary is enough. | Codec and entry-name rules. No zip and no user save. |
@@ -373,40 +388,37 @@ The deliberate failing test for M0-AC-004 is a short-lived branch, never the app
 ## Assumptions
 
 - The operational specification is the Module 0 contract.
-- Web and desktop will share this TypeScript core. A future host that cannot run it reopens ADR-0001.
-- Editor session state is not project content.
-- Hand-edited project files are not a support commitment.
-- No user projects exist, so there is no migration to perform.
+- Module 0 packages are TypeScript. That is not an assumption that every later host or the authoritative scene stays on this package.
+- Module 0 does not persist editor session state, because the only session state is startup. Whether later session state is saved is deferred.
+- No user projects exist, so Module 0 has no migration to perform. Hand-editing is not defined.
 - The repository remote stays on GitHub. Actions availability was not queried against the GitHub API.
 - External version and platform facts were checked by the specialist reviews on 2026-10-02. No shell was built, and no GPU process was launched, because there is no application to launch.
 - React, TypeScript, Vite, and Biome are pinned to the exact versions that pass the license and audit checks on implementation day. This proposal does not invent patch numbers for them.
 - Reference hardware and product performance workloads are not decided. They do not block Module 0. They block the first module that makes a product performance claim.
-- Up-axis, handedness, rotation order, and degrees versus radians are one future schema constant. They are not guessed here. They must be decided before Module 1 transform tests.
+- Up-axis, handedness, rotation order, and degrees versus radians are deferred. They are not guessed here.
 
 ## Decisions that need the Product Owner
 
-These are the confirmations required before Module 0 is READY FOR DEVELOPMENT. Recommended answers are stated so a single approval can accept them, and any rejection is explicit.
+These four confirmations are required before Module 0 is READY FOR DEVELOPMENT. Recommended answers are stated so a single approval can accept them, and any rejection is explicit. They do not ask the Product Owner to lock a later module.
 
-1. **Authorize this proposal** as the Module 0 architecture, including ADR-0001 through ADR-0008, without changing the Module 0 requirements or acceptance criteria.
+1. **Authorize this proposal** as the Module 0 architecture, including ADR-0001 through ADR-0008, without changing the Module 0 requirements or acceptance criteria. Authorization adopts the binding column only. Revisitable direction and deferred items stay open.
 2. **Primary development environment.** Confirm 64-bit Windows x64 as the documented setup and local-launch environment, with required CI on `windows-2025` and `ubuntu-24.04`. Confirm that the manual `pnpm dev` launch uses current Microsoft Edge or current Google Chrome, and that the evidence records which one. Confirm that Web, Windows, macOS, and Linux remain the product targets and that Module 0 does not implement all of them.
 3. **Module 0 shell.** Confirm a loopback web shell, and confirm that Electron, Tauri, and a native GPU stack are not part of Module 0.
 4. **Design intent.** Confirm the foundation screen in the design review, or correct these assumptions: the heading `Universal Visual Creation Platform`; no icon in Module 0; system light/dark with a light fallback; the purpose sentence in that review. The window title `Foundation` is a purpose label, not a product name.
-5. **One UI implementation.** Confirm that later desktop chrome uses the same UI package, with native file and process integration in a thin host, rather than a second widget toolkit.
 
-Not required to start Module 0. Required before the module that makes them user-visible:
+Not decided here. Notes under a bullet are analysis, not a selection:
 
-- Application license. Do not add an open-source `LICENSE` grant in Module 0.
-- Any copyleft dependency. The default is to refuse it.
-- Public format id, file extension, one file versus a folder, and whether hand-editing is supported. Engineering defaults when that day comes: one container file, not `.json`, hand-editing unsupported, a newer `schemaVersion` refused, a malformed file rejected whole.
-- Whether undo history survives save and reopen. Recommended answer: no.
-- One scene per project or several. The overview says a unified scene. Archive section 4.2 says one or more. Decide before the Module 1 document schema.
-- Whether selection and panel layout are saved. Recommended answer: no.
-- Desktop viewport host when pixels are required: hardened Electron, or native `wgpu` behind chrome. Rendering recommends Electron. Security will re-review whichever is chosen. Tauri-as-viewport is not the recommendation.
-- macOS channel: direct Developer ID, or Mac App Store.
-- Browser support matrix for the first web release.
-- Reference hardware and the first performance workload.
-- Telemetry. The decision in force is none.
-- Repository settings only an admin can change: Actions enabled, and branch protection that requires the verify check. Recommended. Not done here.
+- Application license. Module 0 does not add an open-source `LICENSE` grant.
+- Any copyleft dependency. The Module 0 allow-list refuses it until the Product Owner approves that named dependency.
+- Public format id, file extension, one file versus a folder, and whether hand-editing is supported.
+- Undo, including whether history survives save and reopen.
+- One scene per project or several. The overview describes a unified scene. Archive section 4.2 says one or more.
+- Whether selection and panel layout are saved.
+- Desktop viewport host and product graphics API. ADR-0004 records the comparison.
+- Whether later desktop chrome reuses the Module 0 UI package.
+- Language of the authoritative scene once rendering, performance, and desktop evidence exist.
+- macOS channel, browser-support matrix, reference hardware, and telemetry.
+- Repository settings only an admin can change: Actions enabled, and branch protection that requires the verify check. Not done in this proposal.
 
 ## Implementation breakdown
 
@@ -438,19 +450,19 @@ WP-1 and WP-3 may proceed together after WP-0. WP-2 waits until the core and per
 | Test infrastructure defined | Met. Listed in the test plan and in ADR-0005. |
 | Blocking security findings for preparation | Addressed by ADR-0007. Implementation evidence is still required later for M0-AC-011. |
 | Blocking architectural decisions for Module 0 | Proposed here. |
-| Product ambiguities that block Module 0 | The five confirmations above. |
+| Product ambiguities that block Module 0 | The four confirmations above. |
 | Product Owner authorizes implementation | **Not met.** |
 
 ## ADR index
 
 | ADR | Title |
 | --- | --- |
-| 0001 | TypeScript for the shared core |
-| 0002 | React for editor chrome |
-| 0003 | Render snapshot and WebGPU direction |
-| 0004 | Module 0 web shell and desktop direction |
+| 0001 | TypeScript for Module 0 |
+| 0002 | React for the Module 0 foundation screen |
+| 0003 | Module 0 render boundary |
+| 0004 | Module 0 web shell |
 | 0005 | Workspace, build, and verification |
-| 0006 | Domain, persistence, and undo direction |
+| 0006 | Module 0 domain helpers and provisional manifest |
 | 0007 | Module 0 trust boundaries |
 | 0008 | Editor state and shell content |
 

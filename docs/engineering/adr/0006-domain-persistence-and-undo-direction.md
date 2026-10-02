@@ -1,4 +1,4 @@
-# ADR-0006: Domain, persistence, and undo direction
+# ADR-0006: Module 0 domain helpers and provisional manifest
 
 **Status:** Proposed  
 **Date:** 2026-10-02  
@@ -7,36 +7,21 @@
 
 ## Context
 
-Later modules need one scene, a portable project, and undo of edits. Module 0 must establish the persistence boundary without implementing authoring, a scene graph, or a user-facing save. Archive Modules 1 and 2 describe that later work and do not authorize it.
+Module 0 must establish a persistence boundary without implementing authoring, a scene graph, or a user-facing save. Archive descriptions of later modules do not authorize that work and do not decide it.
 
-The risk of an empty persistence package is that the first save becomes `JSON.stringify` of a renderer object. The risk of a rich framework now is a scene implementation disguised as a placeholder.
+The risk of an empty persistence package is that the first save becomes `JSON.stringify` of a renderer object. The risk of a rich model now is a scene implementation disguised as a placeholder.
+
+**Binding for Module 0:** numeric helpers and the provisional manifest codec below.  
+**Revisitable:** package shape, scene shape, and undo notes.  
+**Deferred:** the scene schema, the container, and the undo strategy.
 
 ## Decision
-
-### Domain
-
-One authoritative scene will live in `core` as plain data, starting in Module 1 if that module is approved. Not before.
-
-Intended shape, not Module 0 code:
-
-- nodes in one map, ordered children only on the parent's `childIds`
-- transform as a small record of translation, rotation, and scale
-- 2D and 3D as payloads in that hierarchy, not as a second scene
-- asset bytes referenced by id, not inlined in the document
-- ids supplied by the caller; core does not read a clock or a random source
-- world transforms derived, not saved
-
-Up-axis, handedness, rotation order, and degrees versus radians are one schema-level constant. They are intentionally undecided. The starting proposal for the Module 1 ADR is degrees, a fixed XYZ order, and the edited triple as the stored value. Do not also persist a quaternion. That proposal is not a Module 0 decision and may be replaced before Module 1 tests exist.
-
-Rejected for the scene model: a class hierarchy with draw methods, an ECS framework, storing both `parentId` and `childIds`, and any renderer scene graph as the document.
 
 ### What Module 0 puts in core
 
 `DomainError`, `canonicalizeFiniteNumber`, and `canonicalizeFiniteTriple`. Finite numbers pass. `-0` becomes `0`. `NaN`, infinities, and non-numbers throw `NON_FINITE_NUMBER`. No `Vector3` type and no math dependency.
 
 ### Persistence
-
-Long-term project: a logical package of `manifest.json`, a domain document, and asset entries under relative `/` names. Recommended user-facing container, when save exists: one zip of that package. Tests may later use the same entries as a directory. Same names, no second schema.
 
 Module 0 implements only:
 
@@ -46,21 +31,17 @@ Module 0 implements only:
 - a reader that accepts insignificant whitespace and either key order, rejects duplicate keys, unknown keys, a non-integer version, and inputs over 4096 bytes, and returns a new value
 - pure entry-name checks: NFC, 1–255 UTF-8 bytes, relative `/` segments, no `..`, no `\` or `:`, no ASCII controls, and no two names that collide under ASCII case-fold
 
-No zip library, no directory writer, no migration registry, and no scene JSON. Persistence does not call the filesystem. The editor will pass bytes in when a save exists. `replace-all` semantics for the user's file are a later platform concern: the previous complete package stays readable if the write fails.
+No zip library, no directory writer, no migration registry, and no scene JSON. Persistence does not call the filesystem. Who writes a user's file, and what a failed write does, is deferred.
 
-`schemaVersion` is the compatibility authority. A newer version is rejected whole. An older version is migrated in memory by persistence, and the file is not rewritten until the user saves. There is no older version in Module 0, so there is no migrator.
+The Module 0 reader rejects a `schemaVersion` other than `1`. There is no migrator, because there is no older file.
 
-### Undo
+### Studied, not selected
 
-Not built. Later default: `apply(document, operation)` returns the next document and an inverse patch of the records that changed. The editor holds the stacks. The file does not. A transform gesture pushes one patch on commit, not one patch per pointer move. A failed save does not roll the document back and does not discard history.
+A logical package of a manifest, a domain document, and asset entries was compared with one JSON file, SQLite, and a custom binary document. A zip file was the container most often named. None of these is selected. The Module 0 manifest is JSON because it is two fields, not because the project format is one JSON file.
 
-Full-document snapshots are easier and will retain asset bytes if those bytes ever sit on the node. Rejected as the default. They may be reconsidered in the Module 2 ADR only if history stays in the editor, stays out of the file, and does not copy asset payloads.
+Undo was compared the same way. Inverse patches held beside the document, full-document snapshots, and an event log are all possible. None is selected. Module 0 adds no undo API, and the manifest is not a history log.
 
-Event sourcing as the project format is rejected. Collaboration is outside the initial product path, and a log of untrusted operations is a worse persistence surface than a document.
-
-### Python and other hosts
-
-No clock port, random port, filesystem interface, or dependency-injection container in Module 0. Callers pass values. A future Python sidecar submits bytes. It does not hold core objects. The transport is undecided and is not built.
+No clock port, random port, filesystem interface, or dependency-injection container is added. Callers pass values. A Python sidecar is not built.
 
 ## Alternatives
 
@@ -70,23 +51,23 @@ Enough to satisfy "a boundary may contain minimal code," and too weak to stop a 
 
 ### Single JSON file as the project
 
-Fine for a scene with no assets. Images and meshes then become base64 or force a format change. Rejected as the long-term project. The Module 0 manifest is JSON because it is two fields, not because the whole project is one JSON file.
+Fine for a document with no assets. Images and meshes then become base64 or force a format change. Not selected. The Module 0 manifest is JSON because it is two fields.
 
 ### SQLite
 
-A real one-file database, and a poor creative-document format here: opaque diffs, a large untrusted parser, journal or WAL companions, and a Wasm storage port on the web. Rejected as the project. A later cache outside the portable project is not forbidden by this ADR and is not Module 0 work.
+A real one-file database. The costs named in preparation were opaque diffs, a large untrusted parser, journal or WAL companions, and a web storage port. Not selected. Not forbidden for a later cache. Not Module 0 work.
 
 ### Custom binary document
 
-Compact, and a private parser on every future language boundary, including a Python sidecar. Interchange binaries belong to export. Rejected for the working document. Asset payloads are the binary part.
+Compact, and a private parser on every language boundary. Not selected for Module 0. Not a decision that a later document cannot be binary.
 
 ## Consequences
 
 - Headless persistence tests are the first proof that core and persistence import without the shell.
-- The provisional format id can be renamed until a user can save. After that, a rename is a migration.
-- ASCII case-fold does not solve every Unicode case collision. That gap is accepted only because Module 0 extracts nothing. It is a security review item before the first real archive reader.
-- Quarantining a bad object while keeping the rest of a file is a product decision. This ADR's recommendation is to reject the file. It does not apply to any Module 0 user file, because there is none.
+- The provisional format id is a test string. Renaming it before any user-facing save does not require a migration. This ADR does not promise that the string will survive.
+- ASCII case-fold does not solve every Unicode case collision. That gap is accepted only because Module 0 extracts nothing. It is a review item before the first real archive reader.
+- The Module 0 reader rejects a bad manifest whole. That rule is about two JSON fields. It is not a decision to reject a later user file in full.
 
 ## Confirmation
 
-Format id, extension, one file versus a folder, hand-editing, and undo-across-reload need the Product Owner before a user-facing save. They do not block Module 0. One scene versus several scenes needs a decision before the Module 1 schema, not before this module.
+Format id, extension, container, hand-editing, scene cardinality, and undo do not block Module 0. They are deferred.
