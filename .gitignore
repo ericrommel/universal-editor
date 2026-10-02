@@ -1,13 +1,30 @@
 # Dependencies
 node_modules/
+.pnpm-store/
 
 # Build output
 dist/
 build/
+*.tsbuildinfo
 
 # Local environment
 .env
-.env.local
+.env.*
+!.env.example
+
+# Private key material. Names are patterns, not real credentials.
+*.pem
+*.p12
+*.pfx
+*.key
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+id_ecdsa
+id_ecdsa.pub
+*.p8
+*.cer
 
 # IDE / OS
 .vscode/

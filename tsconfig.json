@@ -1,0 +1,12 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/core" },
+    { "path": "packages/persistence" },
+    { "path": "packages/platform" },
+    { "path": "packages/rendering" },
+    { "path": "packages/editor" },
+    { "path": "packages/ui" },
+    { "path": "apps/shell" }
+  ]
+}

@@ -1,0 +1,21 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Isolated linker is what makes a forbidden import fail at resolve time.
+nodeLinker: isolated
+
+# pnpm 12 defaults recorded by the security review. Do not set these to zero.
+minimumReleaseAge: 1440
+blockExoticSubdeps: true
+
+# .node-version and engines.node are exact. Refuse a different Node at install.
+engineStrict: true
+
+# Default is true. Record it so a later default change cannot skip unreviewed scripts.
+strictDepBuilds: true
+
+# Empty until a named package script is read. esbuild is not pre-approved.
+# pnpm's own wrapper script (install.js) was read and is not approved: Corepack
+# supplies the pinned binary, and this project does not install the pnpm package.
+allowBuilds: {}
