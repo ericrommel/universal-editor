@@ -375,3 +375,23 @@ A Pull Request should:
 Agents may prepare branches, commits, and Pull Requests as part of authorized work, but must not treat creation of a Pull Request as approval to merge.
 
 Merging into `main` requires the applicable review and quality gates defined by the development process.
+
+### Agent Attribution
+
+When posting persistent project updates to GitHub Issues, Pull Requests, or reviews, clearly identify the responsible project role at the beginning of the message.
+
+Use:
+
+**Role: <project role>**
+
+Examples:
+
+**Role: Tech Lead**
+
+**Role: Functional Quality Engineer**
+
+**Role: Application Security Engineer**
+
+Do not present the Human Product Owner as the author of an AI-generated project update.
+
+If multiple specialist roles contributed to the same handoff, identify the primary authoring role and list the contributing roles separately.
