@@ -1,82 +1,57 @@
 # Module 0 — Project Manager gate
 
-## Role and limit
+**Role: AI Project Manager**
 
 | | |
 | --- | --- |
-| Role | AI Project Manager |
-| Document | Definition of Ready check of the revised Module 0 architecture proposal |
+| Document | Definition of Ready result after the Product Owner approval |
 | Date | 2026-10-02 |
-| Status | Not authorization. Not GREEN. Not Ready for Development. |
+| Status | Readiness record. Not module approval. Not GREEN. Not Done. |
 
-This file is review evidence. It does not approve Module 0, does not authorize implementation, and does not move GitHub issue #1 or the project board. Work status lives on issue #1 and the Universal Visual Creation Platform board. This file does not record a board column.
+This file does not approve the module, does not declare GREEN or Done, and does not move the board. Work status lives on GitHub issue #1 and the Universal Visual Creation Platform board. This file does not change that record.
 
-The Human Product Owner has not authorized implementation. `docs/engineering/architecture.md` is **Proposed. Not approved.** ADR-0001 through ADR-0008 are Proposed. The specification stays PLANNED until that authorization is explicit. This gate is not GREEN (development-process section 20) and is not Ready for Development.
+The Product Owner approved the binding architecture and the four confirmations on 2026-10-02. The approval is https://github.com/ericrommel/universal-editor/pull/2#issuecomment-5956211119. This note records that decision. It does not make it.
 
-Requirements and acceptance criteria were not changed. Development-process section 21 forbids rewriting them to match an implementation.
+The approval applies only to decisions classified as Binding for Module 0. Revisitable direction and deferred items stay open. Requirements and acceptance criteria are unchanged. The specification status line was not changed. It remains PLANNED.
 
-## Decision classes
+The intended acceptance record is the binding-column acceptance in `docs/engineering/architecture.md` and ADR-0001 through ADR-0008. This note does not edit those files. Product Owner authorization of implementation becomes effective when that acceptance record is on pull request #2 and issue #1 is moved to Ready for Development. It is not effective merely because this note exists.
 
-Every decision in the revised architecture and in ADR-0001 through ADR-0008 uses one class:
+## Four confirmations
 
-- **Binding for Module 0.** Required to implement and verify this module. A change during implementation needs an ADR revision.
-- **Revisitable direction.** Analysis the foundation should not accidentally close. Not a commitment to build that shape.
-- **Deferred.** Not decided.
+Recorded from the Product Owner, not decided here:
 
-Revisitable direction and deferred items are intentionally not binding. A later authorization, if given, adopts the binding column only.
+1. **Architecture.** The Module 0 architecture, including ADR-0001 through ADR-0008, is approved for the binding column only.
+2. **Primary development environment.** 64-bit Windows x64 is the primary documented development and local-launch environment. Required CI is Windows and Ubuntu as proposed. Product targets are unchanged.
+3. **Module 0 shell.** The loopback web shell is confirmed. Electron, Tauri, and a native GPU stack are not required in Module 0.
+4. **Design intent.** The proposed foundation-screen design intent is confirmed.
 
-ADR-0001 opens on that split. TypeScript for the packages Module 0 creates is binding. A later measured numeric function behind a narrow boundary is revisitable. The language of the authoritative scene, and of any later core that replaces these packages, is deferred. The ADR does not change product scope.
-
-## Product Owner confirmations
-
-Four confirmations are required before Ready for Development. There are not five.
-
-The removed confirmation is "one UI package for later desktop." That item is deferred, not a Module 0 gate. Whether later desktop chrome reuses the Module 0 UI package is not decided. Module 0 has one UI package because it has one screen. That does not select a later toolkit.
-
-1. **Authorize this proposal**, including ADR-0001 through ADR-0008, without changing Module 0 requirements or acceptance criteria. Authorization adopts the binding column only. Revisitable direction and deferred items stay open.
-2. **Primary development environment.** 64-bit Windows x64 for documented setup and local launch. Required CI on `windows-2025` and `ubuntu-24.04`. Manual `pnpm dev` uses current Microsoft Edge or current Google Chrome, and the evidence records which one. Web, Windows, macOS, and Linux remain the product targets. Module 0 does not implement all of them.
-3. **Module 0 shell.** A loopback web shell. Electron, Tauri, and a native GPU stack are not part of Module 0.
-4. **Design intent.** The foundation screen in the design review, or a correction of the heading `Universal Visual Creation Platform`, no icon in Module 0, system light/dark with a light fallback, and the purpose sentence in that review. The window title `Foundation` is a purpose label, not a product name.
-
-None of the four adds or deletes an FR, NFR, or AC. The proposal's other not-decided items, including license, public format, undo, scene count, desktop host, and telemetry, are also deferred. They are not Module 0 gates and they are not requirement changes.
+There are four confirmations, not five. "One UI package for later desktop" stays deferred and is not a gate.
 
 ## Definition of Ready
 
-Checked against development-process section 8 and the revised proposal. States are **Met**, **Not met**, or **Met pending Product Owner confirmation**.
+Checked against development-process section 8. Every row is **Met** for the transition to Ready for Development. No build, test, or CI run is claimed.
 
 | Ready condition | State | Basis |
 | --- | --- | --- |
-| Objective, scope, and out-of-scope behavior are explicit | Met | Operational specification. The proposal says that text is unchanged. |
-| Dependencies are identified | Met | No earlier product module. Node.js 24 LTS and pnpm 12.x are named. Exact patches are pinned on implementation day, not invented here. |
+| Objective, scope, and out-of-scope behavior are explicit | Met | Operational specification. Unchanged. |
+| Dependencies are identified | Met | No earlier product module. Node.js 24 LTS and pnpm 12.x are named. Exact patches are pinned on implementation day. |
 | Required earlier modules are approved | Met | None. Module 0 is first. |
-| FR, NFR, and AC identifiers are stable | Met | Unchanged. Requirements and acceptance criteria were not changed. |
+| FR, NFR, and AC identifiers are stable | Met | Unchanged. |
 | Acceptance criteria are observable and testable | Met | The criteria text is unchanged. Confirmations 2 and 3 name how launch criteria are executed. They do not rewrite the criteria. |
-| Test approach for every FR, NFR, and AC, or a documented deferral | Met | The revised proposal points to the updated test plan. This check adds no path and removes none. No tests were run. There is no implementation. |
-| Required design behavior is sufficiently defined | Met pending Product Owner confirmation | Adopted design review. Confirmation 4 can still correct the stated strings. |
-| Test infrastructure and reference workloads, where applicable | Met | Test plan and ADR-0005 for Module 0. Reference hardware and product performance workloads are deferred and are not a Module 0 gate. |
-| Blocking security or trust-boundary questions, where applicable | Met | The proposal records preparation findings as addressed by ADR-0007. M0-AC-011 still needs implementation evidence. This gate is not that review. |
-| Blocking architectural decisions for Module 0 | Met pending Product Owner confirmation | Binding decisions are proposed in the architecture and in ADR-0001 through ADR-0008. They are not approved. Confirmation 1 is that authorization. |
-| Blocking product ambiguities are resolved | Not met | The four confirmations above are still open. |
-| The Product Owner authorizes implementation | Not met | No authorization exists. This file must not be read as one. |
+| An appropriate test approach exists for every FR, NFR, and AC, or deferred or manual verification is documented | Met | The updated test plan. No tests were run. There is no implementation. |
+| Required design behavior is sufficiently defined | Met | The Product Owner confirmed the foundation-screen design intent on 2026-10-02. |
+| Required test infrastructure and reference workloads are defined where applicable | Met | Test plan and ADR-0005. Reference hardware and product performance workloads stay deferred and are not a Module 0 gate. |
+| Blocking security risks or trust-boundary questions are resolved where applicable | Met | Preparation findings are addressed by ADR-0007 for this transition. M0-AC-011 still needs implementation evidence later. This gate does not close it. |
+| Blocking architectural decisions are resolved | Met | Binding column only. Revisitable direction and deferred items stay open. |
+| Blocking product ambiguities are resolved | Met | The four confirmations are approved. Deferred items are not Module 0 gates. |
+| The Product Owner authorizes implementation | Met | Met for the binding scope by the 2026-10-02 approval, for this transition. Effective when the acceptance record is on pull request #2 and issue #1 is moved to Ready for Development. Not effective because this note exists. Not module acceptance and not GREEN. |
 
-The open rows are Product Owner confirmation and authorization. That keeps the module out of Ready for Development. It does not mean the binding proposal is an incomplete engineering draft, and it is not GREEN.
+## Next status
 
-## Work packages
+The correct next board status is Ready for Development, with PO Approval Approved. Do not use Done. This is not the section 19 final module package, and it is not GREEN (section 20).
 
-WP-0 through WP-6 stay inside Module 0. No package adds a scene, a user save, undo, a viewport, a GPU, or a desktop host.
+Observed on 2026-10-02, and not changed by this file: issue #1 was open, Status was `Ready for PO`, and PO Approval was `Pending`.
 
-| ID | Stop line |
-| --- | --- |
-| WP-0 | Workspace and checks only. No scene package and no desktop host. |
-| WP-1 | Numeric helpers and a closed provisional manifest codec. No scene type and no public format. |
-| WP-2 | Editor startup session only. No selection, tool, panel, undo, or viewport API. Waits for WP-1. |
-| WP-3 | Snapshot value and null renderer. Empty draw list. No canvas or GPU. May overlap WP-1 after WP-0. |
-| WP-4 | Foundation screen and loopback shell. No editor frame and no second toolkit. Waits for WP-2. |
-| WP-5 | Verify, CI, Dependabot, and developer documentation. No installer and no performance gate. Waits for WP-1 through WP-4. |
-| WP-6 | Short-lived failing-test evidence, then removal. The red commit is not merged. |
+After that transition, implementation starts as separate work packages on new branches from `main`, linked to issue #1. WP-0 is first. It must not be committed on `docs/m0-architecture-preparation` or on `main`.
 
-WP-1 and WP-3 may overlap after WP-0. WP-2 waits for WP-1. WP-6's red commit is not merged.
-
-## Limit of this record
-
-This file replaces the earlier five-confirmation gate. It does not claim that specialist reviews of the revised architecture are finished. It does not set Ready for Development, Done, or Approved.
+No tracking defect blocks the transition.

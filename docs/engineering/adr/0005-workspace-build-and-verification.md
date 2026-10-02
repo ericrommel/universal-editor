@@ -1,6 +1,6 @@
 # ADR-0005: Workspace, build, and verification
 
-**Status:** Proposed  
+**Status:** Accepted for the binding Module 0 decision. Revisitable and deferred items stay open.  
 **Date:** 2026-10-02  
 **Decider:** Tech Lead  
 **Consulted:** Senior DevOps / Platform Engineer, Functional Quality Engineer, Non-Functional Quality Engineer, Senior Application Security Engineer
@@ -12,7 +12,7 @@
 
 Module 0 needs a reproducible install, one verification command, CI that fails when that command fails, and mechanical dependency boundaries (M0-FR-004, M0-FR-005, M0-FR-007, M0-NFR-001, M0-NFR-004, M0-NFR-010). The remote is GitHub: `ericrommel/universal-editor`.
 
-The primary development environment proposed for documentation and local launch is 64-bit Windows x64, pending Product Owner confirmation. Product targets are unchanged.
+The primary development environment for documentation and local launch is 64-bit Windows x64, confirmed by the Product Owner on 2026-10-02. Product targets are unchanged.
 
 ## Decision
 
@@ -79,4 +79,4 @@ An optional smoke was considered. It is a browser supply-chain download, and it 
 
 ## Confirmation
 
-Product Owner confirmation 2 accepts Windows as the documented Module 0 environment and accepts this CI matrix. Changing the primary OS changes the setup guide and the required runner before implementation starts.
+The Product Owner confirmed Windows as the documented Module 0 environment and confirmed this CI matrix on 2026-10-02. Changing the primary OS changes the setup guide and the required runner.

@@ -1,6 +1,6 @@
 # ADR-0006: Module 0 domain helpers and provisional manifest
 
-**Status:** Proposed  
+**Status:** Accepted for the binding Module 0 decision. Revisitable and deferred items stay open.  
 **Date:** 2026-10-02  
 **Decider:** Tech Lead  
 **Consulted:** Senior Core / Platform Engineer, Senior 2D / Editor Engineer, Senior 3D / Rendering Engineer
@@ -70,4 +70,4 @@ Compact, and a private parser on every language boundary. Not selected for Modul
 
 ## Confirmation
 
-Format id, extension, container, hand-editing, scene cardinality, and undo do not block Module 0. They are deferred.
+The Product Owner accepted the binding numeric helpers and provisional manifest on 2026-10-02. Format id, extension, container, hand-editing, scene cardinality, and undo do not block Module 0. They are deferred.

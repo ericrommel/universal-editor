@@ -1,23 +1,23 @@
 # Architecture
 
-**Status:** Proposed. Not approved.  
+**Status:** Approved for the binding Module 0 decisions.  
 **Date:** 2026-10-02  
 **Owner:** Tech Lead  
-**Module:** 0 — Engineering Foundation, architecture preparation only
+**Module:** 0 — Engineering Foundation
 
-The Human Product Owner has not authorized implementation. Module 0 is **not** READY FOR DEVELOPMENT until that authorization is explicit.
+The Human Product Owner approved the binding Module 0 architecture on 2026-10-02, including ADR-0001 through ADR-0008 and the four confirmations in this document. The approval is https://github.com/ericrommel/universal-editor/pull/2#issuecomment-5956211119. Revisitable direction and deferred items stay open. That approval authorizes development of the binding scope once the work item enters Ready for Development. It is not module acceptance and it is not GREEN.
 
-This document is the Module 0 architecture proposal. Major decisions are recorded in `/docs/engineering/adr/`. Specialist inputs are in `/docs/modules/module-00-foundation/preparation/reviews/`. Those reviews are evidence and recommendations. This document is the decision.
+This document is the Module 0 architecture. Major decisions are recorded in `/docs/engineering/adr/`. Specialist inputs are in `/docs/modules/module-00-foundation/preparation/reviews/`. Those reviews are evidence and recommendations. This document is the decision.
 
-No production application code is part of this proposal.
+No production application code is part of this document.
 
 ## Operational record
 
-Work status for Module 0 is GitHub issue [#1](https://github.com/ericrommel/universal-editor/issues/1) and the Universal Visual Creation Platform project board. This document does not record the current board column. Merging it does not authorize implementation.
+Work status for Module 0 is GitHub issue [#1](https://github.com/ericrommel/universal-editor/issues/1) and the Universal Visual Creation Platform project board. This document does not record the current board column.
 
 ## Authority
 
-Normative for this proposal:
+Normative for this architecture:
 
 - `docs/product-overview.md`
 - `docs/engineering/development-process.md`
@@ -328,7 +328,7 @@ The native window title is `Foundation`. The on-screen heading is `Universal Vis
 
 ## Primary development environment
 
-Proposed, pending Product Owner confirmation:
+Confirmed by the Product Owner on 2026-10-02:
 
 - Documented setup, local build, `pnpm dev`, and local verification evidence: 64-bit Windows on x64.
 - Manual launch browser for that evidence: current Microsoft Edge or current Google Chrome. One of them is enough. Record which one was used. Firefox, Safari, and other browsers are not Module 0 launch evidence. This is not the product browser-support matrix.
@@ -397,14 +397,14 @@ The deliberate failing test for M0-AC-004 is a short-lived branch, never the app
 - Reference hardware and product performance workloads are not decided. They do not block Module 0. They block the first module that makes a product performance claim.
 - Up-axis, handedness, rotation order, and degrees versus radians are deferred. They are not guessed here.
 
-## Decisions that need the Product Owner
+## Product Owner decisions
 
-These four confirmations are required before Module 0 is READY FOR DEVELOPMENT. Recommended answers are stated so a single approval can accept them, and any rejection is explicit. They do not ask the Product Owner to lock a later module.
+The Product Owner confirmed these four decisions on 2026-10-02. They do not lock a later module.
 
-1. **Authorize this proposal** as the Module 0 architecture, including ADR-0001 through ADR-0008, without changing the Module 0 requirements or acceptance criteria. Authorization adopts the binding column only. Revisitable direction and deferred items stay open.
-2. **Primary development environment.** Confirm 64-bit Windows x64 as the documented setup and local-launch environment, with required CI on `windows-2025` and `ubuntu-24.04`. Confirm that the manual `pnpm dev` launch uses current Microsoft Edge or current Google Chrome, and that the evidence records which one. Confirm that Web, Windows, macOS, and Linux remain the product targets and that Module 0 does not implement all of them.
-3. **Module 0 shell.** Confirm a loopback web shell, and confirm that Electron, Tauri, and a native GPU stack are not part of Module 0.
-4. **Design intent.** Confirm the foundation screen in the design review, or correct these assumptions: the heading `Universal Visual Creation Platform`; no icon in Module 0; system light/dark with a light fallback; the purpose sentence in that review. The window title `Foundation` is a purpose label, not a product name.
+1. **Architecture.** ADR-0001 through ADR-0008 are approved for the binding column only. Requirements and acceptance criteria are unchanged. Revisitable direction and deferred items stay open.
+2. **Primary development environment.** 64-bit Windows x64 is the documented setup and local-launch environment. Required CI is `windows-2025` and `ubuntu-24.04`. Manual `pnpm dev` uses current Microsoft Edge or current Google Chrome, and the evidence records which one. Web, Windows, macOS, and Linux remain the product targets. Module 0 does not implement all of them.
+3. **Module 0 shell.** The shell is a loopback web shell. Electron, Tauri, and a native GPU stack are not part of Module 0.
+4. **Design intent.** The foundation screen in the design review is confirmed: the heading `Universal Visual Creation Platform`; no icon in Module 0; system light/dark with a light fallback; the purpose sentence in that review. The window title `Foundation` is a purpose label, not a product name.
 
 Not decided here. Notes under a bullet are analysis, not a selection:
 
@@ -422,9 +422,9 @@ Not decided here. Notes under a bullet are analysis, not a selection:
 
 ## Implementation breakdown
 
-Implementation has not started. The order below is the proposed breakdown after authorization. Work packages may proceed in parallel only where the dependencies allow it.
+Implementation has not started. The order below is the breakdown for the approved binding scope. Work packages may proceed in parallel only where the dependencies allow it.
 
-After the Product Owner authorizes Ready for Development, each work package is implemented on its own branch and opened as a pull request linked to issue #1. That work is not committed directly to `main`. It does not start while issue #1 remains at the Product Owner review gate.
+Each work package is implemented on its own branch and opened as a pull request linked to issue #1. That work is not committed directly to `main`.
 
 | ID | Work | Depends on | Demonstrates |
 | --- | --- | --- | --- |
@@ -446,12 +446,12 @@ WP-1 and WP-3 may proceed together after WP-0. WP-2 waits until the core and per
 | Dependencies on earlier modules | None. |
 | Stable FR, NFR, and AC identifiers | Met. Unchanged. |
 | Test approach for every identifier | Met by the updated test plan plus this proposal. |
-| Design behavior defined | Met by the adopted design review. Pending confirmation in decision 4. |
+| Design behavior defined | Met. The Product Owner confirmed the design review on 2026-10-02. |
 | Test infrastructure defined | Met. Listed in the test plan and in ADR-0005. |
 | Blocking security findings for preparation | Addressed by ADR-0007. Implementation evidence is still required later for M0-AC-011. |
-| Blocking architectural decisions for Module 0 | Proposed here. |
-| Product ambiguities that block Module 0 | The four confirmations above. |
-| Product Owner authorizes implementation | **Not met.** |
+| Blocking architectural decisions for Module 0 | Met for the binding column. Revisitable direction and deferred items stay open. |
+| Product ambiguities that block Module 0 | Met. The four confirmations are recorded above. Deferred items are not Module 0 gates. |
+| Product Owner authorizes implementation | Met for the binding scope, by the 2026-10-02 approval, once the work item enters Ready for Development. This row is not module acceptance and not GREEN. |
 
 ## ADR index
 

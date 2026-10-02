@@ -1,6 +1,6 @@
 # ADR-0004: Module 0 web shell
 
-**Status:** Proposed  
+**Status:** Accepted for the binding Module 0 decision. Revisitable and deferred items stay open.  
 **Date:** 2026-10-02  
 **Decider:** Tech Lead  
 **Consulted:** Senior 3D / Rendering Engineer, Senior Application Security Engineer, Senior DevOps / Platform Engineer, Senior 2D / Editor Engineer
@@ -66,4 +66,4 @@ Rejected in ADR-0002. Restated here because a desktop shell must not fork the fo
 
 ## Confirmation
 
-Product Owner confirmation 3 in `docs/engineering/architecture.md` accepts or rejects this shell. Rejecting it and requiring a desktop window in Module 0 is a scope change that must be written down before implementation, because it reopens ADR-0007.
+The Product Owner accepted this loopback web shell on 2026-10-02. Electron, Tauri, and a native GPU stack are not part of Module 0. A later requirement for a desktop window in this module would be a scope change and would reopen ADR-0007.

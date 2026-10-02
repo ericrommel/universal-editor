@@ -1,6 +1,6 @@
 # ADR-0002: React for the Module 0 foundation screen
 
-**Status:** Proposed  
+**Status:** Accepted for the binding Module 0 decision. Revisitable and deferred items stay open.  
 **Date:** 2026-10-02  
 **Decider:** Tech Lead  
 **Consulted:** Senior 2D / Editor Engineer, Senior Product Designer / UX Architect
@@ -49,4 +49,4 @@ AppKit, WinUI, or GTK would split every interaction the Designer specifies. Reje
 
 ## Confirmation
 
-Choosing React for the foundation screen does not change product scope and does not decide later desktop chrome. Rejecting React for this screen reopens the Module 0 UI decision.
+The Product Owner accepted React for the Module 0 foundation screen on 2026-10-02. That acceptance does not change product scope and does not decide later desktop chrome.

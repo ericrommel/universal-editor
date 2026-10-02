@@ -1,6 +1,6 @@
 # ADR-0003: Module 0 render boundary
 
-**Status:** Proposed  
+**Status:** Accepted for the binding Module 0 decision. Revisitable and deferred items stay open.  
 **Date:** 2026-10-02  
 **Decider:** Tech Lead  
 **Consulted:** Senior 3D / Rendering Engineer, Senior Core / Platform Engineer, Senior Application Security Engineer
@@ -52,4 +52,4 @@ A real native WebGPU path. It also pulls Rust, a window, and an in-process drive
 
 ## Confirmation
 
-The Product Owner does not choose a rendering engine to authorize Module 0. Confirmation that Module 0 shows no viewport is part of the shell confirmation in the architecture proposal. The later graphics API does not block this module.
+The Product Owner accepted the Module 0 shell with no viewport on 2026-10-02 and did not choose a rendering engine. The later graphics API does not block this module and is not selected here.

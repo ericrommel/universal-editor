@@ -1,6 +1,6 @@
 # ADR-0001: TypeScript for Module 0
 
-**Status:** Proposed  
+**Status:** Accepted for the binding Module 0 decision. Revisitable and deferred items stay open.  
 **Date:** 2026-10-02  
 **Decider:** Tech Lead  
 **Consulted:** Senior Core / Platform Engineer, Senior DevOps / Platform Engineer, Senior 3D / Rendering Engineer
@@ -59,4 +59,4 @@ A Python sidecar that exchanges validated bytes is revisitable direction. It is 
 
 ## Confirmation
 
-The Product Owner authorizes this choice as part of the Module 0 architecture. It does not change product scope.
+The Product Owner authorized this choice on 2026-10-02 as part of the binding Module 0 architecture. It does not change product scope. Revisitable and deferred items in this ADR stay open.

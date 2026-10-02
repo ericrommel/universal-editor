@@ -1,6 +1,6 @@
 # ADR-0007: Module 0 trust boundaries
 
-**Status:** Proposed  
+**Status:** Accepted for the binding Module 0 decision. Revisitable and deferred items stay open.  
 **Date:** 2026-10-02  
 **Decider:** Tech Lead  
 **Consulted:** Senior Application Security Engineer, Senior DevOps / Platform Engineer
@@ -96,4 +96,4 @@ Code signing, notarization, auto-update, SBOM, project-file parsers, AI and plug
 
 ## Confirmation
 
-The Product Owner decides the product license, any copyleft exception, and any telemetry. This ADR's recommendation is no telemetry and no copyleft. Those defaults stand unless the Product Owner changes them. Authorizing Module 0 authorizes these controls for the web shell. It does not authorize Electron or Tauri.
+The Product Owner accepted these web-shell controls on 2026-10-02. That acceptance does not authorize Electron or Tauri. The Product Owner still decides the product license, any copyleft exception, and any telemetry. This ADR's recommendation is no telemetry and no copyleft. Those defaults stand unless the Product Owner changes them.

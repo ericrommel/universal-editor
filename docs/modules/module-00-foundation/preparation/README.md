@@ -39,4 +39,6 @@ GitHub issue [#1](https://github.com/ericrommel/universal-editor/issues/1) and t
 
 Reviews dated 2026-10-02 cite `development-process.md` section numbers from before Operational Work Tracking was inserted as section 3. From the Team section onward, current numbers are one higher. Definition of Ready is section 8. The PO review package is section 19. Requirement changes are section 21.
 
-The security proposal review records the historical block on SEC-M0-B-008. ADR-0007 was amended so every disjunct of an `OR` must be on the permissive list. The security review concurs with that amended rule only. That is not a full concurrence with the architecture, not closure of M0-AC-011, and not Product Owner approval.
+The Product Owner approved the binding Module 0 architecture on 2026-10-02 in pull request #2. Revisitable direction and deferred items stay open. This directory does not record the current board column.
+
+The security proposal review records the historical block on SEC-M0-B-008. ADR-0007 was amended so every disjunct of an `OR` must be on the permissive list. The security review concurs with that amended rule only. That concurrence is not a full architecture concurrence and does not close M0-AC-011.

@@ -1,6 +1,6 @@
 # ADR-0008: Editor state and shell content
 
-**Status:** Proposed  
+**Status:** Accepted for the binding Module 0 decision. Revisitable and deferred items stay open.  
 **Date:** 2026-10-02  
 **Decider:** Tech Lead  
 **Consulted:** Senior 2D / Editor Engineer, Senior Product Designer / UX Architect, Senior 3D / Rendering Engineer, Functional Quality Engineer, Non-Functional Quality Engineer
@@ -60,4 +60,4 @@ Easier to flip in a packaged build, and it is a permanent test switch in user-fa
 
 ## Confirmation
 
-Product Owner confirmation of the foundation-screen copy and appearance is confirmation 4 in the architecture proposal. It does not add a viewport and does not decide later desktop chrome.
+The Product Owner confirmed the foundation-screen copy and appearance on 2026-10-02. That confirmation does not add a viewport and does not decide later desktop chrome.
