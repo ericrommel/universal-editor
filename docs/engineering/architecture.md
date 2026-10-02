@@ -17,7 +17,7 @@ GitHub issue [#1](https://github.com/ericrommel/universal-editor/issues/1) and t
 
 Architecture preparation is at the Product Owner review gate. On that board the column for the gate is **Ready for PO**. There is no separate "Ready for PO Review" column. `PO Approval` stays **Pending** until the Human Product Owner decides. This proposal does not set **Ready for Development** or **Done**.
 
-The repository changes are on branch `docs/m0-architecture-preparation` and are submitted through the pull request linked from issue #1. They are not a commit on `main`. Merging that pull request does not authorize implementation.
+The repository changes are on branch `docs/m0-architecture-preparation` and are submitted through [pull request #2](https://github.com/ericrommel/universal-editor/pull/2). They are not a commit on `main`. Merging that pull request does not authorize implementation.
 
 ## Authority
 

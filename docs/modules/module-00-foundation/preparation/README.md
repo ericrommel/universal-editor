@@ -35,7 +35,7 @@ No application code is created in this phase.
 
 ## Operational record
 
-GitHub issue [#1](https://github.com/ericrommel/universal-editor/issues/1) and the Universal Visual Creation Platform project board are the operational record. This directory is evidence. Session output is not a substitute.
+GitHub issue [#1](https://github.com/ericrommel/universal-editor/issues/1), [pull request #2](https://github.com/ericrommel/universal-editor/pull/2), and the Universal Visual Creation Platform project board are the operational record. This directory is evidence. Session output is not a substitute.
 
 The board column for this Product Owner review gate is `Ready for PO`. `PO Approval` stays Pending until the Human Product Owner decides. Preparation does not set Ready for Development or Done.
 

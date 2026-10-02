@@ -156,6 +156,6 @@ This file is review evidence. It is not the project status.
 
 The operational record is GitHub issue #1 on the Universal Visual Creation Platform board. Architecture preparation is at the Product Owner review gate. The board column is `Ready for PO`. `PO Approval` remains Pending. This review does not set Ready for Development, Done, or Approved.
 
-The proposal is on branch `docs/m0-architecture-preparation` and is submitted through the pull request linked from issue #1. Session output is not a substitute for that issue, pull request, and board state.
+The proposal is on branch `docs/m0-architecture-preparation` and is submitted through [pull request #2](https://github.com/ericrommel/universal-editor/pull/2). Session output is not a substitute for that issue, pull request, and board state.
 
 CONCUR
