@@ -17,7 +17,7 @@ PLANNED / BACKLOG
        ↓
 IN PREPARATION
        ↓
-READY FOR PO REVIEW
+READY FOR PO
        ↓
    PO DECISION
    ↙         ↘
@@ -35,7 +35,7 @@ IN PREPARATION
                ↓
            TESTING
                ↓
-      READY FOR PO REVIEW
+      READY FOR PO
                ↓
           PO DECISION
           ↙       ↘
@@ -54,9 +54,9 @@ For example, CODE REVIEW is a required delivery gate but does not require a dedi
 
 Preparation work includes architecture, design, test planning, security analysis, DevOps planning, and other work required to satisfy the Definition of Ready.
 
-When preparation reaches a Product Owner decision gate, the work moves to READY FOR PO REVIEW. Only the Human Product Owner may authorize the transition to READY FOR DEVELOPMENT.
+When preparation reaches a Product Owner decision gate, the work moves to READY FOR PO. Only the Human Product Owner may authorize the transition to READY FOR DEVELOPMENT.
 
-The same READY FOR PO REVIEW status may be used at later Product Owner gates, including final module acceptance. The meaning of the review must be clear from the associated Issue and Pull Request.
+The same READY FOR PO status may be used at later Product Owner gates, including final module acceptance. The meaning of the review must be clear from the associated Issue and Pull Request.
 
 Repository documentation describes requirements and process but does not replace the project board as the operational record of current work state.
 
@@ -89,10 +89,8 @@ When work reaches a review gate:
 - identify relevant decisions and ADRs;
 - identify known limitations, risks, assumptions, and unresolved questions;
 - identify any decision required from the Human Product Owner;
-- move the Issue to `Ready for PO Review`;
+- move the Issue to `Ready for PO`;
 - stop if Product Owner approval is required.
-
-On the current Universal Visual Creation Platform board, the column for that gate is `Ready for PO`. There is no separate `Ready for PO Review` column. Do not use `Ready for Development` or `Done` for this transition.
 
 The Human Product Owner determines whether work at a PO gate:
 
