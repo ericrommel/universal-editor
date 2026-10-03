@@ -89,6 +89,10 @@ Prefer simple, readable, maintainable solutions over clever or unnecessarily abs
 ### Keep Code Simple
 
 - Use the simplest design that correctly satisfies the current requirements.
+- Before implementing substantial custom infrastructure, check whether the existing stack, standard library, or a focused well-maintained dependency already solves the problem more simply.
+- Do not implement custom parsers, serializers, protocol handlers, state machines, schedulers, security primitives, or similar infrastructure without first evaluating simpler existing alternatives.
+- If custom infrastructure is still the best choice, keep it narrowly scoped and document why the simpler alternatives are insufficient.
+- Passing tests does not by itself justify unnecessary implementation complexity.
 - Do not introduce abstractions, frameworks, patterns, layers, or dependencies without a concrete current need.
 - Do not build speculative infrastructure for future modules.
 - Prefer explicit code over clever code.
@@ -145,7 +149,9 @@ If a broader change would materially improve the solution, identify it separatel
 
 ### Dependencies
 
-Do not add a dependency when the required behavior can be implemented clearly and safely with the existing stack or standard library.
+Do not add a dependency when the required behavior can be implemented clearly, safely, and with comparable maintainability using the existing stack or standard library.
+
+Do not avoid a focused dependency by replacing it with substantially more custom code that the project would then have to maintain.
 
 When introducing a dependency:
 
