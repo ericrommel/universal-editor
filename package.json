@@ -13,6 +13,7 @@
     "verify": "node scripts/verify.mjs"
   },
   "devDependencies": {
+    "@babel/parser": "7.29.9",
     "@biomejs/biome": "2.5.15",
     "typescript": "7.0.2"
   }

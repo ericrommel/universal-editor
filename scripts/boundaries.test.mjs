@@ -230,6 +230,20 @@ test("parenthesized require calls keep a literal specifier", () => {
   assert.deepEqual(specifiersOf('obj.require("react");'), []);
 });
 
+test("nested loads, type-position imports, and constructed require count", () => {
+  assert.deepEqual(
+    specifiersOf(
+      'function load() { require("react"); return import("electron"); }',
+    ),
+    ["react", "electron"],
+  );
+  assert.deepEqual(specifiersOf('type Ready = import("@uvcp/core").Ready;'), [
+    "@uvcp/core",
+  ]);
+  assert.deepEqual(specifiersOf('new require("node:fs");'), ["node:fs"]);
+  failsClosed("new require(name);");
+});
+
 test("a non-literal import or require fails closed", () => {
   failsClosed('const name = "node:fs"; import(name);');
   failsClosed("require(name);");
