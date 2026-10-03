@@ -1,0 +1,14 @@
+{
+  "name": "@uvcp/shell",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@uvcp/editor": "workspace:*",
+    "@uvcp/platform": "workspace:*",
+    "@uvcp/ui": "workspace:*"
+  }
+}

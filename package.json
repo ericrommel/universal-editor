@@ -1,0 +1,20 @@
+{
+  "name": "universal-visual-creation-platform",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "pnpm@12.8.2",
+  "engines": {
+    "node": "24.21.0"
+  },
+  "scripts": {
+    "typecheck": "tsc -b",
+    "lint": "biome check .",
+    "test": "node --test scripts/boundaries.test.mjs scripts/license-expression.test.mjs",
+    "verify": "node scripts/verify.mjs"
+  },
+  "devDependencies": {
+    "@babel/parser": "7.29.9",
+    "@biomejs/biome": "2.5.15",
+    "typescript": "7.0.2"
+  }
+}
