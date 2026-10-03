@@ -55,7 +55,6 @@ test("duplicate keys are rejected before shape checks", () => {
     `{"formatId":"${FORMAT_ID}","schemaVersion":1,"schema\\u0056ersion":2}`,
     `{"a":1,"\\u0061":2}`,
     `{"__proto__":1,"__proto__":1}`,
-    `{"formatId":"${FORMAT_ID}","schemaVersion":1,"schemaVersion":}`,
   ];
   for (const text of texts) {
     expectManifest(
@@ -120,6 +119,11 @@ test("malformed manifests are rejected whole", () => {
     "Manifest is not valid JSON.",
   );
   expectManifest(textBytes("{"), "INVALID_JSON", "Manifest is not valid JSON.");
+  expectManifest(
+    textBytes(`{"formatId":"${FORMAT_ID}","schemaVersion":1,"schemaVersion":}`),
+    "INVALID_JSON",
+    "Manifest is not valid JSON.",
+  );
   expectManifest(
     textBytes(`{"formatId":"${FORMAT_ID}","schemaVersion":1,}`),
     "INVALID_JSON",

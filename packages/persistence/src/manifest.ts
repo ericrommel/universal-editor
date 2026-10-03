@@ -123,7 +123,6 @@ function parseWithSchemaSource(text: string): {
   readonly value: unknown;
   readonly schemaSource: string | undefined;
 } {
-  rejectDuplicateKeys(text);
   const sources = new Map<object, string>();
   let value: unknown;
   try {
@@ -134,6 +133,9 @@ function parseWithSchemaSource(text: string): {
     }
     throw error;
   }
+  // The host accepted this text. The walk only finds duplicate keys that
+  // JSON.parse has already collapsed, including equal values and escapes.
+  rejectDuplicateKeys(text);
   return {
     value,
     schemaSource: schemaSourceOf(value, sources),
@@ -171,7 +173,8 @@ function schemaSourceOf(
 
 function rejectDuplicateKeys(text: string): void {
   // JSON.parse keeps the last duplicate, including keys that match only
-  // after escapes are decoded, so it cannot enforce this contract.
+  // after escapes are decoded. It is not the syntax authority: malformed
+  // JSON never reaches this walk.
   try {
     const parser: Cursor = { text, index: 0 };
     scanValue(parser);
