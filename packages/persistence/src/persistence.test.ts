@@ -49,9 +49,6 @@ test("duplicate keys are rejected before shape checks", () => {
     `{"formatId":"${FORMAT_ID}","formatId":"${SENTINEL}","schemaVersion":1}`,
     `{"formatId":"${SENTINEL}","formatId":"${FORMAT_ID}","schemaVersion":1}`,
     `{"formatId":"${FORMAT_ID}","schemaVersion":1,"schemaVersion":1}`,
-    `{"formatId":{"a":1,"a":2},"schemaVersion":1}`,
-    `{"formatId":"${FORMAT_ID}","schemaVersion":1,"nested":{"b":1,"b":2}}`,
-    `{"formatId":"${FORMAT_ID}","schemaVersion":1,"list":[{"b":1,"b":2}]}`,
     `{"formatId":"${FORMAT_ID}","schemaVersion":1,"schema\\u0056ersion":2}`,
     `{"a":1,"\\u0061":2}`,
     `{"__proto__":1,"__proto__":1}`,
@@ -61,6 +58,21 @@ test("duplicate keys are rejected before shape checks", () => {
       textBytes(text),
       "DUPLICATE_KEY",
       "Manifest contains a duplicate key.",
+    );
+  }
+});
+
+test("a nested duplicate is the wrong manifest shape", () => {
+  const texts = [
+    `{"formatId":{"a":1,"a":2},"schemaVersion":1}`,
+    `{"formatId":"${FORMAT_ID}","schemaVersion":1,"nested":{"b":1,"b":2}}`,
+    `{"formatId":"${FORMAT_ID}","schemaVersion":1,"list":[{"b":1,"b":2}]}`,
+  ];
+  for (const text of texts) {
+    expectManifest(
+      textBytes(text),
+      "INVALID_SHAPE",
+      "Manifest shape is not accepted.",
     );
   }
 });

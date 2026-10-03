@@ -26,11 +26,6 @@ type JsonTokenContext = {
   readonly source?: string;
 };
 
-type Cursor = {
-  text: string;
-  index: number;
-};
-
 export function writeManifest(): Uint8Array {
   // The two constants are the whole document. JSON.stringify would walk a
   // caller-supplied object and cannot express this closed byte contract.
@@ -133,9 +128,9 @@ function parseWithSchemaSource(text: string): {
     }
     throw error;
   }
-  // The host accepted this text. The walk only finds duplicate keys that
-  // JSON.parse has already collapsed, including equal values and escapes.
-  rejectDuplicateKeys(text);
+  if (isRecord(value)) {
+    rejectDuplicateKeys(text, Object.keys(value).length);
+  }
   return {
     value,
     schemaSource: schemaSourceOf(value, sources),
@@ -171,274 +166,145 @@ function schemaSourceOf(
   return undefined;
 }
 
-function rejectDuplicateKeys(text: string): void {
-  // JSON.parse keeps the last duplicate, including keys that match only
-  // after escapes are decoded. It is not the syntax authority: malformed
-  // JSON never reaches this walk.
-  try {
-    const parser: Cursor = { text, index: 0 };
-    scanValue(parser);
-    skipWhitespace(parser);
-    if (parser.index !== text.length) {
-      invalidJson();
-    }
-  } catch (error) {
-    if (error instanceof DomainError) {
-      throw error;
-    }
-    // A 4096-byte value can still nest deeply enough to overflow this walk.
-    if (error instanceof RangeError) {
-      invalidJson();
-    }
-    throw error;
+function rejectDuplicateKeys(text: string, parsedKeyCount: number): void {
+  // JSON.parse keeps one property when two keys match, including equal
+  // values and different escape spellings. Only a root duplicate can
+  // change a manifest this reader would otherwise accept.
+  const rawCount = countRootKeys(text);
+  if (rawCount > parsedKeyCount) {
+    throw new DomainError("DUPLICATE_KEY", DUPLICATE_KEY);
+  }
+  if (rawCount < parsedKeyCount) {
+    duplicateCheckFailed();
   }
 }
 
-function scanValue(parser: Cursor): void {
-  skipWhitespace(parser);
-  const char = parser.text.charAt(parser.index);
-  if (char === "{") {
-    scanObject(parser);
-    return;
+function countRootKeys(text: string): number {
+  let index = skipWhitespace(text, 0);
+  if (text.charAt(index) !== "{") {
+    duplicateCheckFailed();
   }
-  if (char === "[") {
-    scanArray(parser);
-    return;
+  index += 1;
+  index = skipWhitespace(text, index);
+  if (text.charAt(index) === "}") {
+    return 0;
   }
-  if (char === '"') {
-    scanString(parser);
-    return;
-  }
-  if (char === "t") {
-    scanLiteral(parser, "true");
-    return;
-  }
-  if (char === "f") {
-    scanLiteral(parser, "false");
-    return;
-  }
-  if (char === "n") {
-    scanLiteral(parser, "null");
-    return;
-  }
-  if (char === "-" || isDigit(char)) {
-    scanNumber(parser);
-    return;
-  }
-  invalidJson();
-}
-
-function scanObject(parser: Cursor): void {
-  expectChar(parser, "{");
-  // A Set, not an object: a key named __proto__ must be recorded as itself.
-  const keys = new Set<string>();
-  skipWhitespace(parser);
-  if (parser.text.charAt(parser.index) === "}") {
-    parser.index += 1;
-    return;
-  }
-  while (true) {
-    skipWhitespace(parser);
-    if (parser.text.charAt(parser.index) !== '"') {
-      invalidJson();
+  let count = 0;
+  while (index < text.length) {
+    index = skipWhitespace(text, index);
+    if (text.charAt(index) !== '"') {
+      duplicateCheckFailed();
     }
-    const key = scanString(parser);
-    skipWhitespace(parser);
-    expectChar(parser, ":");
-    // The key and colon are known. Do not parse a repeated field's value,
-    // even when that value is missing or equal to the first.
-    if (keys.has(key)) {
-      throw new DomainError("DUPLICATE_KEY", DUPLICATE_KEY);
+    index = skipJsonString(text, index);
+    count += 1;
+    index = skipWhitespace(text, index);
+    if (text.charAt(index) !== ":") {
+      duplicateCheckFailed();
     }
-    keys.add(key);
-    scanValue(parser);
-    skipWhitespace(parser);
-    const next = parser.text.charAt(parser.index);
+    index += 1;
+    index = skipJsonValue(text, index);
+    index = skipWhitespace(text, index);
+    const next = text.charAt(index);
     if (next === ",") {
-      parser.index += 1;
+      index += 1;
       continue;
     }
     if (next === "}") {
-      parser.index += 1;
-      return;
+      return count;
     }
-    invalidJson();
+    duplicateCheckFailed();
   }
+  duplicateCheckFailed();
 }
 
-function scanArray(parser: Cursor): void {
-  expectChar(parser, "[");
-  skipWhitespace(parser);
-  if (parser.text.charAt(parser.index) === "]") {
-    parser.index += 1;
-    return;
+function skipJsonValue(text: string, index: number): number {
+  index = skipWhitespace(text, index);
+  const char = text.charAt(index);
+  if (char === '"') {
+    return skipJsonString(text, index);
   }
-  while (true) {
-    scanValue(parser);
-    skipWhitespace(parser);
-    const next = parser.text.charAt(parser.index);
-    if (next === ",") {
-      parser.index += 1;
-      continue;
-    }
-    if (next === "]") {
-      parser.index += 1;
-      return;
-    }
-    invalidJson();
+  if (char === "{" || char === "[") {
+    return skipContainer(text, index);
   }
+  while (index < text.length) {
+    const next = text.charAt(index);
+    if (
+      next === "," ||
+      next === "}" ||
+      next === "]" ||
+      next === " " ||
+      next === "\n" ||
+      next === "\r" ||
+      next === "\t"
+    ) {
+      return index;
+    }
+    index += 1;
+  }
+  duplicateCheckFailed();
 }
 
-function scanLiteral(parser: Cursor, word: string): void {
-  if (!parser.text.startsWith(word, parser.index)) {
-    invalidJson();
-  }
-  parser.index += word.length;
-}
-
-function scanNumber(parser: Cursor): void {
-  if (parser.text.charAt(parser.index) === "-") {
-    parser.index += 1;
-  }
-  const first = parser.text.charAt(parser.index);
-  if (first === "0") {
-    parser.index += 1;
-  } else if (isDigit(first)) {
-    while (isDigit(parser.text.charAt(parser.index))) {
-      parser.index += 1;
-    }
-  } else {
-    invalidJson();
-  }
-  if (parser.text.charAt(parser.index) === ".") {
-    parser.index += 1;
-    if (!isDigit(parser.text.charAt(parser.index))) {
-      invalidJson();
-    }
-    while (isDigit(parser.text.charAt(parser.index))) {
-      parser.index += 1;
-    }
-  }
-  const exponent = parser.text.charAt(parser.index);
-  if (exponent === "e" || exponent === "E") {
-    parser.index += 1;
-    const sign = parser.text.charAt(parser.index);
-    if (sign === "+" || sign === "-") {
-      parser.index += 1;
-    }
-    if (!isDigit(parser.text.charAt(parser.index))) {
-      invalidJson();
-    }
-    while (isDigit(parser.text.charAt(parser.index))) {
-      parser.index += 1;
-    }
-  }
-}
-
-function scanString(parser: Cursor): string {
-  expectChar(parser, '"');
-  let result = "";
-  while (parser.index < parser.text.length) {
-    const char = parser.text.charAt(parser.index);
+function skipContainer(text: string, index: number): number {
+  let depth = 1;
+  index += 1;
+  while (index < text.length && depth > 0) {
+    const char = text.charAt(index);
     if (char === '"') {
-      parser.index += 1;
-      return result;
-    }
-    if (char === "\\") {
-      result += escapedChar(parser);
+      index = skipJsonString(text, index);
       continue;
     }
-    if (char.charCodeAt(0) <= 0x1f) {
-      invalidJson();
+    if (char === "{" || char === "[") {
+      depth += 1;
+      index += 1;
+      continue;
     }
-    result += char;
-    parser.index += 1;
-  }
-  invalidJson();
-}
-
-function escapedChar(parser: Cursor): string {
-  parser.index += 1;
-  const char = parser.text.charAt(parser.index);
-  parser.index += 1;
-  if (char === '"' || char === "\\" || char === "/") {
-    return char;
-  }
-  if (char === "b") {
-    return "\b";
-  }
-  if (char === "f") {
-    return "\f";
-  }
-  if (char === "n") {
-    return "\n";
-  }
-  if (char === "r") {
-    return "\r";
-  }
-  if (char === "t") {
-    return "\t";
-  }
-  if (char === "u") {
-    const code = hex4(parser.text, parser.index);
-    if (code === undefined) {
-      invalidJson();
+    if (char === "}" || char === "]") {
+      depth -= 1;
+      index += 1;
+      continue;
     }
-    parser.index += 4;
-    return String.fromCharCode(code);
+    index += 1;
   }
-  invalidJson();
+  if (depth !== 0) {
+    duplicateCheckFailed();
+  }
+  return index;
 }
 
-function hex4(text: string, index: number): number | undefined {
-  if (index + 4 > text.length) {
-    return undefined;
-  }
-  let value = 0;
-  for (let offset = 0; offset < 4; offset += 1) {
-    const digit = hexDigit(text.charAt(index + offset));
-    if (digit === undefined) {
-      return undefined;
+function skipJsonString(text: string, index: number): number {
+  index += 1;
+  while (index < text.length) {
+    const char = text.charAt(index);
+    if (char === "\\") {
+      // The next source character is escaped, so a quote here is not
+      // the end of the string. The key text itself is not decoded.
+      index += 2;
+      continue;
     }
-    value = value * 16 + digit;
-  }
-  return value;
-}
-
-function hexDigit(char: string): number | undefined {
-  const code = char.charCodeAt(0);
-  if (code >= 48 && code <= 57) {
-    return code - 48;
-  }
-  if (code >= 65 && code <= 70) {
-    return code - 55;
-  }
-  if (code >= 97 && code <= 102) {
-    return code - 87;
-  }
-  return undefined;
-}
-
-function skipWhitespace(parser: Cursor): void {
-  while (true) {
-    const char = parser.text.charAt(parser.index);
-    if (char !== " " && char !== "\t" && char !== "\n" && char !== "\r") {
-      return;
+    if (char === '"') {
+      return index + 1;
     }
-    parser.index += 1;
+    index += 1;
   }
+  duplicateCheckFailed();
 }
 
-function expectChar(parser: Cursor, expected: string): void {
-  if (parser.text.charAt(parser.index) !== expected) {
-    invalidJson();
+function skipWhitespace(text: string, index: number): number {
+  while (
+    text.charAt(index) === " " ||
+    text.charAt(index) === "\t" ||
+    text.charAt(index) === "\n" ||
+    text.charAt(index) === "\r"
+  ) {
+    index += 1;
   }
-  parser.index += 1;
+  return index;
 }
 
-function isDigit(char: string): boolean {
-  const code = char.charCodeAt(0);
-  return code >= 48 && code <= 57;
+function duplicateCheckFailed(): never {
+  // A short count would hide a collapsed key. This is a defect in the
+  // counter, not malformed JSON, and the message must not include input.
+  throw new Error("Manifest duplicate check lost alignment.");
 }
 
 function invalidJson(): never {
