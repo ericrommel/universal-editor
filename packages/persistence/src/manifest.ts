@@ -7,9 +7,6 @@ const SCHEMA_VERSION = 1;
 // This cap is only the provisional manifest, not a project-size limit.
 const MANIFEST_BYTE_LIMIT = 4096;
 
-// A 4096-byte value can still nest deeper than this process should recurse.
-const MAX_JSON_DEPTH = 32;
-
 const EMPTY = "Manifest is empty.";
 const TOO_LARGE = "Manifest exceeds the size limit.";
 const INVALID_ENCODING = "Manifest is not UTF-8 text.";
@@ -24,18 +21,10 @@ export type ProvisionalManifest = {
   readonly schemaVersion: 1;
 };
 
-type JsonNumber = {
-  readonly kind: "number";
-  readonly raw: string;
+// Node 24's JSON.parse reviver receives this. The ES2024 lib omits it.
+type JsonTokenContext = {
+  readonly source?: string;
 };
-
-type JsonValue =
-  | null
-  | boolean
-  | string
-  | JsonNumber
-  | JsonValue[]
-  | Map<string, JsonValue>;
 
 type Cursor = {
   text: string;
@@ -73,7 +62,8 @@ export function readManifest(input: Uint8Array): ProvisionalManifest {
     }
     throw error;
   }
-  return manifestFrom(parseDocument(text));
+  const parsed = parseWithSchemaSource(text);
+  return manifestFrom(parsed.value, parsed.schemaSource);
 }
 
 function hasUtf8Bom(input: Uint8Array): boolean {
@@ -85,20 +75,26 @@ function hasUtf8Bom(input: Uint8Array): boolean {
   );
 }
 
-function manifestFrom(value: JsonValue): ProvisionalManifest {
-  if (!(value instanceof Map)) {
+function manifestFrom(
+  value: unknown,
+  schemaSource: string | undefined,
+): ProvisionalManifest {
+  if (!isRecord(value)) {
     throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
   }
   // Unknown keys fail as shape even when a known field would also fail.
-  for (const key of value.keys()) {
+  for (const key of Object.keys(value)) {
     if (key !== "formatId" && key !== "schemaVersion") {
       throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
     }
   }
-  if (!value.has("formatId") || !value.has("schemaVersion")) {
+  if (
+    !Object.hasOwn(value, "formatId") ||
+    !Object.hasOwn(value, "schemaVersion")
+  ) {
     throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
   }
-  const formatId = value.get("formatId");
+  const formatId = value.formatId;
   if (typeof formatId !== "string") {
     throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
   }
@@ -107,7 +103,7 @@ function manifestFrom(value: JsonValue): ProvisionalManifest {
   }
   // A present schemaVersion other than the integer token 1 is a version
   // failure, including strings, booleans, and numbers such as 1.0 or 1e0.
-  if (!isSchemaVersionOne(value.get("schemaVersion"))) {
+  if (schemaSource !== "1") {
     throw new DomainError(
       "UNSUPPORTED_SCHEMA_VERSION",
       UNSUPPORTED_SCHEMA_VERSION,
@@ -119,78 +115,140 @@ function manifestFrom(value: JsonValue): ProvisionalManifest {
   };
 }
 
-function isSchemaVersionOne(value: JsonValue | undefined): boolean {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "kind" in value &&
-    value.kind === "number" &&
-    value.raw === "1"
-  );
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function parseDocument(text: string): JsonValue {
-  // JSON.parse keeps the last duplicate and collapses 1.0 and 1e0 to 1.
-  const parser: Cursor = { text, index: 0 };
-  const value = parseValue(parser, 0);
-  skipWhitespace(parser);
-  if (parser.index !== parser.text.length) {
-    invalidJson();
+function parseWithSchemaSource(text: string): {
+  readonly value: unknown;
+  readonly schemaSource: string | undefined;
+} {
+  rejectDuplicateKeys(text);
+  const sources = new Map<object, string>();
+  let value: unknown;
+  try {
+    value = JSON.parse(text, schemaReviver(sources));
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      invalidJson();
+    }
+    throw error;
   }
-  return value;
+  return {
+    value,
+    schemaSource: schemaSourceOf(value, sources),
+  };
 }
 
-function parseValue(parser: Cursor, depth: number): JsonValue {
-  if (depth > MAX_JSON_DEPTH) {
-    invalidJson();
+function schemaReviver(
+  sources: Map<object, string>,
+): (this: object, key: string, value: unknown) => unknown {
+  const reviver = function (
+    this: object,
+    key: string,
+    value: unknown,
+    context: JsonTokenContext | undefined,
+  ): unknown {
+    // Keep every value. Returning undefined would delete the key.
+    if (key === "schemaVersion" && typeof context?.source === "string") {
+      sources.set(this, context.source);
+    }
+    return value;
+  };
+  // Node 24 passes the raw token as a third argument. The ES2024 lib omits it.
+  return reviver as (this: object, key: string, value: unknown) => unknown;
+}
+
+function schemaSourceOf(
+  value: unknown,
+  sources: Map<object, string>,
+): string | undefined {
+  if (typeof value === "object" && value !== null) {
+    return sources.get(value);
   }
+  return undefined;
+}
+
+function rejectDuplicateKeys(text: string): void {
+  // JSON.parse keeps the last duplicate, including keys that match only
+  // after escapes are decoded, so it cannot enforce this contract.
+  try {
+    const parser: Cursor = { text, index: 0 };
+    scanValue(parser);
+    skipWhitespace(parser);
+    if (parser.index !== text.length) {
+      invalidJson();
+    }
+  } catch (error) {
+    if (error instanceof DomainError) {
+      throw error;
+    }
+    // A 4096-byte value can still nest deeply enough to overflow this walk.
+    if (error instanceof RangeError) {
+      invalidJson();
+    }
+    throw error;
+  }
+}
+
+function scanValue(parser: Cursor): void {
   skipWhitespace(parser);
   const char = parser.text.charAt(parser.index);
   if (char === "{") {
-    return parseObject(parser, depth);
+    scanObject(parser);
+    return;
   }
   if (char === "[") {
-    return parseArray(parser, depth);
+    scanArray(parser);
+    return;
   }
   if (char === '"') {
-    return parseString(parser);
+    scanString(parser);
+    return;
   }
   if (char === "t") {
-    return parseLiteral(parser, "true", true);
+    scanLiteral(parser, "true");
+    return;
   }
   if (char === "f") {
-    return parseLiteral(parser, "false", false);
+    scanLiteral(parser, "false");
+    return;
   }
   if (char === "n") {
-    return parseLiteral(parser, "null", null);
+    scanLiteral(parser, "null");
+    return;
   }
   if (char === "-" || isDigit(char)) {
-    return parseNumber(parser);
+    scanNumber(parser);
+    return;
   }
   invalidJson();
 }
 
-function parseObject(parser: Cursor, depth: number): Map<string, JsonValue> {
+function scanObject(parser: Cursor): void {
   expectChar(parser, "{");
-  const fields = new Map<string, JsonValue>();
+  // A Set, not an object: a key named __proto__ must be recorded as itself.
+  const keys = new Set<string>();
   skipWhitespace(parser);
   if (parser.text.charAt(parser.index) === "}") {
     parser.index += 1;
-    return fields;
+    return;
   }
   while (true) {
     skipWhitespace(parser);
     if (parser.text.charAt(parser.index) !== '"') {
       invalidJson();
     }
-    const key = parseString(parser);
+    const key = scanString(parser);
     skipWhitespace(parser);
     expectChar(parser, ":");
-    // The key is already illegal. Do not read the rest of its value.
-    if (fields.has(key)) {
+    // The key and colon are known. Do not parse a repeated field's value,
+    // even when that value is missing or equal to the first.
+    if (keys.has(key)) {
       throw new DomainError("DUPLICATE_KEY", DUPLICATE_KEY);
     }
-    fields.set(key, parseValue(parser, depth + 1));
+    keys.add(key);
+    scanValue(parser);
     skipWhitespace(parser);
     const next = parser.text.charAt(parser.index);
     if (next === ",") {
@@ -199,22 +257,21 @@ function parseObject(parser: Cursor, depth: number): Map<string, JsonValue> {
     }
     if (next === "}") {
       parser.index += 1;
-      return fields;
+      return;
     }
     invalidJson();
   }
 }
 
-function parseArray(parser: Cursor, depth: number): JsonValue[] {
+function scanArray(parser: Cursor): void {
   expectChar(parser, "[");
-  const items: JsonValue[] = [];
   skipWhitespace(parser);
   if (parser.text.charAt(parser.index) === "]") {
     parser.index += 1;
-    return items;
+    return;
   }
   while (true) {
-    items.push(parseValue(parser, depth + 1));
+    scanValue(parser);
     skipWhitespace(parser);
     const next = parser.text.charAt(parser.index);
     if (next === ",") {
@@ -223,26 +280,20 @@ function parseArray(parser: Cursor, depth: number): JsonValue[] {
     }
     if (next === "]") {
       parser.index += 1;
-      return items;
+      return;
     }
     invalidJson();
   }
 }
 
-function parseLiteral(
-  parser: Cursor,
-  word: string,
-  value: boolean | null,
-): boolean | null {
+function scanLiteral(parser: Cursor, word: string): void {
   if (!parser.text.startsWith(word, parser.index)) {
     invalidJson();
   }
   parser.index += word.length;
-  return value;
 }
 
-function parseNumber(parser: Cursor): JsonNumber {
-  const start = parser.index;
+function scanNumber(parser: Cursor): void {
   if (parser.text.charAt(parser.index) === "-") {
     parser.index += 1;
   }
@@ -279,13 +330,9 @@ function parseNumber(parser: Cursor): JsonNumber {
       parser.index += 1;
     }
   }
-  return {
-    kind: "number",
-    raw: parser.text.slice(start, parser.index),
-  };
 }
 
-function parseString(parser: Cursor): string {
+function scanString(parser: Cursor): string {
   expectChar(parser, '"');
   let result = "";
   while (parser.index < parser.text.length) {

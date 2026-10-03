@@ -54,6 +54,7 @@ test("duplicate keys are rejected before shape checks", () => {
     `{"formatId":"${FORMAT_ID}","schemaVersion":1,"list":[{"b":1,"b":2}]}`,
     `{"formatId":"${FORMAT_ID}","schemaVersion":1,"schema\\u0056ersion":2}`,
     `{"a":1,"\\u0061":2}`,
+    `{"__proto__":1,"__proto__":1}`,
     `{"formatId":"${FORMAT_ID}","schemaVersion":1,"schemaVersion":}`,
   ];
   for (const text of texts) {
@@ -154,11 +155,6 @@ test("malformed manifests are rejected whole", () => {
     "INVALID_JSON",
     "Manifest is not valid JSON.",
   );
-  expectManifest(
-    nestedArrays(40),
-    "INVALID_JSON",
-    "Manifest is not valid JSON.",
-  );
 });
 
 test("the wrong shape, format, and schema version are distinct", () => {
@@ -252,6 +248,11 @@ test("the wrong shape, format, and schema version are distinct", () => {
     "INVALID_SHAPE",
     "Manifest shape is not accepted.",
   );
+  expectManifest(
+    nestedArrays(40),
+    "INVALID_SHAPE",
+    "Manifest shape is not accepted.",
+  );
 });
 
 test("4096 bytes are accepted and 4097 bytes are not parsed", () => {
@@ -266,6 +267,19 @@ test("4096 bytes are accepted and 4097 bytes are not parsed", () => {
     "TOO_LARGE",
     "Manifest exceeds the size limit.",
   );
+});
+
+test("an own proto key is rejected and does not change Object.prototype", () => {
+  const marker = "uvcpPolluted";
+  assert.equal(Object.hasOwn(Object.prototype, marker), false);
+  expectManifest(
+    textBytes(
+      `{"__proto__":{"${marker}":"${SENTINEL}"},"formatId":"${FORMAT_ID}","schemaVersion":1}`,
+    ),
+    "INVALID_SHAPE",
+    "Manifest shape is not accepted.",
+  );
+  assert.equal(Object.hasOwn(Object.prototype, marker), false);
 });
 
 test("a non-byte input is a shape failure and does not echo the value", () => {
