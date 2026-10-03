@@ -4,8 +4,8 @@ import {
   ALLOWED,
   boundaryViolation,
   exoticDependency,
-  extractSpecifiers,
   NO_DOM_LIB,
+  scanSource,
 } from "./boundaries.mjs";
 
 const root = process.cwd();
@@ -63,7 +63,15 @@ for (const packageDir of packageDirs(root)) {
   }
   for (const file of sourceFiles(packageDir)) {
     const source = fs.readFileSync(file, "utf8");
-    for (const specifier of extractSpecifiers(source)) {
+    const extension = path.extname(file);
+    const scanned = scanSource(source, {
+      jsx: extension === ".tsx" || extension === ".jsx",
+    });
+    if (scanned.failure) {
+      violations.push(`${path.relative(root, file)}: ${scanned.failure}`);
+      continue;
+    }
+    for (const specifier of scanned.specifiers) {
       if (specifier.startsWith(".")) {
         if (!staysInside(packageDir, file, specifier)) {
           violations.push(
