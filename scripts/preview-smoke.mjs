@@ -18,6 +18,17 @@ export function previewAccepted(statusCode, contentSecurityPolicy) {
   return statusCode === 200 && contentSecurityPolicy === productionPolicy;
 }
 
+// Vite colors the ready line when CI forces color, which splits "Local:"
+// and "127.0.0.1:5173" with escape sequences. ESC is built here so the
+// pattern is not a regex literal containing a control character.
+const ansiPattern = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g");
+
+export function previewReady(text) {
+  ansiPattern.lastIndex = 0;
+  const plain = text.replace(ansiPattern, "");
+  return plain.includes("Local:") && plain.includes("127.0.0.1:5173");
+}
+
 function isDirectRun() {
   const entry = process.argv[1];
   if (entry === undefined) {
@@ -154,10 +165,9 @@ async function smoke() {
         );
         return exitStatus === 0 ? 1 : exitStatus;
       }
-      const text = output();
       // "Local:" is the ready line. An address-in-use error can name the
       // same host and port before the process exits.
-      if (!text.includes("Local:") || !text.includes("127.0.0.1:5173")) {
+      if (!previewReady(output())) {
         await delay(200);
         continue;
       }
