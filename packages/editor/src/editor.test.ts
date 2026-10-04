@@ -39,6 +39,55 @@ test("startup reaches ready without a shell", () => {
   );
 });
 
+test("the session is starting until initialization finishes", () => {
+  const readyLines: string[] = [];
+  let readySeen: { readonly status: string } | undefined;
+  const ready = startSession({
+    initialize: (session) => {
+      // Assert during initialize. A later mutation of the same object
+      // must not be able to satisfy this check.
+      readySeen = session;
+      assert.equal(Object.isFrozen(session), true);
+      assert.deepEqual(session, { status: "starting" });
+      assert.equal(readyLines.length, 1);
+      assert.equal(JSON.parse(readyLines[0] ?? "").event, "startup.beginning");
+    },
+    write: (line) => {
+      readyLines.push(line);
+    },
+  });
+  assert.equal(readySeen?.status, "starting");
+  assert.equal(ready.status, "ready");
+  assert.equal(JSON.parse(readyLines[1] ?? "").event, "startup.ready");
+
+  const failedLines: string[] = [];
+  let failedSeen: { readonly status: string } | undefined;
+  const failed = startSession({
+    initialize: (session) => {
+      failedSeen = session;
+      assert.equal(Object.isFrozen(session), true);
+      assert.deepEqual(session, { status: "starting" });
+      assert.equal(failedLines.length, 1);
+      assert.equal(JSON.parse(failedLines[0] ?? "").event, "startup.beginning");
+      throw new InitializationError(
+        "injected-initialization-failure",
+        "INJECTED_INITIALIZATION_FAILURE",
+        "Initialization failed.",
+      );
+    },
+    write: (line) => {
+      failedLines.push(line);
+    },
+  });
+  assert.equal(failedSeen?.status, "starting");
+  assert.equal(failed.status, "failed");
+  if (failed.status !== "failed") {
+    assert.fail("startup should have failed");
+  }
+  assert.equal(failed.step, "injected-initialization-failure");
+  assert.equal(JSON.parse(failedLines[1] ?? "").event, "startup.failed");
+});
+
 test("a rejected manifest is diagnosable without a shell", () => {
   const lines: string[] = [];
   const session = startSession({

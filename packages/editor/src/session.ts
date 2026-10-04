@@ -24,6 +24,7 @@ export class InitializationError extends Error {
 }
 
 export type EditorSession =
+  | { readonly status: "starting" }
   | { readonly status: "ready" }
   | {
       readonly status: "failed";
@@ -32,19 +33,25 @@ export type EditorSession =
       readonly message: string;
     };
 
+export type StartingSession = Extract<EditorSession, { status: "starting" }>;
+
+export type SettledSession = Exclude<EditorSession, StartingSession>;
+
 export type DiagnosticSink = (line: string) => void;
 
 export type StartSessionOptions = {
-  readonly initialize: () => void;
+  readonly initialize: (session: StartingSession) => void;
   readonly write: DiagnosticSink;
 };
 
-export function startSession(options: StartSessionOptions): EditorSession {
-  // Startup is synchronous. The beginning record is the starting state.
-  // The caller observes ready or failed.
+export function startSession(options: StartSessionOptions): SettledSession {
+  // The initializer runs while the session is starting. The beginning
+  // record logs that state. It does not replace it. The returned
+  // session is ready or failed.
+  const session: StartingSession = Object.freeze({ status: "starting" });
   options.write(beginningLine());
   try {
-    options.initialize();
+    options.initialize(session);
   } catch (error) {
     const failure = failureOf(error);
     options.write(failedLine(failure));

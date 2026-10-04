@@ -1,7 +1,7 @@
 import {
   type DiagnosticSink,
-  type EditorSession,
   InitializationError,
+  type SettledSession,
   startSession,
 } from "./session.ts";
 
@@ -12,7 +12,7 @@ export function initializeFoundation(): void {}
 export function runHeadless(
   mode: "success" | "failure",
   write: DiagnosticSink,
-): EditorSession {
+): SettledSession {
   return startSession({
     initialize:
       mode === "failure" ? injectedInitializationFailure : initializeFoundation,
