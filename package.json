@@ -9,7 +9,7 @@
   "scripts": {
     "typecheck": "tsc -b",
     "lint": "biome check .",
-    "test": "node --test scripts/boundaries.test.mjs scripts/license-expression.test.mjs packages/core/src/core.test.ts packages/persistence/src/persistence.test.ts",
+    "test": "node --test scripts/boundaries.test.mjs scripts/license-expression.test.mjs packages/core/src/core.test.ts packages/persistence/src/persistence.test.ts packages/rendering/src/rendering.test.ts",
     "verify": "node scripts/verify.mjs"
   },
   "devDependencies": {
