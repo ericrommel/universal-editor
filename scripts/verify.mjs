@@ -9,8 +9,7 @@ if (process.version !== requiredNode) {
   process.exit(1);
 }
 
-// The production build and the preview smoke wait until the shell exists.
-// WP-5 adds those steps. Omitting them here is not a passing substitute.
+// The preview request is build evidence. It is not the graphical launch.
 
 const steps = [
   ["node", ["scripts/check-boundaries.mjs"]],
@@ -19,6 +18,8 @@ const steps = [
   ["node", ["scripts/check-licenses.mjs"]],
   ["pnpm", ["audit", "--audit-level=high"]],
   ["pnpm", ["test"]],
+  ["pnpm", ["build"]],
+  [process.execPath, ["scripts/preview-smoke.mjs"]],
 ];
 
 for (const [command, args] of steps) {
