@@ -10,7 +10,7 @@ Install Git and Node.js. The Node.js version is exact: the contents of `.node-ve
 
 Enable the Corepack that ships with that Node.js build. The `packageManager` field in `package.json` selects pnpm `12.8.2`. Do not install pnpm with a curl script, and do not install a global pnpm another way.
 
-Do not approve dependency build scripts. `allowBuilds` in `pnpm-workspace.yaml` stays empty.
+Do not approve dependency build scripts except the named `esbuild` entry in `pnpm-workspace.yaml`. Vite does not install without that script. Nothing else is approved.
 
 ## Commands
 
@@ -21,7 +21,16 @@ corepack enable
 corepack pnpm install --frozen-lockfile
 corepack pnpm test
 corepack pnpm verify
+corepack pnpm dev
+corepack pnpm start
+corepack pnpm build
 ```
+
+`corepack pnpm start` is an alias of `corepack pnpm dev`. Both serve the shell on `127.0.0.1` port `5173`. `corepack pnpm build` writes the static shell to `apps/shell/dist` with a relative base. It does not create an installer. `tsc -b` writes the shell's declarations to `apps/shell/ts-out` and does not write them into `apps/shell/dist`.
+
+`UVCP_FORCE_INIT_FAILURE` is read only by `corepack pnpm dev`. Unset or `0` starts normally. `1` shows Not ready. Any other value also shows Not ready and is not treated as success. `corepack pnpm build` and `corepack pnpm --filter @uvcp/shell preview` do not read it. It is not a control on the screen.
+
+Preview the static build with `corepack pnpm --filter @uvcp/shell preview`. That server binds to `127.0.0.1` port `5173`.
 
 Continuous integration uses `corepack pnpm install --frozen-lockfile`. Do not use `pnpm ci`.
 
@@ -40,9 +49,7 @@ Continuous integration uses `corepack pnpm install --frozen-lockfile`. Do not us
 
 It stops on the first failure and returns that process status. A Node.js version other than the pinned version fails the gate before those steps.
 
-The production build and the loopback preview smoke are not in `scripts/verify.mjs` yet. They are later steps, after the shell exists. This guide does not mark them done.
-
-`pnpm dev`, `pnpm start`, and `pnpm build` are not scripts in `package.json` yet. Do not run them as setup steps. They are not commands this repository provides today.
+The production build and the loopback preview smoke are not in `scripts/verify.mjs` yet. The shell can be built and previewed with the commands above. This guide does not mark those checks done.
 
 ## Continuous integration
 

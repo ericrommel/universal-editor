@@ -15,7 +15,12 @@ engineStrict: true
 # Default is true. Record it so a later default change cannot skip unreviewed scripts.
 strictDepBuilds: true
 
-# Empty until a named package script is read. esbuild is not pre-approved.
+# esbuild is the only approved script. Vite 7.3.6 does not install while
+# esbuild@0.28.2's postinstall is ignored. That install.js was read: it uses
+# the optional platform package pnpm already installed and checks the binary
+# version. Its download fallback runs only when that package is missing, and
+# it checks the hash published in esbuild's own package.json.
 # pnpm's own wrapper script (install.js) was read and is not approved: Corepack
 # supplies the pinned binary, and this project does not install the pnpm package.
-allowBuilds: {}
+allowBuilds:
+  esbuild: true
