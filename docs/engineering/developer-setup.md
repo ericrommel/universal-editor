@@ -46,10 +46,12 @@ Continuous integration uses `corepack pnpm install --frozen-lockfile`. Do not us
 4. the license allow-list
 5. `pnpm audit` at high severity
 6. the headless `node:test` suite
+7. `pnpm build`
+8. the loopback preview smoke
 
 It stops on the first failure and returns that process status. A Node.js version other than the pinned version fails the gate before those steps.
 
-The production build and the loopback preview smoke are not in `scripts/verify.mjs` yet. The shell can be built and previewed with the commands above. This guide does not mark those checks done.
+The preview smoke runs after the build. It starts the shell preview on `127.0.0.1` port `5173` and requests `/` with Node. HTTP 200 with the production content security policy passes. Port `5173` must be free. The smoke does not open a window and is not the manual browser launch.
 
 ## Continuous integration
 
