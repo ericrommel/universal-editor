@@ -10,7 +10,7 @@ This project is developed through a coordinated team of AI subagents.
 
 Do not simulate all roles yourself when specialist review is required. Create and manage the appropriate subagents.
 
-Do not start independent sessions and do not require information to be manually copied between sessions.
+Independent primary sessions may be used when useful. Sessions should use the repository and persistent project records as their shared source of truth. Do not use manual copy/paste of plans, reasoning, or responses between sessions as a coordination mechanism.
 
 ## Team
 
