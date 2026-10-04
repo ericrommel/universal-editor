@@ -3,7 +3,8 @@
   "compilerOptions": {
     "lib": ["ES2024", "DOM"],
     "jsx": "react-jsx",
-    "outDir": "dist",
+    "outDir": "ts-out",
+    "emitDeclarationOnly": true,
     "rootDir": ".",
     "allowImportingTsExtensions": true,
     "rewriteRelativeImportExtensions": true

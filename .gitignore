@@ -7,6 +7,9 @@ dist/
 build/
 *.tsbuildinfo
 
+# Typecheck emit. Vite serves apps/shell/dist, so tsc must not write the shell there.
+ts-out/
+
 # Local environment
 .env
 .env.*

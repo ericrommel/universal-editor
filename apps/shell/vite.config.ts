@@ -81,10 +81,12 @@ declare const process: {
   };
 };
 
-export default defineConfig(({ command }) => {
-  // Build does not read the variable, so a production compile cannot inline it.
+export default defineConfig(({ command, isPreview }) => {
+  // Preview uses command "serve" as well. Only the dev server may read this.
   const devFailure =
-    command === "serve" ? (process.env.UVCP_FORCE_INIT_FAILURE ?? "") : "";
+    command === "serve" && !isPreview
+      ? (process.env.UVCP_FORCE_INIT_FAILURE ?? "")
+      : "";
   return {
     base: "./",
     plugins: [cspStyles()],

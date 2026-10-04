@@ -26,9 +26,9 @@ corepack pnpm start
 corepack pnpm build
 ```
 
-`corepack pnpm start` is an alias of `corepack pnpm dev`. Both serve the shell on `127.0.0.1` port `5173`. `corepack pnpm build` writes the static shell to `apps/shell/dist` with a relative base. It does not create an installer.
+`corepack pnpm start` is an alias of `corepack pnpm dev`. Both serve the shell on `127.0.0.1` port `5173`. `corepack pnpm build` writes the static shell to `apps/shell/dist` with a relative base. It does not create an installer. `tsc -b` writes the shell's declarations to `apps/shell/ts-out` and does not write them into `apps/shell/dist`.
 
-`UVCP_FORCE_INIT_FAILURE` is read only by `corepack pnpm dev`. Unset or `0` starts normally. `1` shows Not ready. Any other value also shows Not ready and is not treated as success. The production build does not read it. It is not a control on the screen.
+`UVCP_FORCE_INIT_FAILURE` is read only by `corepack pnpm dev`. Unset or `0` starts normally. `1` shows Not ready. Any other value also shows Not ready and is not treated as success. `corepack pnpm build` and `corepack pnpm --filter @uvcp/shell preview` do not read it. It is not a control on the screen.
 
 Preview the static build with `corepack pnpm --filter @uvcp/shell preview`. That server binds to `127.0.0.1` port `5173`.
 
