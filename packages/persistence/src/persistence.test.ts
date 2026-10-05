@@ -271,6 +271,32 @@ test("the wrong shape, format, and schema version are distinct", () => {
   );
 });
 
+test("nesting past the portable parse limit is a shape failure", () => {
+  const deep = textBytes(`${"[".repeat(2048)}${"]".repeat(2048)}`);
+  assert.equal(deep.byteLength, 4096);
+  expectManifest(deep, "INVALID_SHAPE", "Manifest shape is not accepted.");
+  expectManifest(
+    textBytes("[".repeat(80)),
+    "INVALID_SHAPE",
+    "Manifest shape is not accepted.",
+  );
+  expectManifest(
+    textBytes(nestedSchemaVersion(40)),
+    "UNSUPPORTED_SCHEMA_VERSION",
+    "Manifest schema version is not supported.",
+  );
+  expectManifest(
+    textBytes(`{"formatId":"${"{".repeat(80)}","schemaVersion":1}`),
+    "UNSUPPORTED_FORMAT",
+    "Manifest format is not supported.",
+  );
+  expectManifest(
+    textBytes(`{"formatId":"a}b{c\\"d","schemaVersion":1}`),
+    "UNSUPPORTED_FORMAT",
+    "Manifest format is not supported.",
+  );
+});
+
 test("4096 bytes are accepted and 4097 bytes are not parsed", () => {
   const accepted = sizedManifest(4096);
   assert.equal(accepted.byteLength, 4096);
@@ -420,6 +446,14 @@ function nestedArrays(depth: number): Uint8Array {
     text = `[${text}]`;
   }
   return textBytes(text);
+}
+
+function nestedSchemaVersion(depth: number): string {
+  let token = "1";
+  for (let count = 0; count < depth; count += 1) {
+    token = `[${token}]`;
+  }
+  return `{"formatId":"${FORMAT_ID}","schemaVersion":${token}}`;
 }
 
 function expectManifest(
