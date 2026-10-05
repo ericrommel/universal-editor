@@ -295,7 +295,7 @@ The shell is the web-only option from the security review, with these conditions
 - licenses of resolved packages must be on the allow-list in ADR-0007
 - CI has no secrets and does not use `pull_request_target`
 
-See ADR-0007. The threat model in the security review remains the Module 0 threat model. Its blocking findings are resolved for preparation by the decisions in that ADR. M0-AC-011 stays open until implementation matches them.
+See ADR-0007. The threat model in the security review remains the Module 0 threat model. Its blocking findings are resolved for preparation by the decisions in that ADR. The implementation review is `docs/modules/module-00-foundation/evidence/security-review.md`. It records no blocking finding. That review is not Product Owner approval.
 
 ## 23. Technical risks
 
@@ -392,7 +392,7 @@ The deliberate failing test for M0-AC-004 is a short-lived branch, never the app
 - Module 0 does not persist editor session state, because the only session state is startup. Whether later session state is saved is deferred.
 - No user projects exist, so Module 0 has no migration to perform. Hand-editing is not defined.
 - The repository remote stays on GitHub. Actions availability was not queried against the GitHub API.
-- External version and platform facts were checked by the specialist reviews on 2026-10-02. No shell was built, and no GPU process was launched, because there is no application to launch.
+- External version and platform facts were checked by the specialist reviews on 2026-10-02. No shell had been built at that date. The shell on main is the loopback Vite application in sections 4, 5, and 10. Module 0 still does not launch a GPU process.
 - React, TypeScript, Vite, and Biome are pinned to the exact versions that pass the license and audit checks on implementation day. This proposal does not invent patch numbers for them.
 - Reference hardware and product performance workloads are not decided. They do not block Module 0. They block the first module that makes a product performance claim.
 - Up-axis, handedness, rotation order, and degrees versus radians are deferred. They are not guessed here.
@@ -422,7 +422,7 @@ Not decided here. Notes under a bullet are analysis, not a selection:
 
 ## Implementation breakdown
 
-Implementation has not started. The order below is the breakdown for the approved binding scope. Work packages may proceed in parallel only where the dependencies allow it.
+The order below is the breakdown for the approved binding scope. Work packages may proceed in parallel only where the dependencies allow it. The outcome of that breakdown is the implementation record after the table. The record is not module acceptance and not GREEN.
 
 Each work package is implemented on its own branch and opened as a pull request linked to issue #1. That work is not committed directly to `main`.
 
@@ -437,6 +437,22 @@ Each work package is implemented on its own branch and opened as a pull request 
 | WP-6 | Short-lived failing-test branch, then removal. Record local and CI evidence. Record the pipeline baseline from real runs. | WP-5 | M0-AC-004, M0-NFR-004, M0-NFR-010 |
 
 WP-1 and WP-3 may proceed together after WP-0. WP-2 waits until the core and persistence exports it imports exist. WP-4 waits for editor startup. WP-6 is evidence, not a feature, and its red commit is not merged.
+
+## Implementation record
+
+The binding decisions in this document are unchanged. Main implements that scope as follows.
+
+| ID | Outcome |
+| --- | --- |
+| WP-0 | On main. Workspace, pins, TypeScript references, Biome, boundary check, and license check. |
+| WP-1 | On main. Core numeric helpers and the provisional manifest codec, with headless tests. |
+| WP-2 | On main. Editor startup, diagnostic records, the headless composition script, and injected failure. |
+| WP-3 | On main. Null renderer snapshot. It records a fractional device-pixel ratio and does not request a GPU. |
+| WP-4 | On main for the foundation screen and the loopback shell. `@uvcp/platform` is the host boundary and has no capability. `packages/platform/src/index.ts` has no runtime export. The shell declares the dependency and does not import it, because Module 0 has no host call to make. |
+| WP-5 | On main. `pnpm verify` runs the boundary check, `tsc -b`, Biome, the license check, `pnpm audit --audit-level=high`, `pnpm test`, `pnpm build`, and the loopback preview smoke. GitHub Actions runs that command on `ubuntu-24.04` and `windows-2025`. Dependabot opens weekly pull requests and does not merge them. |
+| WP-6 | Evidence, not a feature. The pipeline baseline is `docs/modules/module-00-foundation/evidence/m0-pipeline-baseline.json` with `kind: observation`. The durations are not pass/fail thresholds. The candidate failure probe is draft pull request 28. Its red commit is not merged. |
+
+`pnpm dev` is the documented launch. The headed browser record is `docs/modules/module-00-foundation/evidence/launch/`. The preview smoke is build evidence and is not that launch.
 
 ## Definition of Ready
 
