@@ -32,3 +32,13 @@ TP-M0-NF-001 through TP-M0-NF-004 are satisfied.
 - Run 37359364804 failed both runners on the probe message and exit code 1.
 
 Section 11 is not tripped. Verification was reproduced on the pinned toolchain, the red CI run was not ignored, and no undocumented project edit is recorded.
+
+## Corrections integrated before this package
+
+Parallel reviews found three defects in the tree those reviews had called sufficient. They are corrected on this branch, with regression tests:
+
+- The null renderer reused one mutable clear color. Results are now frozen.
+- `pnpm test` skipped a test file that was not named in `package.json`. Node now discovers `*.test.ts` and `*.test.mjs`.
+- `readManifest` let `JSON.parse` throw `RangeError` for a nested array inside the 4096-byte cap. Depth above 64 is `INVALID_SHAPE`, and a host `RangeError` is `INVALID_JSON`.
+
+The preview smoke now checks the served build, not only HTTP 200 and the content security policy. The discovery-gate failure probe is recorded in `m0-quality-trace.md`.

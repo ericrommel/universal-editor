@@ -34,7 +34,7 @@ Preview the static build with `corepack pnpm --filter @uvcp/shell preview`. That
 
 Continuous integration uses `corepack pnpm install --frozen-lockfile`. Do not use `pnpm ci`.
 
-`corepack pnpm test` runs the headless `node:test` suite. It discovers every `*.test.ts` and `*.test.mjs` file outside `node_modules`, `dist`, and `ts-out`. A test file with another suffix fails the command. It does not start a dev server or open a window.
+`corepack pnpm test` runs the headless `node:test` suite. It discovers every `*.test.ts` and `*.test.mjs` file outside `node_modules`, `dist`, `ts-out`, `build`, and `.git`. A test file with another suffix fails the command. It does not start a dev server or open a window.
 
 ## Verify
 

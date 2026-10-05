@@ -8,7 +8,9 @@ Compared commit `3cfa957` with `docs/engineering/architecture.md` and ADR-0001 t
 
 - Packages and the allowed import table match `scripts/boundaries.mjs` and the package manifests. The shell may import `@uvcp/ui`, `@uvcp/editor`, and `@uvcp/platform`. It imports the first two. It declares `@uvcp/platform` and does not import it.
 - `@uvcp/platform` has no capability and no runtime export. That is the host boundary in section 10. The work-breakdown words "platform marker" do not add an export. An export would be a capability Module 0 does not have.
-- `pnpm verify` runs the eight steps in section 11, in that order, and returns the first non-zero status.
+- `pnpm verify` runs the eight steps in section 11, in that order, and returns the first non-zero status. `pnpm test` discovers `*.test.ts` and `*.test.mjs` in Node. The preview smoke checks that the served files are the build and that the build contains the foundation copy and palette, and that it contains neither a canvas element nor the dev failure switch.
+- The null renderer freezes the result, the snapshot, the shared clear color, and the empty draw list.
+- A manifest nested deeper than 64 is `INVALID_SHAPE` before `JSON.parse`. A `RangeError` from `JSON.parse` becomes `INVALID_JSON`.
 - The null renderer records size, a fractional device-pixel ratio, an sRGB clear, and an empty draw list. It does not request a GPU.
 - Diagnostics use `startup.beginning`, `startup.ready`, and `startup.failed` with the closed fields. `UVCP_FORCE_INIT_FAILURE` is honored only by `pnpm dev`.
 - The production shell is static, with `base: "./"`, and the preview server binds to `127.0.0.1`.

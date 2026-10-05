@@ -28,7 +28,7 @@ This matrix maps the operational identifiers in `specification.md` to the implem
 | M0-AC-001 | `docs/engineering/developer-setup.md` | Cold empty-store install and verify, exit 0 | The documented commands succeed. No undocumented project edit is recorded | `evidence/reproducibility.md` | Pending |
 | M0-AC-002 | `pnpm dev` on loopback | Headed Microsoft Edge 154.0.4258.53 | Ready with the variable unset. Not ready with `UVCP_FORCE_INIT_FAILURE=1` | `evidence/launch/README.md` | Pending |
 | M0-AC-003 | `pnpm verify` | Local exit 0 and Actions run 37235385386 | The documented checks ran | Functional quality review | Pending |
-| M0-AC-004 | Deliberate failing test, then removal | Pull request 23 and draft pull request 28, run 37359364804 | Both required jobs failed with the probe message and exit 1. The probe was removed | `evidence/failure-clarity.md` | Pending |
+| M0-AC-004 | Deliberate failing test, then removal | Pull request 23, pull request 28, and the discovery-gate runs 37361409189 and 37361578198 | Both required jobs failed with the probe message and exit 1. The probe was removed. The current command discovers the probe file | `evidence/failure-clarity.md` and `evidence/m0-quality-trace.md` | Pending |
 | M0-AC-005 | `pnpm test` | Same command in CI without a display server | Passed without xvfb | `evidence/reproducibility.md` | Pending |
 | M0-AC-006 | Core imported by headless tests, not by the shell UI path | Editor test and boundary tests | Core tests do not import UI | Functional quality review | Pending |
 | M0-AC-007 | The verify workflow | Red runs 37192000472 and 37359364804, green run 37235385386 | CI reports failure when verify fails | Functional quality review | Pending |

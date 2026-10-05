@@ -440,17 +440,17 @@ WP-1 and WP-3 may proceed together after WP-0. WP-2 waits until the core and per
 
 ## Implementation record
 
-The binding decisions in this document are unchanged. Main implements that scope as follows.
+The binding decisions in this document are unchanged. This review branch contains the merged work plus the corrections below. It is not module acceptance and not GREEN.
 
 | ID | Outcome |
 | --- | --- |
-| WP-0 | On main. Workspace, pins, TypeScript references, Biome, boundary check, and license check. |
-| WP-1 | On main. Core numeric helpers and the provisional manifest codec, with headless tests. |
-| WP-2 | On main. Editor startup, diagnostic records, the headless composition script, and injected failure. |
-| WP-3 | On main. Null renderer snapshot. It records a fractional device-pixel ratio and does not request a GPU. |
-| WP-4 | On main for the foundation screen and the loopback shell. `@uvcp/platform` is the host boundary and has no capability. `packages/platform/src/index.ts` has no runtime export. The shell declares the dependency and does not import it, because Module 0 has no host call to make. |
-| WP-5 | On main. `pnpm verify` runs the boundary check, `tsc -b`, Biome, the license check, `pnpm audit --audit-level=high`, `pnpm test`, `pnpm build`, and the loopback preview smoke. GitHub Actions runs that command on `ubuntu-24.04` and `windows-2025`. Dependabot opens weekly pull requests and does not merge them. |
-| WP-6 | Evidence, not a feature. The pipeline baseline is `docs/modules/module-00-foundation/evidence/m0-pipeline-baseline.json` with `kind: observation`. The durations are not pass/fail thresholds. The candidate failure probe is draft pull request 28. Its red commit is not merged. |
+| WP-0 | Workspace, pins, TypeScript references, Biome, boundary check, and license check. |
+| WP-1 | Core numeric helpers and the provisional manifest codec, with headless tests. Nesting deeper than 64 is `INVALID_SHAPE` before `JSON.parse`. A `RangeError` from `JSON.parse` is `INVALID_JSON`. |
+| WP-2 | Editor startup, diagnostic records, the headless composition script, and injected failure. |
+| WP-3 | Null renderer snapshot. It records a fractional device-pixel ratio and does not request a GPU. The result, snapshot, clear color, and empty draw list are frozen. |
+| WP-4 | Foundation screen and the loopback shell. `@uvcp/platform` is the host boundary and has no capability. `packages/platform/src/index.ts` has no runtime export. The shell declares the dependency and does not import it, because Module 0 has no host call to make. |
+| WP-5 | `pnpm verify` runs the boundary check, `tsc -b`, Biome, the license check, `pnpm audit --audit-level=high`, `pnpm test`, `pnpm build`, and the loopback preview smoke. `pnpm test` discovers `*.test.ts` and `*.test.mjs`. The smoke checks the served build, not only the status line. GitHub Actions runs that command on `ubuntu-24.04` and `windows-2025`. Dependabot opens weekly pull requests and does not merge them. |
+| WP-6 | Evidence, not a feature. The pipeline baseline is `docs/modules/module-00-foundation/evidence/m0-pipeline-baseline.json` with `kind: observation`. The durations are not pass/fail thresholds. Failure probes are recorded in `docs/modules/module-00-foundation/evidence/failure-clarity.md` and `docs/modules/module-00-foundation/evidence/m0-quality-trace.md`. The red commits are not merged. |
 
 `pnpm dev` is the documented launch. The headed browser record is `docs/modules/module-00-foundation/evidence/launch/`. The preview smoke is build evidence and is not that launch.
 
@@ -464,7 +464,7 @@ The binding decisions in this document are unchanged. Main implements that scope
 | Test approach for every identifier | Met by the updated test plan plus this proposal. |
 | Design behavior defined | Met. The Product Owner confirmed the design review on 2026-10-02. |
 | Test infrastructure defined | Met. Listed in the test plan and in ADR-0005. |
-| Blocking security findings for preparation | Addressed by ADR-0007. Implementation evidence is still required later for M0-AC-011. |
+| Blocking security findings for preparation | Addressed by ADR-0007. The implementation review is `docs/modules/module-00-foundation/evidence/security-review.md` and records no blocking finding. That review is not Product Owner approval. |
 | Blocking architectural decisions for Module 0 | Met for the binding column. Revisitable direction and deferred items stay open. |
 | Product ambiguities that block Module 0 | Met. The four confirmations are recorded above. Deferred items are not Module 0 gates. |
 | Product Owner authorizes implementation | Met for the binding scope, by the 2026-10-02 approval, once the work item enters Ready for Development. This row is not module acceptance and not GREEN. |
