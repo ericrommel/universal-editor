@@ -81,7 +81,7 @@ Remove the deliberate failure after evidence is collected.
 Procedure:
 
 1. Start from the implementation candidate. Use a short-lived branch or draft pull request, for example `verify/m0-failure-propagation`. Do not use a reduced CI workflow.
-2. Add one new test file whose only purpose is the probe, so removal is a complete file delete. Do not edit an existing test. The assertion must be an ordinary failure with a fixed message, for example `M0 failure-propagation probe: this test must fail`. It must run under the same core test command CI runs, not under an excluded path.
+2. Add one new test file whose only purpose is the probe, so removal is a complete file delete. Do not edit an existing test. Name it `*.test.ts` or `*.test.mjs` outside `node_modules`, `dist`, and `ts-out`. `pnpm test` discovers those files; do not add the probe to a list in `package.json`. The assertion must be an ordinary failure with a fixed message, for example `M0 failure-propagation probe: this test must fail`. It must run under the same core test command CI runs, not under an excluded path.
 3. Run the documented local verification command. Keep the log. Pass condition for this step: non-zero exit, the probe name, and the message are visible without a private debugger.
 4. Push that commit and let the required CI test job run on that commit. Keep the job reference and the log excerpt. Pass condition: the test job status is failed, not skipped or neutral; the same probe message is in the log; the aggregate required check for the pull request is failed. A workflow syntax error, a cancelled job, or a failure in an unrelated job does not count.
 5. If the workflow swallows the test step, fix the wiring and repeat from step 3. Do not remove the probe first.

@@ -21,13 +21,17 @@ export type NullRenderResult = {
 };
 
 // No scene background exists in Module 0. Opaque sRGB black is the test double.
-const CLEAR: SrgbClearColor = {
+// Frozen and shared: a caller must not be able to store a scene by writing
+// into the object the next call would otherwise reuse.
+const CLEAR: SrgbClearColor = Object.freeze({
   space: "srgb",
   red: 0,
   green: 0,
   blue: 0,
   alpha: 1,
-};
+});
+
+const EMPTY_DRAW_LIST: readonly [] = Object.freeze([]);
 
 export function renderNull(
   cssWidth: number,
@@ -36,15 +40,15 @@ export function renderNull(
 ): NullRenderResult {
   // There is no framebuffer to snap. The product is the physical size, and
   // the ratio is the one used to compute it, including a fractional ratio.
-  return {
-    snapshot: {
+  return Object.freeze({
+    snapshot: Object.freeze({
       width: cssWidth * devicePixelRatio,
       height: cssHeight * devicePixelRatio,
       devicePixelRatio,
       clear: CLEAR,
-      drawList: [] as const,
-    },
+      drawList: EMPTY_DRAW_LIST,
+    }),
     backend: null,
     device: "not-requested",
-  };
+  });
 }

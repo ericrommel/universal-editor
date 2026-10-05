@@ -185,10 +185,10 @@ Root commands:
 | `pnpm dev` | Loopback shell. This is the documented launch for M0-AC-002. |
 | `pnpm start` | Alias of `pnpm dev`. |
 | `pnpm build` | Libraries and static shell assets. No installer. |
-| `pnpm test` | Headless `node --test`. Must not start Vite or open a window. |
+| `pnpm test` | Headless `node --test` for every `*.test.ts` and `*.test.mjs` file outside dependency, build, and declaration output. Another test suffix fails the command. Must not start Vite or open a window. |
 | `pnpm verify` | The single verification entrypoint. |
 
-`pnpm verify` runs, in order, and returns the first non-zero exit: boundary check, `tsc -b`, Biome, license check, `pnpm audit --audit-level=high`, `pnpm test`, `pnpm build`, headless preview smoke. The smoke requests `/` from the Vite preview server with Node. HTTP 200 is build evidence. It is not the graphical launch.
+`pnpm verify` runs, in order, and returns the first non-zero exit: boundary check, `tsc -b`, Biome, license check, `pnpm audit --audit-level=high`, `pnpm test`, `pnpm build`, headless preview smoke. The smoke requests `/` from the Vite preview server with Node. HTTP 200 with the production content security policy is build evidence only when the served document, script, and stylesheet are the built files, those files contain the foundation copy and palette, and the build contains neither a canvas element nor the dev failure switch. It is not the graphical launch.
 
 ## 12. Unit testing
 
@@ -242,7 +242,7 @@ Fields: `event`, `shell` (`browser`), `version` (`0.0.0`), `step`, and on failur
 
 The headless composition script writes these lines to stderr and exits non-zero on failure. The browser shell writes the same records with `console.error` and shows the matching status on screen. A window by itself is not evidence of startup.
 
-Initialization failure in tests is an injected initializer at the composition root. The production static build has no failure switch. `pnpm dev` honors `UVCP_FORCE_INIT_FAILURE=1` and rejects any other non-zero value. That variable is not compiled into the production bundle.
+Initialization failure in tests is an injected initializer at the composition root. The production static build has no failure switch. `pnpm dev` honors `UVCP_FORCE_INIT_FAILURE=1` and rejects any other non-zero value. That variable is not compiled into the production bundle. The preview smoke fails if a built file contains the variable name, the dev-only step id `forced-initialization-failure`, or `INVALID_INITIALIZATION_VALUE`.
 
 ## 18. Dependency boundaries
 
