@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import test from "node:test";
 import { foundationStatus } from "./foundation-status.ts";
 import { strings } from "./strings.ts";
@@ -201,6 +202,135 @@ test("visible status words are Starting, Ready, and Not ready", () => {
     }
   }
 });
+
+test("the foundation stylesheet uses the token palette, type, and space scale", () => {
+  const css = fs.readFileSync(
+    new URL("./foundation-screen.css", import.meta.url),
+    "utf8",
+  );
+  const flat = css.replace(/\s+/g, " ");
+  assert.equal(flat.includes(tokens.font.family.ui), true);
+  for (const palette of [tokens.color.light, tokens.color.dark]) {
+    for (const hex of [
+      palette.canvas,
+      palette.surface,
+      palette.text.primary,
+      palette.text.secondary,
+      palette.border,
+      palette.focus,
+      palette.status.ready,
+      palette.status.failed,
+    ]) {
+      assert.equal(css.toLowerCase().includes(hex.toLowerCase()), true, hex);
+    }
+  }
+  assert.match(
+    css,
+    new RegExp(`font-size:\\s*${escapeRegExp(tokens.type.display.size)}`),
+  );
+  assert.match(
+    css,
+    new RegExp(`font-size:\\s*${escapeRegExp(tokens.type.status.size)}`),
+  );
+  assert.match(
+    css,
+    new RegExp(`font-size:\\s*${escapeRegExp(tokens.type.body.size)}`),
+  );
+  assert.match(
+    css,
+    new RegExp(`font-size:\\s*${escapeRegExp(tokens.type.label.size)}`),
+  );
+  assert.match(
+    css,
+    new RegExp(`padding-top:\\s*${escapeRegExp(tokens.space[6])}`),
+  );
+  assert.match(
+    css,
+    new RegExp(`padding-top:\\s*${escapeRegExp(tokens.space[8])}`),
+  );
+  assert.match(
+    css,
+    new RegExp(`padding-bottom:\\s*${escapeRegExp(tokens.space[7])}`),
+  );
+  assert.match(
+    css,
+    new RegExp(`padding-inline:\\s*${escapeRegExp(tokens.space[5])}`),
+  );
+  assert.match(
+    css,
+    new RegExp(`padding-inline:\\s*${escapeRegExp(tokens.space[7])}`),
+  );
+  assert.match(
+    css,
+    new RegExp(`margin:\\s*${escapeRegExp(tokens.space[3])} 0 0`),
+  );
+  assert.match(
+    css,
+    new RegExp(`margin-top:\\s*${escapeRegExp(tokens.space[6])}`),
+  );
+  assert.match(css, new RegExp(`padding:\\s*${escapeRegExp(tokens.space[4])}`));
+  assert.match(
+    css,
+    new RegExp(`margin-top:\\s*${escapeRegExp(tokens.space[2])}`),
+  );
+  assert.match(css, new RegExp(`gap:\\s*${escapeRegExp(tokens.space[2])}`));
+  assert.match(
+    css,
+    new RegExp(`border-radius:\\s*${escapeRegExp(tokens.radius.surface)}`),
+  );
+  assert.match(
+    css,
+    new RegExp(`outline:\\s*${escapeRegExp(tokens.focus.ring.width)} solid`),
+  );
+  assert.match(
+    css,
+    new RegExp(`outline-offset:\\s*${escapeRegExp(tokens.focus.ring.offset)}`),
+  );
+  assert.match(css, /max-width:\s*36rem/);
+  assert.match(css, /width:\s*8px/);
+  assert.match(css, /height:\s*8px/);
+  assert.equal(css.includes("gradient"), false);
+  assert.equal(css.includes("@keyframes"), false);
+  assert.equal(css.includes("animation:"), false);
+  assert.equal(css.includes("text-overflow"), false);
+  assert.equal(css.includes("ellipsis"), false);
+  assert.equal(css.includes("<canvas"), false);
+  assert.match(css, /user-select:\s*text/);
+  assert.match(css, /white-space:\s*pre-wrap/);
+});
+
+test("the foundation screen source is one text column and not a markup sink", () => {
+  const source = fs.readFileSync(
+    new URL("./foundation-screen.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.equal(source.match(/<h1\b/g)?.length, 1);
+  assert.match(
+    source,
+    /<h1 className="uvcp-foundation-name">\{strings\.productName\}<\/h1>/,
+  );
+  assert.match(
+    source,
+    /<p className="uvcp-foundation-purpose">\{strings\.purpose\}<\/p>/,
+  );
+  assert.match(source, /\{presentation\.statusWord\}/);
+  assert.match(
+    source,
+    /<p className="uvcp-foundation-diagnostic">\{diagnosticText\}<\/p>/,
+  );
+  assert.match(source, /aria-hidden="true"/);
+  assert.match(source, /type="button"/);
+  assert.equal(source.includes("dangerouslySetInnerHTML"), false);
+  assert.equal(source.includes("<canvas"), false);
+  assert.equal(source.includes("<img"), false);
+  assert.equal(source.includes("autoFocus"), false);
+  assert.equal(source.includes("autofocus"), false);
+  assert.equal(source.includes("UVCP_FORCE_INIT_FAILURE"), false);
+});
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 function assertNoStartingKey(value: unknown): void {
   if (typeof value !== "object" || value === null) {

@@ -26,7 +26,7 @@ corepack pnpm start
 corepack pnpm build
 ```
 
-`corepack pnpm start` is an alias of `corepack pnpm dev`. Both serve the shell on `127.0.0.1` port `5173`. `corepack pnpm build` writes the static shell to `apps/shell/dist` with a relative base. It does not create an installer. `tsc -b` writes the shell's declarations to `apps/shell/ts-out` and does not write them into `apps/shell/dist`.
+`corepack pnpm start` is an alias of `corepack pnpm dev`. Both serve the shell on `127.0.0.1` port `5173`. Open `http://127.0.0.1:5173/` in current Microsoft Edge or current Google Chrome. The foundation screen shows Ready. Record which browser was used. Firefox, Safari, and other browsers are not this launch evidence, and this is not a browser-support matrix. `corepack pnpm build` writes the static shell to `apps/shell/dist` with a relative base. It does not create an installer. `tsc -b` writes the shell's declarations to `apps/shell/ts-out` and does not write them into `apps/shell/dist`.
 
 `UVCP_FORCE_INIT_FAILURE` is read only by `corepack pnpm dev`. Unset or `0` starts normally. `1` shows Not ready. Any other value also shows Not ready and is not treated as success. `corepack pnpm build` and `corepack pnpm --filter @uvcp/shell preview` do not read it. It is not a control on the screen.
 
@@ -34,7 +34,7 @@ Preview the static build with `corepack pnpm --filter @uvcp/shell preview`. That
 
 Continuous integration uses `corepack pnpm install --frozen-lockfile`. Do not use `pnpm ci`.
 
-`corepack pnpm test` runs the headless `node:test` suite. It does not start a dev server or open a window.
+`corepack pnpm test` runs the headless `node:test` suite. It discovers every `*.test.ts` and `*.test.mjs` file outside `node_modules`, `dist`, `ts-out`, `build`, and `.git`. A test file with another suffix fails the command. It does not start a dev server or open a window.
 
 ## Verify
 
@@ -51,7 +51,7 @@ Continuous integration uses `corepack pnpm install --frozen-lockfile`. Do not us
 
 It stops on the first failure and returns that process status. A Node.js version other than the pinned version fails the gate before those steps.
 
-The preview smoke runs after the build. It starts the shell preview on `127.0.0.1` port `5173` and requests `/` with Node. HTTP 200 with the production content security policy passes. Port `5173` must be free. The smoke does not open a window and is not the manual browser launch.
+The preview smoke runs after the build. It starts the shell preview on `127.0.0.1` port `5173` and requests `/` with Node. HTTP 200 with the production content security policy passes only when the served document, script, and stylesheet are the built files. Those files must contain the foundation copy and palette, and must not contain a canvas element or the dev failure switch. Port `5173` must be free. The smoke does not open a window and is not the manual browser launch.
 
 ## Continuous integration
 

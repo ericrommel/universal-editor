@@ -185,10 +185,10 @@ Root commands:
 | `pnpm dev` | Loopback shell. This is the documented launch for M0-AC-002. |
 | `pnpm start` | Alias of `pnpm dev`. |
 | `pnpm build` | Libraries and static shell assets. No installer. |
-| `pnpm test` | Headless `node --test`. Must not start Vite or open a window. |
+| `pnpm test` | Headless `node --test` for every `*.test.ts` and `*.test.mjs` file outside dependency, build, and declaration output. Another test suffix fails the command. Must not start Vite or open a window. |
 | `pnpm verify` | The single verification entrypoint. |
 
-`pnpm verify` runs, in order, and returns the first non-zero exit: boundary check, `tsc -b`, Biome, license check, `pnpm audit --audit-level=high`, `pnpm test`, `pnpm build`, headless preview smoke. The smoke requests `/` from the Vite preview server with Node. HTTP 200 is build evidence. It is not the graphical launch.
+`pnpm verify` runs, in order, and returns the first non-zero exit: boundary check, `tsc -b`, Biome, license check, `pnpm audit --audit-level=high`, `pnpm test`, `pnpm build`, headless preview smoke. The smoke requests `/` from the Vite preview server with Node. HTTP 200 with the production content security policy is build evidence only when the served document, script, and stylesheet are the built files, those files contain the foundation copy and palette, and the build contains neither a canvas element nor the dev failure switch. It is not the graphical launch.
 
 ## 12. Unit testing
 
@@ -242,7 +242,7 @@ Fields: `event`, `shell` (`browser`), `version` (`0.0.0`), `step`, and on failur
 
 The headless composition script writes these lines to stderr and exits non-zero on failure. The browser shell writes the same records with `console.error` and shows the matching status on screen. A window by itself is not evidence of startup.
 
-Initialization failure in tests is an injected initializer at the composition root. The production static build has no failure switch. `pnpm dev` honors `UVCP_FORCE_INIT_FAILURE=1` and rejects any other non-zero value. That variable is not compiled into the production bundle.
+Initialization failure in tests is an injected initializer at the composition root. The production static build has no failure switch. `pnpm dev` honors `UVCP_FORCE_INIT_FAILURE=1` and rejects any other non-zero value. That variable is not compiled into the production bundle. The preview smoke fails if a built file contains the variable name, the dev-only step id `forced-initialization-failure`, or `INVALID_INITIALIZATION_VALUE`.
 
 ## 18. Dependency boundaries
 
@@ -295,7 +295,7 @@ The shell is the web-only option from the security review, with these conditions
 - licenses of resolved packages must be on the allow-list in ADR-0007
 - CI has no secrets and does not use `pull_request_target`
 
-See ADR-0007. The threat model in the security review remains the Module 0 threat model. Its blocking findings are resolved for preparation by the decisions in that ADR. M0-AC-011 stays open until implementation matches them.
+See ADR-0007. The threat model in the security review remains the Module 0 threat model. Its blocking findings are resolved for preparation by the decisions in that ADR. The implementation review is `docs/modules/module-00-foundation/evidence/security-review.md`. It records no blocking finding. That review is not Product Owner approval.
 
 ## 23. Technical risks
 
@@ -392,7 +392,7 @@ The deliberate failing test for M0-AC-004 is a short-lived branch, never the app
 - Module 0 does not persist editor session state, because the only session state is startup. Whether later session state is saved is deferred.
 - No user projects exist, so Module 0 has no migration to perform. Hand-editing is not defined.
 - The repository remote stays on GitHub. Actions availability was not queried against the GitHub API.
-- External version and platform facts were checked by the specialist reviews on 2026-10-02. No shell was built, and no GPU process was launched, because there is no application to launch.
+- External version and platform facts were checked by the specialist reviews on 2026-10-02. No shell had been built at that date. The shell on main is the loopback Vite application in sections 4, 5, and 10. Module 0 still does not launch a GPU process.
 - React, TypeScript, Vite, and Biome are pinned to the exact versions that pass the license and audit checks on implementation day. This proposal does not invent patch numbers for them.
 - Reference hardware and product performance workloads are not decided. They do not block Module 0. They block the first module that makes a product performance claim.
 - Up-axis, handedness, rotation order, and degrees versus radians are deferred. They are not guessed here.
@@ -422,7 +422,7 @@ Not decided here. Notes under a bullet are analysis, not a selection:
 
 ## Implementation breakdown
 
-Implementation has not started. The order below is the breakdown for the approved binding scope. Work packages may proceed in parallel only where the dependencies allow it.
+The order below is the breakdown for the approved binding scope. Work packages may proceed in parallel only where the dependencies allow it. The outcome of that breakdown is the implementation record after the table. The record is not module acceptance and not GREEN.
 
 Each work package is implemented on its own branch and opened as a pull request linked to issue #1. That work is not committed directly to `main`.
 
@@ -438,6 +438,22 @@ Each work package is implemented on its own branch and opened as a pull request 
 
 WP-1 and WP-3 may proceed together after WP-0. WP-2 waits until the core and persistence exports it imports exist. WP-4 waits for editor startup. WP-6 is evidence, not a feature, and its red commit is not merged.
 
+## Implementation record
+
+The binding decisions in this document are unchanged. This review branch contains the merged work plus the corrections below. It is not module acceptance and not GREEN.
+
+| ID | Outcome |
+| --- | --- |
+| WP-0 | Workspace, pins, TypeScript references, Biome, boundary check, and license check. |
+| WP-1 | Core numeric helpers and the provisional manifest codec, with headless tests. A `RangeError` from `JSON.parse` is `INVALID_JSON`. The reader follows ADR-0006 and does not add a nesting-depth limit. |
+| WP-2 | Editor startup, diagnostic records, the headless composition script, and injected failure. |
+| WP-3 | Null renderer snapshot. It records a fractional device-pixel ratio and does not request a GPU. The result, snapshot, clear color, and empty draw list are frozen. |
+| WP-4 | Foundation screen and the loopback shell. `@uvcp/platform` is the host boundary and has no capability. `packages/platform/src/index.ts` has no runtime export. The shell declares the dependency and does not import it, because Module 0 has no host call to make. |
+| WP-5 | `pnpm verify` runs the boundary check, `tsc -b`, Biome, the license check, `pnpm audit --audit-level=high`, `pnpm test`, `pnpm build`, and the loopback preview smoke. `pnpm test` discovers `*.test.ts` and `*.test.mjs`. The smoke checks the served build, not only the status line. GitHub Actions runs that command on `ubuntu-24.04` and `windows-2025`. Dependabot opens weekly pull requests and does not merge them. |
+| WP-6 | Evidence, not a feature. The pipeline baseline is `docs/modules/module-00-foundation/evidence/m0-pipeline-baseline.json` with `kind: observation`. The durations are not pass/fail thresholds. Failure probes are recorded in `docs/modules/module-00-foundation/evidence/failure-clarity.md` and `docs/modules/module-00-foundation/evidence/m0-quality-trace.md`. The red commits are not merged. |
+
+`pnpm dev` is the documented launch. The headed browser record is `docs/modules/module-00-foundation/evidence/launch/`. The preview smoke is build evidence and is not that launch.
+
 ## Definition of Ready
 
 | Ready condition | State |
@@ -448,7 +464,7 @@ WP-1 and WP-3 may proceed together after WP-0. WP-2 waits until the core and per
 | Test approach for every identifier | Met by the updated test plan plus this proposal. |
 | Design behavior defined | Met. The Product Owner confirmed the design review on 2026-10-02. |
 | Test infrastructure defined | Met. Listed in the test plan and in ADR-0005. |
-| Blocking security findings for preparation | Addressed by ADR-0007. Implementation evidence is still required later for M0-AC-011. |
+| Blocking security findings for preparation | Addressed by ADR-0007. The implementation review is `docs/modules/module-00-foundation/evidence/security-review.md` and records no blocking finding. That review is not Product Owner approval. |
 | Blocking architectural decisions for Module 0 | Met for the binding column. Revisitable direction and deferred items stay open. |
 | Product ambiguities that block Module 0 | Met. The four confirmations are recorded above. Deferred items are not Module 0 gates. |
 | Product Owner authorizes implementation | Met for the binding scope, by the 2026-10-02 approval, once the work item enters Ready for Development. This row is not module acceptance and not GREEN. |

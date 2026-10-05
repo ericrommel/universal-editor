@@ -123,7 +123,9 @@ function parseWithSchemaSource(text: string): {
   try {
     value = JSON.parse(text, schemaReviver(sources));
   } catch (error) {
-    if (error instanceof SyntaxError) {
+    // JSON.parse walks arrays by recursion. A document inside the byte cap
+    // can still throw RangeError. That stays a domain error.
+    if (error instanceof SyntaxError || error instanceof RangeError) {
       invalidJson();
     }
     throw error;

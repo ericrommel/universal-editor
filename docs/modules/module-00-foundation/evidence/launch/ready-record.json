@@ -1,0 +1,565 @@
+{
+  "mode": "ready",
+  "browser": "Edg/154.0.4258.53",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+  "protocol": "1.3",
+  "headed": true,
+  "headlessFlag": false,
+  "windowArgument": "880x640",
+  "temporaryProfile": true,
+  "pageHeaders": {
+    "status": 200,
+    "csp": "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; connect-src 'self'"
+  },
+  "targetUrl": "http://127.0.0.1:5173/",
+  "readyLight": {
+    "title": "Foundation — Universal Visual Creation Platform",
+    "url": "http://127.0.0.1:5173/",
+    "innerWidth": 858,
+    "innerHeight": 550,
+    "appearance": "light",
+    "text": "Universal Visual Creation Platform\n\nA cross-platform environment for visual creation. This build only proves the application foundation. Creation tools are not part of it.\n\nStatus\n\nReady\n\nThe foundation started successfully.",
+    "canvasCount": 0,
+    "imageCount": 0,
+    "buttonCount": 0,
+    "buttons": [],
+    "scroll": {
+      "scrollWidth": 858,
+      "clientWidth": 858,
+      "scrollHeight": 550,
+      "clientHeight": 550
+    },
+    "box": {
+      "width": 858.4000244140625,
+      "height": 549.6000366210938
+    },
+    "name": {
+      "text": "Universal Visual Creation Platform",
+      "fontSize": "28px",
+      "fontWeight": "600",
+      "lineHeight": "35px",
+      "color": "rgb(28, 31, 38)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", sans-serif",
+      "textAlign": "start",
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "userSelect": "auto",
+      "whiteSpace": "normal"
+    },
+    "purpose": {
+      "text": "A cross-platform environment for visual creation. This build only proves the application foundation. Creation tools are not part of it.",
+      "fontSize": "17px",
+      "fontWeight": "400",
+      "lineHeight": "25.5px",
+      "color": "rgb(28, 31, 38)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", sans-serif",
+      "textAlign": "start",
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "userSelect": "auto",
+      "whiteSpace": "normal"
+    },
+    "label": {
+      "text": "Status",
+      "fontSize": "14px",
+      "fontWeight": "600",
+      "lineHeight": "19.6px",
+      "color": "rgb(58, 65, 80)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", sans-serif",
+      "textAlign": "start",
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "userSelect": "auto",
+      "whiteSpace": "normal"
+    },
+    "value": {
+      "text": "Ready",
+      "fontSize": "22px",
+      "fontWeight": "600",
+      "lineHeight": "28.6px",
+      "color": "rgb(28, 31, 38)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", sans-serif",
+      "textAlign": "start",
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "userSelect": "auto",
+      "whiteSpace": "normal"
+    },
+    "detail": {
+      "text": "The foundation started successfully.",
+      "fontSize": "17px",
+      "fontWeight": "400",
+      "lineHeight": "25.5px",
+      "color": "rgb(28, 31, 38)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", sans-serif",
+      "textAlign": "start",
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "userSelect": "auto",
+      "whiteSpace": "normal"
+    },
+    "diagnostic": null,
+    "dot": {
+      "text": "",
+      "fontSize": "22px",
+      "fontWeight": "600",
+      "lineHeight": "28.6px",
+      "color": "rgb(28, 31, 38)",
+      "backgroundColor": "rgb(20, 108, 67)",
+      "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", sans-serif",
+      "textAlign": "start",
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "userSelect": "auto",
+      "whiteSpace": "normal"
+    },
+    "rootFontSize": "16px"
+  },
+  "dark": {
+    "title": "Foundation — Universal Visual Creation Platform",
+    "url": "http://127.0.0.1:5173/",
+    "innerWidth": 858,
+    "innerHeight": 550,
+    "appearance": "dark",
+    "text": "Universal Visual Creation Platform\n\nA cross-platform environment for visual creation. This build only proves the application foundation. Creation tools are not part of it.\n\nStatus\n\nReady\n\nThe foundation started successfully.",
+    "canvasCount": 0,
+    "imageCount": 0,
+    "buttonCount": 0,
+    "buttons": [],
+    "scroll": {
+      "scrollWidth": 858,
+      "clientWidth": 858,
+      "scrollHeight": 550,
+      "clientHeight": 550
+    },
+    "box": {
+      "width": 858.4000244140625,
+      "height": 549.6000366210938
+    },
+    "name": {
+      "text": "Universal Visual Creation Platform",
+      "fontSize": "28px",
+      "fontWeight": "600",
+      "lineHeight": "35px",
+      "color": "rgb(244, 245, 247)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", sans-serif",
+      "textAlign": "start",
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "userSelect": "auto",
+      "whiteSpace": "normal"
+    },
+    "purpose": {
+      "text": "A cross-platform environment for visual creation. This build only proves the application foundation. Creation tools are not part of it.",
+      "fontSize": "17px",
+      "fontWeight": "400",
+      "lineHeight": "25.5px",
+      "color": "rgb(244, 245, 247)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", sans-serif",
+      "textAlign": "start",
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "userSelect": "auto",
+      "whiteSpace": "normal"
+    },
+    "label": {
+      "text": "Status",
+      "fontSize": "14px",
+      "fontWeight": "600",
+      "lineHeight": "19.6px",
+      "color": "rgb(197, 202, 211)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", sans-serif",
+      "textAlign": "start",
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "userSelect": "auto",
+      "whiteSpace": "normal"
+    },
+    "value": {
+      "text": "Ready",
+      "fontSize": "22px",
+      "fontWeight": "600",
+      "lineHeight": "28.6px",
+      "color": "rgb(244, 245, 247)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", sans-serif",
+      "textAlign": "start",
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "userSelect": "auto",
+      "whiteSpace": "normal"
+    },
+    "detail": {
+      "text": "The foundation started successfully.",
+      "fontSize": "17px",
+      "fontWeight": "400",
+      "lineHeight": "25.5px",
+      "color": "rgb(244, 245, 247)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", sans-serif",
+      "textAlign": "start",
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "userSelect": "auto",
+      "whiteSpace": "normal"
+    },
+    "diagnostic": null,
+    "dot": {
+      "text": "",
+      "fontSize": "22px",
+      "fontWeight": "600",
+      "lineHeight": "28.6px",
+      "color": "rgb(244, 245, 247)",
+      "backgroundColor": "rgb(155, 212, 176)",
+      "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", sans-serif",
+      "textAlign": "start",
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "userSelect": "auto",
+      "whiteSpace": "normal"
+    },
+    "rootFontSize": "16px"
+  },
+  "forced": {
+    "title": "Foundation — Universal Visual Creation Platform",
+    "url": "http://127.0.0.1:5173/",
+    "innerWidth": 858,
+    "innerHeight": 550,
+    "appearance": "forced",
+    "text": "Universal Visual Creation Platform\n\nA cross-platform environment for visual creation. This build only proves the application foundation. Creation tools are not part of it.\n\nStatus\n\nReady\n\nThe foundation started successfully.",
+    "canvasCount": 0,
+    "imageCount": 0,
+    "buttonCount": 0,
+    "buttons": [],
+    "scroll": {
+      "scrollWidth": 858,
+      "clientWidth": 858,
+      "scrollHeight": 550,
+      "clientHeight": 550
+    },
+    "box": {
+      "width": 858.4000244140625,
+      "height": 549.6000366210938
+    },
+    "name": {
+      "text": "Universal Visual Creation Platform",
+      "fontSize": "28px",
+      "fontWeight": "600",
+      "lineHeight": "35px",
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgba(255, 255, 255, 0)",
+      "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", sans-serif",
+      "textAlign": "start",
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "userSelect": "auto",
+      "whiteSpace": "normal"
+    },
+    "purpose": {
+      "text": "A cross-platform environment for visual creation. This build only proves the application foundation. Creation tools are not part of it.",
+      "fontSize": "17px",
+      "fontWeight": "400",
+      "lineHeight": "25.5px",
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgba(255, 255, 255, 0)",
+      "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", sans-serif",
+      "textAlign": "start",
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "userSelect": "auto",
+      "whiteSpace": "normal"
+    },
+    "label": {
+      "text": "Status",
+      "fontSize": "14px",
+      "fontWeight": "600",
+      "lineHeight": "19.6px",
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgba(255, 255, 255, 0)",
+      "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", sans-serif",
+      "textAlign": "start",
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "userSelect": "auto",
+      "whiteSpace": "normal"
+    },
+    "value": {
+      "text": "Ready",
+      "fontSize": "22px",
+      "fontWeight": "600",
+      "lineHeight": "28.6px",
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgba(255, 255, 255, 0)",
+      "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", sans-serif",
+      "textAlign": "start",
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "userSelect": "auto",
+      "whiteSpace": "normal"
+    },
+    "detail": {
+      "text": "The foundation started successfully.",
+      "fontSize": "17px",
+      "fontWeight": "400",
+      "lineHeight": "25.5px",
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgba(255, 255, 255, 0)",
+      "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", sans-serif",
+      "textAlign": "start",
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "userSelect": "auto",
+      "whiteSpace": "normal"
+    },
+    "diagnostic": null,
+    "dot": {
+      "text": "",
+      "fontSize": "22px",
+      "fontWeight": "600",
+      "lineHeight": "28.6px",
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(55, 0, 110)",
+      "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", sans-serif",
+      "textAlign": "start",
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "userSelect": "auto",
+      "whiteSpace": "normal"
+    },
+    "rootFontSize": "16px"
+  },
+  "scaled": {
+    "title": "Foundation — Universal Visual Creation Platform",
+    "url": "http://127.0.0.1:5173/",
+    "innerWidth": 640,
+    "innerHeight": 480,
+    "appearance": "light",
+    "text": "Universal Visual Creation Platform\n\nA cross-platform environment for visual creation. This build only proves the application foundation. Creation tools are not part of it.\n\nStatus\n\nReady\n\nThe foundation started successfully.",
+    "canvasCount": 0,
+    "imageCount": 0,
+    "buttonCount": 0,
+    "buttons": [],
+    "scroll": {
+      "scrollWidth": 625,
+      "clientWidth": 625,
+      "scrollHeight": 665,
+      "clientHeight": 480
+    },
+    "box": {
+      "width": 640,
+      "height": 480
+    },
+    "name": {
+      "text": "Universal Visual Creation Platform",
+      "fontSize": "56px",
+      "fontWeight": "600",
+      "lineHeight": "70px",
+      "color": "rgb(28, 31, 38)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", sans-serif",
+      "textAlign": "start",
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "userSelect": "auto",
+      "whiteSpace": "normal"
+    },
+    "purpose": {
+      "text": "A cross-platform environment for visual creation. This build only proves the application foundation. Creation tools are not part of it.",
+      "fontSize": "34px",
+      "fontWeight": "400",
+      "lineHeight": "51px",
+      "color": "rgb(28, 31, 38)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", sans-serif",
+      "textAlign": "start",
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "userSelect": "auto",
+      "whiteSpace": "normal"
+    },
+    "label": {
+      "text": "Status",
+      "fontSize": "28px",
+      "fontWeight": "600",
+      "lineHeight": "39.2px",
+      "color": "rgb(58, 65, 80)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", sans-serif",
+      "textAlign": "start",
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "userSelect": "auto",
+      "whiteSpace": "normal"
+    },
+    "value": {
+      "text": "Ready",
+      "fontSize": "44px",
+      "fontWeight": "600",
+      "lineHeight": "57.2px",
+      "color": "rgb(28, 31, 38)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", sans-serif",
+      "textAlign": "start",
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "userSelect": "auto",
+      "whiteSpace": "normal"
+    },
+    "detail": {
+      "text": "The foundation started successfully.",
+      "fontSize": "34px",
+      "fontWeight": "400",
+      "lineHeight": "51px",
+      "color": "rgb(28, 31, 38)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", sans-serif",
+      "textAlign": "start",
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "userSelect": "auto",
+      "whiteSpace": "normal"
+    },
+    "diagnostic": null,
+    "dot": {
+      "text": "",
+      "fontSize": "44px",
+      "fontWeight": "600",
+      "lineHeight": "57.2px",
+      "color": "rgb(28, 31, 38)",
+      "backgroundColor": "rgb(20, 108, 67)",
+      "fontFamily": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans\", sans-serif",
+      "textAlign": "start",
+      "overflow": "visible",
+      "textOverflow": "clip",
+      "userSelect": "auto",
+      "whiteSpace": "normal"
+    },
+    "rootFontSize": "32px"
+  },
+  "interaction": {
+    "tabbable": []
+  },
+  "console": [
+    {
+      "type": "debug",
+      "args": ["[vite] connecting..."]
+    },
+    {
+      "type": "debug",
+      "args": ["[vite] connecting..."]
+    },
+    {
+      "type": "debug",
+      "args": ["[vite] connected."]
+    },
+    {
+      "type": "info",
+      "args": [
+        "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools",
+        "font-weight:bold"
+      ]
+    },
+    {
+      "type": "error",
+      "args": [
+        "{\"event\":\"startup.beginning\",\"shell\":\"browser\",\"version\":\"0.0.0\",\"step\":\"initialize\"}"
+      ]
+    },
+    {
+      "type": "error",
+      "args": [
+        "{\"event\":\"startup.ready\",\"shell\":\"browser\",\"version\":\"0.0.0\",\"step\":\"initialize\"}"
+      ]
+    },
+    {
+      "type": "debug",
+      "args": ["[vite] connecting..."]
+    },
+    {
+      "type": "debug",
+      "args": ["[vite] connected."]
+    },
+    {
+      "type": "info",
+      "args": [
+        "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools",
+        "font-weight:bold"
+      ]
+    },
+    {
+      "type": "error",
+      "args": [
+        "{\"event\":\"startup.beginning\",\"shell\":\"browser\",\"version\":\"0.0.0\",\"step\":\"initialize\"}"
+      ]
+    },
+    {
+      "type": "error",
+      "args": [
+        "{\"event\":\"startup.ready\",\"shell\":\"browser\",\"version\":\"0.0.0\",\"step\":\"initialize\"}"
+      ]
+    },
+    {
+      "type": "debug",
+      "args": ["[vite] connecting..."]
+    },
+    {
+      "type": "debug",
+      "args": ["[vite] connected."]
+    },
+    {
+      "type": "info",
+      "args": [
+        "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools",
+        "font-weight:bold"
+      ]
+    },
+    {
+      "type": "error",
+      "args": [
+        "{\"event\":\"startup.beginning\",\"shell\":\"browser\",\"version\":\"0.0.0\",\"step\":\"initialize\"}"
+      ]
+    },
+    {
+      "type": "error",
+      "args": [
+        "{\"event\":\"startup.ready\",\"shell\":\"browser\",\"version\":\"0.0.0\",\"step\":\"initialize\"}"
+      ]
+    },
+    {
+      "type": "debug",
+      "args": ["[vite] connecting..."]
+    },
+    {
+      "type": "debug",
+      "args": ["[vite] connected."]
+    },
+    {
+      "type": "info",
+      "args": [
+        "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools",
+        "font-weight:bold"
+      ]
+    },
+    {
+      "type": "error",
+      "args": [
+        "{\"event\":\"startup.beginning\",\"shell\":\"browser\",\"version\":\"0.0.0\",\"step\":\"initialize\"}"
+      ]
+    },
+    {
+      "type": "error",
+      "args": [
+        "{\"event\":\"startup.ready\",\"shell\":\"browser\",\"version\":\"0.0.0\",\"step\":\"initialize\"}"
+      ]
+    }
+  ],
+  "exceptions": []
+}

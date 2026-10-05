@@ -271,6 +271,55 @@ test("the wrong shape, format, and schema version are distinct", () => {
   );
 });
 
+test("a host stack overflow while reading a manifest stays a domain error", () => {
+  const deep = textBytes(`${"[".repeat(2048)}${"]".repeat(2048)}`);
+  assert.equal(deep.byteLength, 4096);
+  let hostOverflow = false;
+  try {
+    JSON.parse(new TextDecoder().decode(deep), (_key, value) => value);
+  } catch (error) {
+    hostOverflow = error instanceof RangeError;
+  }
+  expectManifest(
+    deep,
+    hostOverflow ? "INVALID_JSON" : "INVALID_SHAPE",
+    hostOverflow
+      ? "Manifest is not valid JSON."
+      : "Manifest shape is not accepted.",
+  );
+  // Eighty levels is above the rejected cutoff and still inside the byte cap.
+  // Malformed JSON stays invalid JSON. A nested version stays a version
+  // failure. A duplicate key stays a duplicate key. Brackets in a string
+  // are not structure.
+  expectManifest(
+    textBytes("[".repeat(80)),
+    "INVALID_JSON",
+    "Manifest is not valid JSON.",
+  );
+  expectManifest(
+    textBytes(nestedSchemaVersion(80)),
+    "UNSUPPORTED_SCHEMA_VERSION",
+    "Manifest schema version is not supported.",
+  );
+  expectManifest(
+    textBytes(
+      `{"formatId":"${FORMAT_ID}","formatId":"${FORMAT_ID}","schemaVersion":${"[".repeat(70)}1${"]".repeat(70)}}`,
+    ),
+    "DUPLICATE_KEY",
+    "Manifest contains a duplicate key.",
+  );
+  expectManifest(
+    textBytes(`{"formatId":"${"{".repeat(80)}","schemaVersion":1}`),
+    "UNSUPPORTED_FORMAT",
+    "Manifest format is not supported.",
+  );
+  expectManifest(
+    textBytes(`{"formatId":"a}b{c\\"d","schemaVersion":1}`),
+    "UNSUPPORTED_FORMAT",
+    "Manifest format is not supported.",
+  );
+});
+
 test("4096 bytes are accepted and 4097 bytes are not parsed", () => {
   const accepted = sizedManifest(4096);
   assert.equal(accepted.byteLength, 4096);
@@ -420,6 +469,14 @@ function nestedArrays(depth: number): Uint8Array {
     text = `[${text}]`;
   }
   return textBytes(text);
+}
+
+function nestedSchemaVersion(depth: number): string {
+  let token = "1";
+  for (let count = 0; count < depth; count += 1) {
+    token = `[${token}]`;
+  }
+  return `{"formatId":"${FORMAT_ID}","schemaVersion":${token}}`;
 }
 
 function expectManifest(

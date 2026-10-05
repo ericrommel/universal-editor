@@ -1,6 +1,6 @@
 # Module 0 — Engineering Foundation
 
-**Status:** PLANNED
+**Status:** Pending Product Owner acceptance. The requirements below are unchanged. This status is not GREEN.
 
 ## 1. Objective
 

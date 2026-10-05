@@ -10,7 +10,6 @@
     "rewriteRelativeImportExtensions": true
   },
   "include": ["src", "vite.config.ts"],
-  "exclude": ["src/**/*.test.ts"],
   "references": [
     { "path": "../../packages/ui" },
     { "path": "../../packages/editor" },
