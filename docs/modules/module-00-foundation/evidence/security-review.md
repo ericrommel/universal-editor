@@ -6,7 +6,7 @@
 
 Commit reviewed: `3cfa957e46baef128059243430a62fe02576ef66`. Preparation findings SEC-M0-B-001 through SEC-M0-B-008 are not reopened. Electron and Tauri are not present, so those later lists in ADR-0007 are not in force.
 
-The Tech Lead recorded this review after the commit. The only later product-source edit on the review branch is a comment in `packages/platform/src/index.ts`. The file still has no runtime export. Developer setup now names Edge or Chrome for the loopback launch. Neither change adds a capability, a secret, or a network client.
+The Tech Lead recorded this review after the commit. Later product-source edits on the review branch are a comment in `packages/platform/src/index.ts` and the removal of the pre-parse nesting scanner in `packages/persistence/src/manifest.ts`. The platform file still has no runtime export. The reader still turns `SyntaxError` and `RangeError` from `JSON.parse` into `INVALID_JSON` and does not add a manifest field. This security review was not repeated for that removal. Developer setup now names Edge or Chrome for the loopback launch. None of these edits adds a capability, a secret, or a network client.
 
 ## Controls
 

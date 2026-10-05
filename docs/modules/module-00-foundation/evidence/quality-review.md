@@ -39,6 +39,6 @@ Parallel reviews found three defects in the tree those reviews had called suffic
 
 - The null renderer reused one mutable clear color. Results are now frozen.
 - `pnpm test` skipped a test file that was not named in `package.json`. Node now discovers `*.test.ts` and `*.test.mjs`.
-- `readManifest` let `JSON.parse` throw `RangeError` for a nested array inside the 4096-byte cap. A host `RangeError` is `INVALID_JSON`. The reader follows ADR-0006 and does not add a nesting-depth limit.
+- `readManifest` let `JSON.parse` throw `RangeError` for a nested array inside the 4096-byte cap. A host `RangeError` is `INVALID_JSON`. The reader follows ADR-0006 and does not add a nesting-depth limit. A document deeper than the rejected depth of 64 keeps the existing JSON, duplicate-key, shape, and version result.
 
 The preview smoke now checks the served build, not only HTTP 200 and the content security policy. The discovery-gate failure probe is recorded in `m0-quality-trace.md`.

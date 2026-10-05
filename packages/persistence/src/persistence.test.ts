@@ -288,7 +288,9 @@ test("a host stack overflow while reading a manifest stays a domain error", () =
       : "Manifest shape is not accepted.",
   );
   // Eighty levels is above the rejected cutoff and still inside the byte cap.
-  // Malformed JSON stays invalid JSON. A nested version token stays a version failure.
+  // Malformed JSON stays invalid JSON. A nested version stays a version
+  // failure. A duplicate key stays a duplicate key. Brackets in a string
+  // are not structure.
   expectManifest(
     textBytes("[".repeat(80)),
     "INVALID_JSON",
@@ -298,6 +300,23 @@ test("a host stack overflow while reading a manifest stays a domain error", () =
     textBytes(nestedSchemaVersion(80)),
     "UNSUPPORTED_SCHEMA_VERSION",
     "Manifest schema version is not supported.",
+  );
+  expectManifest(
+    textBytes(
+      `{"formatId":"${FORMAT_ID}","formatId":"${FORMAT_ID}","schemaVersion":${"[".repeat(70)}1${"]".repeat(70)}}`,
+    ),
+    "DUPLICATE_KEY",
+    "Manifest contains a duplicate key.",
+  );
+  expectManifest(
+    textBytes(`{"formatId":"${"{".repeat(80)}","schemaVersion":1}`),
+    "UNSUPPORTED_FORMAT",
+    "Manifest format is not supported.",
+  );
+  expectManifest(
+    textBytes(`{"formatId":"a}b{c\\"d","schemaVersion":1}`),
+    "UNSUPPORTED_FORMAT",
+    "Manifest format is not supported.",
   );
 });
 
