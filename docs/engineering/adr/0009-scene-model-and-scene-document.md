@@ -27,7 +27,7 @@ The transform is three canonical finite triples from `canonicalizeFiniteTriple`:
 
 Dimensions are canonical finite numbers. Zero and negative values round-trip. This module does not decide that a size must be positive.
 
-Operations return a new scene. They do not mutate the previous value. `createScene` returns an empty scene with no selection. `addNode` inserts a node under a named parent, or at the root when no parent is given. `selectNode` selects an existing id. `clearSelection` clears it. `deleteSelection` removes the selected node and that node's descendants, and clears the selection. Nodes outside that subtree stay equal.
+Operations return a new scene. They do not mutate the previous value. `createScene` returns an empty scene with no selection. `addNode` appends a node at the end of a named parent's child list, or at the end of the root list when no parent is given. `selectNode` selects an existing id. `clearSelection` clears it. `deleteSelection` removes the selected node and that node's descendants, and clears the selection. Nodes outside that subtree stay equal. A rejected operation throws `DomainError` and returns no replacement scene.
 
 Ids are unique in the scene, non-empty, and at most 64 UTF-8 bytes. The caller supplies the id. Error messages do not include the document or the id.
 
@@ -37,7 +37,7 @@ The codec lives in `@uvcp/persistence`. Persistence still does not call the file
 
 The scene document is not the provisional manifest. `writeManifest` still emits exactly `{"formatId":"universal-visual-creation-project","schemaVersion":1}`.
 
-The scene format id proposed here is `universal-visual-creation-scene`, schema version integer `1`. The writer is deterministic for one scene value. The reader accepts insignificant whitespace and either key order, rejects duplicate keys, unknown keys, a non-integer version, and the wrong format id, and returns a new scene. `SyntaxError` and `RangeError` from `JSON.parse` are invalid JSON. There is no nesting-depth limit.
+The scene format id proposed here is `universal-visual-creation-scene`, schema version integer `1`. The writer is deterministic for one scene value. The reader rejects a leading BOM and ill-formed UTF-8 before `JSON.parse`. It accepts insignificant whitespace and either key order. It rejects duplicate keys on every object, including keys that differ only by JSON escaping, unknown keys, a non-integer version, and the wrong format id. It returns a new scene built from known fields. It does not copy the parsed object. `SyntaxError` and `RangeError` from `JSON.parse` become `DomainError` invalid JSON. The host error is not the message and not the cause. There is no nesting-depth limit.
 
 The byte cap is 262144. The 4096-byte manifest cap stays the cap for that two-field document only. A scene needs its own bound so the parser is not handed an unbounded value. 256 KiB is large enough for the hierarchy this module tests and is not a product project-size limit.
 

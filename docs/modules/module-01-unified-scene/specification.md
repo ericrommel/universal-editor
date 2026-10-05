@@ -67,15 +67,15 @@ The core shall add a box node with a caller-supplied id and finite width, height
 
 ### M1-FR-005 — Transform
 
-Every node shall store position, rotation, and scale as canonical finite triples. `-0` becomes `0`. A non-finite component is rejected and does not change the scene.
+Every node shall store position, rotation, and scale as canonical finite triples. `-0` becomes `0`. A non-finite component throws `DomainError` and does not change the scene.
 
 ### M1-FR-006 — Selection
 
-The core shall select an existing node by id and shall clear that selection. An unknown id is rejected and does not change the scene.
+The core shall select an existing node by id and shall clear that selection. An unknown id throws `DomainError` and does not change the scene. Adding a node appends it at the end of the named parent's children, or at the end of the root list when no parent is given.
 
 ### M1-FR-007 — Removal
 
-Deleting the selection shall remove that node and its descendants and shall clear the selection. Nodes outside that subtree keep their ids, kinds, dimensions, transforms, and child order. Deleting with no selection is rejected and does not change the scene.
+Deleting the selection shall remove that node and its descendants and shall clear the selection. Nodes outside that subtree keep their ids, kinds, dimensions, transforms, and child order. Deleting with no selection throws `DomainError` and does not change the scene.
 
 ### M1-FR-008 — Scene document
 
@@ -97,7 +97,7 @@ Writing the same scene twice yields the same bytes. Reading those bytes yields a
 
 ### M1-NFR-004 — Reject the whole document
 
-A document that fails validation throws `DomainError` and yields no scene. The error message does not include the document bytes. The caller's previous scene value is not modified.
+A document that fails validation throws `DomainError` and yields no scene. The reader rejects a BOM and ill-formed UTF-8 before `JSON.parse`. Duplicate keys are rejected on every object, including escape-equivalent spellings. The scene is built from known fields and is not the parsed object. The error message does not include the document bytes, and the host `SyntaxError` is not the message or the cause. The caller's previous scene value is not modified.
 
 ### M1-NFR-005 — Module 0 regression
 
@@ -139,7 +139,7 @@ After the scene codec is present, `writeManifest` still returns the closed Modul
 
 ### M1-AC-007 — Bad document
 
-An empty document, a document over 262144 bytes, malformed JSON, a duplicate key, an unknown key, a duplicate id, and an unknown kind each throw `DomainError` and do not echo a sentinel planted in the input.
+An empty document, a leading BOM, ill-formed UTF-8, a document over 262144 bytes, malformed JSON, a duplicate key at the root or on a nested object, an escape-equivalent duplicate key, an unknown key, a duplicate id, and an unknown kind each throw `DomainError` and do not echo a sentinel planted in the input.
 
 ## 8. Verification
 
