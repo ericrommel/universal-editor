@@ -445,7 +445,7 @@ The binding decisions in this document are unchanged. This review branch contain
 | ID | Outcome |
 | --- | --- |
 | WP-0 | Workspace, pins, TypeScript references, Biome, boundary check, and license check. |
-| WP-1 | Core numeric helpers and the provisional manifest codec, with headless tests. Nesting deeper than 64 is `INVALID_SHAPE` before `JSON.parse`. A `RangeError` from `JSON.parse` is `INVALID_JSON`. |
+| WP-1 | Core numeric helpers and the provisional manifest codec, with headless tests. A `RangeError` from `JSON.parse` is `INVALID_JSON`. The reader follows ADR-0006 and does not add a nesting-depth limit. |
 | WP-2 | Editor startup, diagnostic records, the headless composition script, and injected failure. |
 | WP-3 | Null renderer snapshot. It records a fractional device-pixel ratio and does not request a GPU. The result, snapshot, clear color, and empty draw list are frozen. |
 | WP-4 | Foundation screen and the loopback shell. `@uvcp/platform` is the host boundary and has no capability. `packages/platform/src/index.ts` has no runtime export. The shell declares the dependency and does not import it, because Module 0 has no host call to make. |

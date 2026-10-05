@@ -7,13 +7,6 @@ const SCHEMA_VERSION = 1;
 // This cap is only the provisional manifest, not a project-size limit.
 const MANIFEST_BYTE_LIMIT = 4096;
 
-// JSON.parse walks arrays by recursion. 4096 bytes holds 2048 brackets, and
-// on this host that throws RangeError once depth passes roughly 1600, while
-// depth 40 still parses. A flat manifest is depth 1. Deeper than this is
-// rejected before the host parser recurses, so the failure stays a
-// DomainError on every supported stack size.
-const MAX_MANIFEST_NESTING = 64;
-
 const EMPTY = "Manifest is empty.";
 const TOO_LARGE = "Manifest exceeds the size limit.";
 const INVALID_ENCODING = "Manifest is not UTF-8 text.";
@@ -63,9 +56,6 @@ export function readManifest(input: Uint8Array): ProvisionalManifest {
       throw new DomainError("INVALID_ENCODING", INVALID_ENCODING);
     }
     throw error;
-  }
-  if (nestingExceedsLimit(text)) {
-    throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
   }
   const parsed = parseWithSchemaSource(text);
   return manifestFrom(parsed.value, parsed.schemaSource);
@@ -124,53 +114,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function nestingExceedsLimit(text: string): boolean {
-  let depth = 0;
-  let index = 0;
-  while (index < text.length) {
-    const char = text.charAt(index);
-    if (char === '"') {
-      const next = skipQuoted(text, index);
-      if (next === null) {
-        return false;
-      }
-      index = next;
-      continue;
-    }
-    if (char === "{" || char === "[") {
-      depth += 1;
-      if (depth > MAX_MANIFEST_NESTING) {
-        return true;
-      }
-      index += 1;
-      continue;
-    }
-    if ((char === "}" || char === "]") && depth > 0) {
-      depth -= 1;
-    }
-    index += 1;
-  }
-  return false;
-}
-
-function skipQuoted(text: string, index: number): number | null {
-  index += 1;
-  while (index < text.length) {
-    const char = text.charAt(index);
-    if (char === "\\") {
-      // The next source character is escaped, so a quote here is not the
-      // end of the string. Brackets in the string are not structure.
-      index += 2;
-      continue;
-    }
-    if (char === '"') {
-      return index + 1;
-    }
-    index += 1;
-  }
-  return null;
-}
-
 function parseWithSchemaSource(text: string): {
   readonly value: unknown;
   readonly schemaSource: string | undefined;
@@ -180,8 +123,8 @@ function parseWithSchemaSource(text: string): {
   try {
     value = JSON.parse(text, schemaReviver(sources));
   } catch (error) {
-    // The nesting cap is the stable path. This still covers a host that
-    // overflows inside the cap, so the engine exception does not escape.
+    // JSON.parse walks arrays by recursion. A document inside the byte cap
+    // can still throw RangeError. That stays a domain error.
     if (error instanceof SyntaxError || error instanceof RangeError) {
       invalidJson();
     }

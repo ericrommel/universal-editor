@@ -271,29 +271,21 @@ test("the wrong shape, format, and schema version are distinct", () => {
   );
 });
 
-test("nesting past the portable parse limit is a shape failure", () => {
+test("a host stack overflow while reading a manifest stays a domain error", () => {
   const deep = textBytes(`${"[".repeat(2048)}${"]".repeat(2048)}`);
   assert.equal(deep.byteLength, 4096);
-  expectManifest(deep, "INVALID_SHAPE", "Manifest shape is not accepted.");
+  let hostOverflow = false;
+  try {
+    JSON.parse(new TextDecoder().decode(deep), (_key, value) => value);
+  } catch (error) {
+    hostOverflow = error instanceof RangeError;
+  }
   expectManifest(
-    textBytes("[".repeat(80)),
-    "INVALID_SHAPE",
-    "Manifest shape is not accepted.",
-  );
-  expectManifest(
-    textBytes(nestedSchemaVersion(40)),
-    "UNSUPPORTED_SCHEMA_VERSION",
-    "Manifest schema version is not supported.",
-  );
-  expectManifest(
-    textBytes(`{"formatId":"${"{".repeat(80)}","schemaVersion":1}`),
-    "UNSUPPORTED_FORMAT",
-    "Manifest format is not supported.",
-  );
-  expectManifest(
-    textBytes(`{"formatId":"a}b{c\\"d","schemaVersion":1}`),
-    "UNSUPPORTED_FORMAT",
-    "Manifest format is not supported.",
+    deep,
+    hostOverflow ? "INVALID_JSON" : "INVALID_SHAPE",
+    hostOverflow
+      ? "Manifest is not valid JSON."
+      : "Manifest shape is not accepted.",
   );
 });
 
@@ -446,14 +438,6 @@ function nestedArrays(depth: number): Uint8Array {
     text = `[${text}]`;
   }
   return textBytes(text);
-}
-
-function nestedSchemaVersion(depth: number): string {
-  let token = "1";
-  for (let count = 0; count < depth; count += 1) {
-    token = `[${token}]`;
-  }
-  return `{"formatId":"${FORMAT_ID}","schemaVersion":${token}}`;
 }
 
 function expectManifest(
