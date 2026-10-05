@@ -2,6 +2,7 @@ import { startSession } from "@uvcp/editor";
 import { FoundationScreen } from "@uvcp/ui";
 import { createRoot } from "react-dom/client";
 import { applyDevFailure } from "./dev-failure.ts";
+import { foundationProps } from "./foundation-props.ts";
 import "./shell.css";
 
 const rootElement = document.getElementById("root");
@@ -23,11 +24,6 @@ const session = startSession({
   },
 });
 
-const view =
-  session.status === "failed" ? (
-    <FoundationScreen status={session.status} diagnostic={session.message} />
-  ) : (
-    <FoundationScreen status={session.status} />
-  );
-
-createRoot(rootElement).render(view);
+createRoot(rootElement).render(
+  <FoundationScreen {...foundationProps(session)} />,
+);

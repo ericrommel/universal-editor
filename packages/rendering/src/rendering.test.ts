@@ -27,3 +27,24 @@ test("an integer ratio uses the same physical-size rule", () => {
   assert.equal(result.snapshot.devicePixelRatio, 2);
   assert.equal(result.snapshot.drawList.length, 0);
 });
+
+test("a null snapshot cannot be mutated into a shared scene", () => {
+  const result = renderNull(8, 4, 1.5);
+  assert.equal(Object.isFrozen(result), true);
+  assert.equal(Object.isFrozen(result.snapshot), true);
+  assert.equal(Object.isFrozen(result.snapshot.clear), true);
+  assert.equal(Object.isFrozen(result.snapshot.drawList), true);
+  const clear = result.snapshot.clear as { red: number };
+  assert.throws(() => {
+    clear.red = 1;
+  }, TypeError);
+  const drawList = result.snapshot.drawList as unknown[];
+  assert.throws(() => {
+    drawList.push(1);
+  }, TypeError);
+  const again = renderNull(8, 4, 1.5);
+  assert.equal(again.snapshot.clear.red, 0);
+  assert.equal(again.snapshot.drawList.length, 0);
+  assert.equal(again.snapshot.clear, result.snapshot.clear);
+  assert.equal(again.snapshot.drawList, result.snapshot.drawList);
+});

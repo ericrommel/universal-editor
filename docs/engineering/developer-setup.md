@@ -34,7 +34,7 @@ Preview the static build with `corepack pnpm --filter @uvcp/shell preview`. That
 
 Continuous integration uses `corepack pnpm install --frozen-lockfile`. Do not use `pnpm ci`.
 
-`corepack pnpm test` runs the headless `node:test` suite. It does not start a dev server or open a window.
+`corepack pnpm test` runs the headless `node:test` suite. It discovers every `*.test.ts` and `*.test.mjs` file outside `node_modules`, `dist`, and `ts-out`. A test file with another suffix fails the command. It does not start a dev server or open a window.
 
 ## Verify
 
@@ -51,7 +51,7 @@ Continuous integration uses `corepack pnpm install --frozen-lockfile`. Do not us
 
 It stops on the first failure and returns that process status. A Node.js version other than the pinned version fails the gate before those steps.
 
-The preview smoke runs after the build. It starts the shell preview on `127.0.0.1` port `5173` and requests `/` with Node. HTTP 200 with the production content security policy passes. Port `5173` must be free. The smoke does not open a window and is not the manual browser launch.
+The preview smoke runs after the build. It starts the shell preview on `127.0.0.1` port `5173` and requests `/` with Node. HTTP 200 with the production content security policy passes only when the served document, script, and stylesheet are the built files. Those files must contain the foundation copy and palette, and must not contain a canvas element or the dev failure switch. Port `5173` must be free. The smoke does not open a window and is not the manual browser launch.
 
 ## Continuous integration
 
