@@ -287,6 +287,18 @@ test("a host stack overflow while reading a manifest stays a domain error", () =
       ? "Manifest is not valid JSON."
       : "Manifest shape is not accepted.",
   );
+  // Eighty levels is above the rejected cutoff and still inside the byte cap.
+  // Malformed JSON stays invalid JSON. A nested version token stays a version failure.
+  expectManifest(
+    textBytes("[".repeat(80)),
+    "INVALID_JSON",
+    "Manifest is not valid JSON.",
+  );
+  expectManifest(
+    textBytes(nestedSchemaVersion(80)),
+    "UNSUPPORTED_SCHEMA_VERSION",
+    "Manifest schema version is not supported.",
+  );
 });
 
 test("4096 bytes are accepted and 4097 bytes are not parsed", () => {
@@ -438,6 +450,14 @@ function nestedArrays(depth: number): Uint8Array {
     text = `[${text}]`;
   }
   return textBytes(text);
+}
+
+function nestedSchemaVersion(depth: number): string {
+  let token = "1";
+  for (let count = 0; count < depth; count += 1) {
+    token = `[${token}]`;
+  }
+  return `{"formatId":"${FORMAT_ID}","schemaVersion":${token}}`;
 }
 
 function expectManifest(
