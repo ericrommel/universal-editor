@@ -28,29 +28,37 @@ These come from the approved Module 0 architecture and the development process. 
 - The foundation shell has no viewport, canvas, hierarchy, selection, or save command. Those stay out of the foundation screen until an approved Module 1 scope adds them.
 - A new dependency has to pass the existing license rule and `pnpm audit --audit-level=high`. A second scene language requires a new ADR.
 
-## 3. Decisions that block pass/fail criteria
+## 3. Rows the test plan cannot close
 
-The approved architecture leaves these open. A test that picks an answer would be a product decision.
+Pull request #33 proposes M1-FR-001 through M1-FR-008, M1-NFR-001 through M1-NFR-007, and M1-AC-001 through M1-AC-007. `../test-plan.md` traces those identifiers. The reviews under `reviews/` were written against the starter position and disagree with that proposal on the rows below. A test that picked one expected result would decide the row.
 
-- Whether archive section 9.2 is the scope to prepare.
-- One scene per project, or more than one.
-- Public format identifier, extension, one file or a folder, and whether hand-editing is supported.
-- Up axis, handedness, rotation order, and degrees versus radians.
-- Whether the first slice includes save and reload, and whether it includes undo.
-- Whether selection is from a hierarchy, a viewport, or both.
-- Which 2D primitive and which 3D primitive are in scope, if primitives are in scope.
+- Where selection lives, and whether the scene document contains it.
+- Which extent values are legal, and whether extents are fields.
+- The scene JSON shape, the writer order, the format fields, and the byte cap.
+- Whether insert can choose an index, and whether delete of a parent removes descendants.
+- Stable `DomainError` codes. The proposal names the type and does not name the codes.
 
-## 4. Evidence still required before implementation
+`proposal-review.md` records both results for each row. Those rows are the discussion between the proposal and the reviews. They are not a request for the Product Owner to approve a scope.
 
-Definition of Ready is development process section 8. For Module 1 that means an operational specification, stable identifiers, a test approach for every identifier, design behavior, and the test infrastructure, each approved at the preparation gate. This note does not supply those artifacts.
+Coordinates, pivot, a viewport, undo, a second scene, a file extension, and hand-editing stay out of the pass/fail rows. The proposal already says the stored numbers are not an axis decision. Archive section 9.2 stays context.
 
-No scene type, viewport, persistence format, package, or test is added here.
+## 4. Artifacts in this package
 
-## 5. Product Owner decisions
+| Artifact | What it is |
+| --- | --- |
+| `../test-plan.md` | Proposed test plan. Dissent rows are not stable. |
+| `proposal-review.md` | Quality review of pull request #33. |
+| `devops.md` | The verify workflow does not change. Not a DevOps sign-off. |
+| `reviews/` | Tech Lead, core, 2D, 3D, design, and security reviews. |
 
-Two decisions remain with the Product Owner:
+Definition of Ready is development process section 8. It is not met. Module 0 is not approved. The rows in section 3 do not have one expected result. The Product Owner has not authorized implementation. This package does not mark Module 1 ready.
 
-1. Accept or reject Module 0.
-2. Approve the operational scope of Module 1 before implementation begins.
+No scene type, viewport, persistence format, package, or test file is added here.
 
-Until both are explicit, Module 1 stays in preparation.
+## 5. What this preparation does next
+
+The test plan and the proposal review are the discussion. They are not a request for the Product Owner to approve scope.
+
+Module 0 acceptance stays the open decision on issue #1. Module 1 implementation stays closed until Module 0 is accepted and a completed preparation package has later been reviewed.
+
+The next engineering step is to give each dissenting row one expected result, by amending pull request #33 or the review that disagrees, and then to update that row in the test plan.
