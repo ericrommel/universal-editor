@@ -49,7 +49,7 @@ No row in this plan has a second expected result. The five rows that previously 
 
 Call `createScene`.
 
-Expected result: the call succeeds. The scene has no nodes and an empty root-id list. That value is not an error. It has no selection field.
+Expected result: the call succeeds. `rootIds` is empty and `nodes` has no keys. The scene object has no other field, including no `selection`. That value is not an error. The returned scene and `rootIds` are frozen.
 
 Pass zero bytes to `readScene`.
 

@@ -55,7 +55,9 @@ This specification includes:
 
 `@uvcp/core` exports the scene operations. Core still imports no UI, React, filesystem API, or workspace package.
 
-A scene has an ordered list of root ids and nodes addressed by id. A node has:
+A scene object has exactly two fields: `rootIds` and `nodes`. `rootIds` is the ordered root-id list. `nodes` is a record addressed by id and is not hierarchy order. There is no `selection` field.
+
+A node has:
 
 - `id`
 - `kind`, which is `rectangle` or `box`
@@ -68,7 +70,7 @@ A node has no parent-id field and no selection field. The parent is the list tha
 
 Each transform component is the result of `canonicalizeFiniteTriple`. `-0` is returned as `0`. Each extent is the result of `canonicalizeFiniteNumber` and is strictly greater than zero.
 
-`createScene`, `insertNode`, `replaceTransform`, `replaceExtents`, and `deleteNode` return a new scene. The scene, each node, each id list, each transform, and each triple on that result is frozen. The scene passed in is not mutated. Its observable ids, kinds, extents, transforms, and order stay as they were.
+`createScene`, `insertNode`, `replaceTransform`, `replaceExtents`, and `deleteNode` return a new scene. The scene, the `nodes` record, each node, each id list, each transform, and each triple on that result is frozen. The scene passed in is not mutated. Its observable ids, kinds, extents, transforms, and order stay as they were.
 
 `createScene` returns a scene with no nodes and an empty root list.
 
