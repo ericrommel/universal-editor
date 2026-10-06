@@ -400,7 +400,15 @@ When opening a PR, the owner must identify the required reviewer roles based on 
 
 Because multiple logical roles may use the same GitHub account, review independence is established by distinct role-attributed review records, not by GitHub account identity alone.
 
-Reviewers work independently on the same head and persist their result. The PR owner waits for all requested reviews to finish before making normal review fixes, then integrates the complete feedback set. Re-review is required only from roles whose review area was materially affected.
+Reviewers work independently on the same head.
+
+Review findings are recorded as focused comments, preferably inline when they apply to a specific line or file. Each review comment must identify the logical reviewer role. Blocking and non-blocking findings should be separate threads where practical.
+
+The role that created a review thread owns it. Only that same logical role may resolve the thread after verifying the fix. Other roles, including the PR owner, must not resolve it merely because the shared GitHub account allows them to.
+
+When a reviewer finishes the current head, it posts a short role-attributed completion comment. An approval is recorded as **Review complete: APPROVED** for the reviewed head after that reviewer has no unresolved blocking findings.
+
+The PR owner waits for all requested reviewers to finish before making normal review fixes, then integrates the complete feedback set. Re-review is required only from roles whose review area was materially affected.
 
 Minimum review requirements and reviewer-selection rules are defined in `docs/engineering/development-process.md`.
 
