@@ -36,17 +36,17 @@ No specialist dissented.
 
 ## What can start now
 
-This directory. It adds no curve type, stroke tool, viewport, undo stack, dependency, test, or workflow.
+Issue #74. This directory. It adds no curve type, stroke tool, viewport, undo stack, dependency, test, or workflow.
 
 ## What stays blocked
 
-| Work | Waits on |
-| --- | --- |
-| Editable control data in a scene document | Module 1 GREEN under the approved contract, then Module 3 GREEN, and a new document contract. Schema token `1` is not extended in place. |
-| Freehand sampling | Module 2 GREEN and Module 3 GREEN. The gesture is not a transform command. The foundation screen is not the surface. |
-| Undo of a completed stroke | The same gate. The Module 2 triple step does not cover it. The undo policy is not selected. |
-| A visible stroke | The same gate, plus a draw ADR that does not exist. Issue #48 shares that missing ADR. This package does not assign it. |
-| Persistence of control points | A later document contract. Not the manifest, not schema token `1`, and not the image-container decision. |
+| Issue | Work | Waits on |
+| --- | --- | --- |
+| #75 | Editable control data in a scene document | Module 1 GREEN under the approved contract, then Module 3 GREEN, and a new document contract. Schema token `1` is not extended in place. |
+| #76 | Freehand sampling | Module 2 GREEN and Module 3 GREEN. The gesture is not a transform command. The foundation screen is not the surface. |
+| #77 | Undo of a completed stroke | The same gate. The Module 2 triple step does not cover it. The undo policy is not selected. |
+| #78 | A visible stroke | The same gate, plus a draw ADR that does not exist. Issue #48 shares that missing ADR. This package does not assign it. |
+| #79 | Persistence of control points | A later document contract. Not the manifest, not schema token `1`, and not the image-container decision. |
 
 Curve-to-tube is Module 5. This preparation does not start it.
 
