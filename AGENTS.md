@@ -65,6 +65,16 @@ Never create a Product Owner subagent.
 
 When a decision requires Product Owner approval, stop at the appropriate gate and present the decision to the human PO.
 
+## Decision Authority
+
+The Human Product Owner is not the default resolver of technical choices.
+
+The Project Manager and Tech Lead should resolve purely technical, architectural, sequencing, quality, security, operability, and implementation-readiness decisions with the relevant specialists and persist the result.
+
+Escalate to the Human Product Owner only when the decision changes or materially affects product intent, scope, requirements, acceptance criteria, user-visible behavior, module boundaries, or another product-level outcome.
+
+Do not stop merely because engineering has multiple reasonable options.
+
 ## Module Boundary
 
 Implement only the module and scope explicitly authorized by the Human Product Owner for the current task.
@@ -381,6 +391,24 @@ A Pull Request should:
 Agents may prepare branches, commits, and Pull Requests as part of authorized work, but must not treat creation of a Pull Request as approval to merge.
 
 Merging into `main` requires the applicable review and quality gates defined by the development process.
+
+### Review Coordination and Merge Authority
+
+The session or role that creates and drives a Pull Request is its logical owner.
+
+When opening a PR, the owner must identify the required reviewer roles based on scope and risk, request those reviews, and identify the head being reviewed.
+
+Because multiple logical roles may use the same GitHub account, review independence is established by distinct role-attributed review records, not by GitHub account identity alone.
+
+Reviewers work independently on the same head and persist their result. The PR owner waits for all requested reviews to finish before making normal review fixes, then integrates the complete feedback set. Re-review is required only from roles whose review area was materially affected.
+
+Minimum review requirements and reviewer-selection rules are defined in `docs/engineering/development-process.md`.
+
+The PR owner owns the merge by default. Another session must not merge merely because it has repository permission.
+
+After all required reviews approve the current material head, required CI and verification are green, blocking findings are closed, required Product Owner approval is present, and no active instruction prevents merge, the PR is merge-authorized and another session may perform the merge if useful.
+
+Repository permission is not merge authorization. An explicit instruction not to merge always takes precedence.
 
 ### Agent Attribution
 
