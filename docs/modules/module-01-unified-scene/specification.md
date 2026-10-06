@@ -94,11 +94,11 @@ A scene shall hold rectangle nodes and box nodes in the same ordered tree. A rec
 
 ### M1-FR-003 — Rectangle
 
-The core shall add a rectangle with a caller-supplied id, finite width and height, and no depth.
+The core shall add a rectangle with a caller-supplied id, a width and height that are each strictly greater than zero, and no depth.
 
 ### M1-FR-004 — Box
 
-The core shall add a box with a caller-supplied id and finite width, height, and depth to the same scene.
+The core shall add a box with a caller-supplied id and a width, height, and depth that are each strictly greater than zero to the same scene.
 
 ### M1-FR-005 — Transform
 
