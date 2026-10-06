@@ -6,7 +6,7 @@ The executable breakdown is [dependency-map.md](dependency-map.md). Specialist n
 
 Archive section 9.4 in `docs/archive/product-engineering-specification-v1.0.md` is context. Its identifiers are not operational requirements.
 
-Pull request #50 proposes one result for each Module 1 row that previously had two. It is not merged and not an approved contract. Specialist notes that still describe those rows as open were written against pull requests #32 and #33. This index and the dependency map are the current split. Module 3 does not extend either Module 1 text until one contract is approved.
+The Product Owner approved pull request #50 as the Module 1 implementation contract on 2026-10-06 ([issuecomment-6013883562](https://github.com/ericrommel/universal-editor/issues/7#issuecomment-6013883562)). The head is `13f1725`. That pull request is not merged. Module 1 is not GREEN. The approval authorizes implementation of that contract only. Specialist notes that still describe the five returned rows as open were written against pull requests #32 and #33. They are history. This index and the dependency map are the current split. Module 3 does not extend the approved contract. Schema version token `1` stays closed.
 
 | Review | Role |
 | --- | --- |
@@ -20,6 +20,8 @@ Pull request #50 proposes one result for each Module 1 row that previously had t
 | [reviews/non-functional-quality.md](reviews/non-functional-quality.md) | Non-Functional Quality Engineer |
 | [reviews/devops-platform.md](reviews/devops-platform.md) | Senior DevOps / Platform Engineer |
 | [reviews/application-security.md](reviews/application-security.md) | Senior Application Security Engineer |
+
+[inherited/README.md](inherited/README.md) integrates the notes written after the Module 1 contract was approved and after the Module 2 preparation notes were on `main`. Those notes do not replace the reviews above. Where a review still says the five Module 1 rows disagree, the inherited notes and the dependency map are the current record.
 
 No application code, dependency, workflow, or ADR is added in this preparation.
 

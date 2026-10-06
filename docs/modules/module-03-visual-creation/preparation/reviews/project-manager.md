@@ -14,11 +14,11 @@ The work that can proceed is the dependency map and the specialist notes. The wo
 
 | Gate | Result |
 | --- | --- |
-| Module 0 GREEN | Met. Issue #1 is closed. Approval: https://github.com/ericrommel/universal-editor/issues/1#issuecomment-6004334244. `main` is `5e99484`. |
-| Module 1 ready for development | Not met. Issue #7. Pull requests #32, #33, #34, and #50 are open. #50 proposes one result per previously split row and is not approved. |
-| Module 2 specified | Not met. Issue #8 has preparation sub-issues #35 through #42 and no viewport or undo model. |
+| Module 0 GREEN | Met. Issue #1 is closed. Approval: https://github.com/ericrommel/universal-editor/issues/1#issuecomment-6004334244. That acceptance is historical `main` `5e99484`. Current `main` is `61cf9c9`. |
+| Module 1 implementation authorized | Met for Module 1 only. The Product Owner approved pull request #50 ([issuecomment-6013883562](https://github.com/ericrommel/universal-editor/issues/7#issuecomment-6013883562)), head `13f1725`. The pull request is not merged. Module 1 is not GREEN. |
+| Module 2 specified | Not met. Preparation notes are on `main`. They are not a specification, a viewport, or an undo API. Issue #8 is not GREEN. |
 | Module 3 Definition of Ready | Not met. See the dependency map, section 8. |
-| Product Owner decision required to continue preparation | No. Section 6 of the dependency map lists decisions that block implementation. They are premature while Module 1 has no single approved contract. This note does not ask for them. |
+| Product Owner decision required to continue preparation | No. Section 6 of the dependency map lists decisions that still block Module 3 implementation. The approved Module 1 contract closed the five earlier rows. It does not choose Module 3 scope. This note does not ask for that scope. |
 
 ## Operational record
 
@@ -39,6 +39,6 @@ The project board was not updated. `gh project list` returns a missing `read:pro
 
 A sub-issue in the "can start now" group can reach a review comment when its note is on a pull request. That comment is not Ready for Development and not module acceptance.
 
-A blocked sub-issue stays blocked until the named predecessor is GREEN and, where the map says so, until the deferred ADR exists. Closing a predecessor issue is not enough when the map also requires a single-valued contract or a draw ADR.
+A blocked sub-issue stays blocked until the named predecessor is GREEN and, where the map says so, until the deferred container or draw ADR exists. An approved Module 1 contract is not Module 1 GREEN, and it does not open issues #45 through #49.
 
 Do not move issue #9 to Ready for PO to ask for scope approval. Definition of Ready is not met. Do not move it to Done.

@@ -22,7 +22,7 @@ No note selects a shape set, a raster format, a container, a stacking model, a t
 
 ## 2. How the blocked packages stay split
 
-**Data versus pixels.** The core note blocks ordering on an approved scene, on a later product decision, and on Module 2 before a visual result exists. The rendering note says sibling order, if a later hierarchy stores it, is document data, and that `renderNull` would not change. Those are one split, not two designs. Issue #45 may add an order field only after Module 1 has a single-valued hierarchy, and it may not treat the contested Module 1 child list as that hierarchy. Issue #48 is the pixel proof. It stays blocked on the draw ADR as well as on issues #7 and #8. This preparation does not assign that ADR to Module 3.
+**Data versus pixels.** The approved contract stores sibling order on `roots` and each children list. The reader ignores `nodes` array order. There is no reorder operation and no stacking field. That list is document data. `renderNull` stays empty. Issue #45 does not add a second order field. Issue #48 is the pixel proof. It stays blocked on the draw ADR as well as on issues #7 and #8. This preparation does not assign that ADR to Module 3.
 
 **Undo versus the operation.** Duplicate and appearance can be data on issue #45 once a scene contract exists. Undo of those operations cannot. ADR-0006 selected no strategy. If Module 2 approves only transform undo, issue #47 still does not cover creation, deletion, duplication, and appearance. The functional note refuses to put both "undo exists" and "undo does not cover these four" on one expected result. That refusal stands.
 
@@ -39,13 +39,18 @@ No note selects a shape set, a raster format, a container, a stacking model, a t
 
 Issue #44 tracks this record. Issues #45 through #49 stay blocked. Closing issue #7 or issue #8 does not by itself open #45 through #49 when the map also requires a single-valued contract, a container decision, or a draw ADR.
 
-## 4. Module 1 and Module 2 moved while this note was written
+## 4. Module 1 contract approved, Module 2 notes on main
 
-Pull request #50 proposes one result for each Module 1 row that pull request #33 left double-valued. It is not merged. Specialist notes in this directory that still say those rows disagree were written against pull requests #32 and #33. They are not a second vote against #50. This preparation does not adopt #50, and it does not extend it.
+The Product Owner approved pull request #50 as the Module 1 implementation contract ([issuecomment-6013883562](https://github.com/ericrommel/universal-editor/issues/7#issuecomment-6013883562)). Head `13f1725`. It is not merged. Module 1 is not GREEN. Specialist notes in `reviews/` that still say the five rows disagree were written against pull requests #32 and #33. They are not a second vote against the approved contract. This preparation does not extend that contract and does not copy it onto this branch.
 
-If that proposal later becomes the approved contract, two constraints carry forward. Selection is not a scene-document field, so issue #45 must not put it back. The 1048576-byte document cap is not an image budget, so issue #46 still needs the container ADR-0006 has not selected.
+Constraints that carry forward:
 
-Issue #8 is now a preparation parent for issues #35 through #42. Those issues do not specify a viewport or an undo model. Issues #47, #48, and #49 stay blocked.
+- Selection is not a scene-document field. Issue #45 must not put it back. A key named `selection` is `INVALID_SHAPE`.
+- The 1048576-byte document cap is not an image budget. The approved reconciliation says that document contains no images. Issue #46 still needs the container ADR-0006 has not selected.
+- Unknown kinds and unknown keys stay `INVALID_SHAPE` on schema token `1`. Creation fields are a later document contract.
+- Ids stay caller-supplied. Core does not mint one for duplicate.
+
+Module 2 preparation notes are on `main` at `61b86f3`. They do not specify a viewport or an undo API. The recommended undo step covers one committed transform replacement and does not cover create, delete, duplicate, rename, reorder, or appearance. Issues #47, #48, and #49 stay blocked. The four open Module 2 disagreements stay open. The numeric frame is not accepted.
 
 ## 5. Non-goals
 

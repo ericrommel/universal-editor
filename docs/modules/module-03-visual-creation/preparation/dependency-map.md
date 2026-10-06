@@ -8,14 +8,14 @@ Definition of Ready is not met. The checklist is section 8.
 
 ## 1. Program state
 
-Checked against `main` at `5e99484` and the GitHub issues on 2026-10-06.
+Checked against `main` at `61cf9c9` and the GitHub issues on 2026-10-06. This branch contains that `main`. The approved Module 1 contract is not on `main`.
 
 | Module | Issue | State that bounds Module 3 |
 | --- | --- | --- |
-| Module 0 — Engineering Foundation | [#1](https://github.com/ericrommel/universal-editor/issues/1), closed | GREEN. The Product Owner approved the module at [issuecomment-6004334244](https://github.com/ericrommel/universal-editor/issues/1#issuecomment-6004334244). `main` is `5e99484`. |
-| Module 1 — Unified Scene | [#7](https://github.com/ericrommel/universal-editor/issues/7) | Preparation only. Pull requests [#32](https://github.com/ericrommel/universal-editor/pull/32), [#33](https://github.com/ericrommel/universal-editor/pull/33), [#34](https://github.com/ericrommel/universal-editor/pull/34), and [#50](https://github.com/ericrommel/universal-editor/pull/50) are open. None is implementation authorization. Pull request #33 was returned with two expected results on selection storage, extents, document shape and byte cap, insert and delete, and error codes. Pull request #50 proposes one result for each of those rows, including a flat scene document with a 1048576-byte cap and selection rejected as an unknown key. That proposal is not approved. The Product Owner's Module 0 approval says Module 1 may proceed beyond preparation only through its own readiness gate. That gate is not met. |
-| Module 2 — Direct Manipulation | [#8](https://github.com/ericrommel/universal-editor/issues/8) | Preparation backlog. Sub-issues [#35](https://github.com/ericrommel/universal-editor/issues/35) through [#39](https://github.com/ericrommel/universal-editor/issues/39) can be written without Module 1. [#40](https://github.com/ericrommel/universal-editor/issues/40) through [#42](https://github.com/ericrommel/universal-editor/issues/42) are blocked on that preparation and on an approved Module 1 contract. There is still no specification, viewport, or undo API. |
-| Module 3 — Visual Creation | [#9](https://github.com/ericrommel/universal-editor/issues/9) | This preparation. The issue was a backlog placeholder. Archive section 9.4 does not freeze its scope. |
+| Module 0 — Engineering Foundation | [#1](https://github.com/ericrommel/universal-editor/issues/1), closed | GREEN at historical `main` `5e99484`. The Product Owner approved the module at [issuecomment-6004334244](https://github.com/ericrommel/universal-editor/issues/1#issuecomment-6004334244). Current `main` is `61cf9c9`. Later commits do not reopen Module 0. |
+| Module 1 — Unified Scene | [#7](https://github.com/ericrommel/universal-editor/issues/7) | The Product Owner approved pull request [#50](https://github.com/ericrommel/universal-editor/pull/50) as the implementation contract ([issuecomment-6013883562](https://github.com/ericrommel/universal-editor/issues/7#issuecomment-6013883562)). Head `13f1725`. The pull request is not merged. Module 1 is not GREEN. That approval authorizes implementation of the contract only. Pull requests [#32](https://github.com/ericrommel/universal-editor/pull/32), [#33](https://github.com/ericrommel/universal-editor/pull/33), and [#34](https://github.com/ericrommel/universal-editor/pull/34) are the earlier input record. They are not a second contract. |
+| Module 2 — Direct Manipulation | [#8](https://github.com/ericrommel/universal-editor/issues/8) | Preparation notes are on `main` at `61b86f3`. The index is `docs/modules/module-02-direct-manipulation/preparation/README.md`. Issues [#35](https://github.com/ericrommel/universal-editor/issues/35) through [#39](https://github.com/ericrommel/universal-editor/issues/39) are closed as inputs. [#40](https://github.com/ericrommel/universal-editor/issues/40) through [#42](https://github.com/ericrommel/universal-editor/issues/42) stay blocked. The notes are not a specification, not an ADR, and not a viewport or an undo API. Module 2 is not GREEN. |
+| Module 3 — Visual Creation | [#9](https://github.com/ericrommel/universal-editor/issues/9) | This preparation. Archive section 9.4 does not freeze its scope. |
 
 Development process section 2 allows research, architecture, design, and test design for a later module before the predecessor is GREEN. Section 20 allows implementation of the next module only after the predecessor is GREEN and the Product Owner has approved it. Module 3 implementation waits until Module 2 is GREEN, which waits until Module 1 is GREEN.
 
@@ -49,33 +49,38 @@ This is preparation. It does not add a scene, a shape, text, an image decoder, a
 | M3-NOW-02 | [#44](https://github.com/ericrommel/universal-editor/issues/44) | Keep image bytes out of the provisional manifest and out of core | Recorded in section 2 and in the security and core notes. No decoder is added. |
 | M3-NOW-03 | [#44](https://github.com/ericrommel/universal-editor/issues/44) | Keep `renderNull`'s draw list empty | Recorded in the rendering note. The Module 0 test stays the lock. |
 | M3-NOW-04 | [#44](https://github.com/ericrommel/universal-editor/issues/44) | Keep creation tools off the foundation screen | Recorded in the design and editor notes. |
-| M3-NOW-05 | [#44](https://github.com/ericrommel/universal-editor/issues/44) | Verification map with no expected result where the predecessor is unsettled | Recorded in the quality notes. No Module 3 test file is added. |
+| M3-NOW-05 | [#44](https://github.com/ericrommel/universal-editor/issues/44) | Verification map with no expected result for Module 3 behavior | Recorded in the quality notes. No Module 3 test file is added. |
+| M3-NOW-06 | [#44](https://github.com/ericrommel/universal-editor/issues/44) | Record how creation data attaches to the approved Module 1 contract and the Module 2 seam | [inherited/README.md](inherited/README.md). No schema is written. |
 
-A Module 3 object schema written against pull request #33 would be a second unapproved contract. This pass does not write one.
+This pass does not write a creation-data schema. The approved contract stays closed, and pull request #33 is not a second contract.
 
 No Product Owner decision is required to finish this pass. The decisions in section 6 block implementation. They do not block the record.
 
 ## 4. Work blocked on Module 1
 
-Start condition for every package in this section: issue #7 is GREEN, and the approved scene contract has one expected result for each row that still disagrees. Until then, these packages stay closed.
+The scene contract is approved and is not on this branch. Module 1 is not GREEN. Schema version token `1` rejects an unknown kind and an unknown key with `INVALID_SHAPE`. This preparation does not amend that document.
+
+Implementation of every package in this section waits until issue #7 is GREEN under that contract and the Product Owner authorizes Module 3. Until then, these packages stay closed.
 
 ### M3-DEP-M1-01 — Creation data on the approved scene
 
 Issue [#45](https://github.com/ericrommel/universal-editor/issues/45), blocked by [#7](https://github.com/ericrommel/universal-editor/issues/7).
 
-Add only what the approved scene does not already store:
+The approved contract already stores a rectangle or a box, caller-supplied ids, extents strictly greater than zero, transforms, and sibling order on `roots` and each children list. Insert takes an index. Delete removes the subtree. `replaceTransform` and `replaceExtents` return a new scene. The document has no selection.
 
-- visual kinds beyond the approved set;
+This package, when it is later authorized, is only what that contract does not store:
+
+- visual kinds other than `rectangle` and `box`;
 - a display name that rename can change;
-- duplicate, using an id rule the approved model already has, or a new ADR if it has none (core still has no id generator);
-- appearance numbers for fill, color, and opacity, passed through `canonicalizeFiniteNumber`;
+- duplicate, as a new insert whose id the caller supplies (M1-FR-009; core does not mint an id);
+- appearance numbers for fill, color, and opacity, passed through `canonicalizeFiniteNumber`, which are not extents;
 - a text payload stored as data;
-- an image reference stored as data, with the bytes kept out of `@uvcp/core`;
-- an ordering change on the order the approved hierarchy already stores.
+- an image reference stored as data, with the bytes kept out of `@uvcp/core` and out of the scene document;
+- a later reorder of an existing node. The approved contract has no reorder operation. `nodes` array order is not hierarchy.
 
-If the approved hierarchy has no order, the order field is part of this package and the pixels are not. Pixel evidence is M3-DEP-M2-02.
+Those values are unknown keys on schema token `1`. Adding them is a new document contract. This preparation does not write that contract and does not choose the kind list, the name rules, or the appearance encoding.
 
-The unapproved Module 1 proposal is a headless rectangle and box, with no text, image, name, appearance, undo, or viewport. It is contested. It is not the baseline this package may extend until it is approved.
+Sibling order already exists. This package does not add a second order field. Pixel evidence is M3-DEP-M2-02.
 
 ### M3-DEP-M1-02 — Text, appearance, and image bytes in an approved container
 
@@ -85,21 +90,21 @@ The provisional manifest stays the two-field writer. Raising its 4096-byte cap d
 
 ADR-0006 already records why image bytes do not belong in one JSON document. The container is still unselected. `checkEntryNames` is not an extractor. The Unicode case-fold gap is open again before the first archive reader.
 
-The 262144-byte figure in pull request #33, and the 1048576-byte figure in pull request #50, are not limits and are not image budgets. ADR-0006 still has not selected a container. A scene JSON document of either size is the shape that ADR says becomes base64 or forces a format change once images exist.
+The approved scene-document cap is 1048576 bytes. The reconciliation states that this document contains no meshes and no images. That cap is not an image budget. The 262144-byte figure from pull request #33 is not the scene cap and is not an image budget. ADR-0006 still has not selected a container. Putting image bytes into this JSON document is the shape that ADR says becomes base64 or forces a format change.
 
 Done for this package means an approved document round-trips the text and appearance it claims to store, image bytes live in the approved container, and a failed read yields no scene. Implementation waits for that approval.
 
 ## 5. Work blocked on Module 2
 
-Issue #8 has preparation sub-issues and no specification. These packages also stay closed while Module 1 is open, because section 20 runs in order. Writing Module 2's preparation notes does not open them.
+Module 2's preparation notes are on `main`. They are not a specification and not an ADR. These packages stay closed while Module 1 is not GREEN, because section 20 runs in order. The notes do not open them.
 
 ### M3-DEP-M2-01 — Selection, transform, and undo participation
 
 Issue [#47](https://github.com/ericrommel/universal-editor/issues/47), blocked by [#7](https://github.com/ericrommel/universal-editor/issues/7) and [#8](https://github.com/ericrommel/universal-editor/issues/8).
 
-New visual objects use the selection, transform, and undo model Module 2 actually approves. They do not grow a second one.
+New visual objects use the selection, transform, and undo model Module 2 actually approves. They do not grow a second one. Selection is not a field of the approved scene document.
 
-ADR-0006 selected no undo strategy. `EditorSession` has no undo stack. Archive Module 2 describes undo of transforms. Archive Module 3 describes undo of creation, deletion, duplication, and appearance. If the approved Module 2 model covers only transforms, the other operations stay blocked after Module 2 is GREEN. This package does not choose the strategy.
+ADR-0006 selected no undo strategy. `EditorSession` has no undo stack. The Module 2 notes recommend one undo step for one committed transform replacement: canonical before-triples and after-triples in editor memory. Pointer samples are not steps. The stack does not survive reload. Create, delete, duplicate, rename, reorder, an appearance change, and an extent replacement are not that step. If Module 2 later approves only the transform step, those operations stay blocked after Module 2 is GREEN. This package does not choose the strategy and does not resolve Module 2's open disagreements.
 
 ADR-0008: do not add empty selection or tool fields to the startup session.
 
@@ -107,9 +112,9 @@ ADR-0008: do not add empty selection or tool fields to the startup session.
 
 Issue [#48](https://github.com/ericrommel/universal-editor/issues/48), blocked by [#7](https://github.com/ericrommel/universal-editor/issues/7) and [#8](https://github.com/ericrommel/universal-editor/issues/8).
 
-Data order is M3-DEP-M1-01. Visible order needs a draw path.
+Data order is the approved `roots` list and each children list. Visible order needs a draw path. This package does not add a stacking field.
 
-`renderNull` stays empty until a new ADR amends the import table and authorizes a non-empty snapshot. Module 2's backlog is viewport interaction, and that ADR does not exist. This package stays blocked on issue #8 and on that ADR. Unblocking issue #8 is not enough if Module 2 ships no draw list.
+`renderNull` stays empty until a new ADR amends the import table and authorizes a non-empty snapshot. Module 2's notes do not add that ADR. This package stays blocked on issue #8 and on that ADR. Closing issue #8 is not enough if Module 2 ships no draw list. The owning module for the ADR is not decided here.
 
 The proof, when a draw path exists, is a CPU check of snapshot data. Architecture section 15. A GPU image is not the oracle. No graphics API is selected.
 
@@ -129,22 +134,22 @@ These are real. Asking for them before Module 1 has one approved scene contract 
 
 | Decision | Why it can wait |
 | --- | --- |
-| Which shapes are "basic" | The approved scene has no kinds yet. The Module 1 proposal's rectangle is contested and is not a shape set. |
-| Raster formats, pixel limits, and byte limits | No container and no decoder are selected. A number chosen now would become an unapproved budget. |
-| Where image bytes live | ADR-0006 leaves the container open on purpose. |
-| Sibling order or a separate stacking field | No approved hierarchy exists to attach either one to. |
-| Inline text editing or a separate field | No text object and no viewport exist. |
-| Numeric encoding of color and opacity | The canonicalizers constrain finiteness only. |
-| Id source for duplicate | Core has no clock and no random source. The caller-supplied id in the Module 1 proposal is not approved. |
-| Undo as a general command model | Deferred in ADR-0006. Module 2 has not started. |
-| Which module first replaces the empty draw list | Architecture requires a new ADR. Module 2 has not written it. |
+| Which shapes are "basic" beyond rectangle and box | The approved contract's kinds are closed. Further kinds are a later product contract. This map does not open one. |
+| Raster formats, pixel limits, and byte limits | No container and no decoder are selected. 1048576 is the scene-document cap, not an image budget. |
+| Where image bytes live | ADR-0006 leaves the container open. The approved scene document contains no images. |
+| A stacking field besides sibling order | Sibling order is `roots` and the children lists. A second field would be a new document contract. Visual proof is still M3-DEP-M2-02. |
+| Inline text editing or a separate field | No text object and no viewport exist. Text is not a schema-1 field. |
+| Numeric encoding of color and opacity | The canonicalizers constrain finiteness only. Appearance is not an extent. |
+| How a caller chooses a duplicate's id | Core does not mint ids. M1-FR-009 already requires a caller-supplied id. The user-facing rule for choosing that id is not selected. |
+| Undo as a general command model | Deferred in ADR-0006. The Module 2 recommendation covers a transform-triple replacement only. |
+| Which module first replaces the empty draw list | Architecture requires a new ADR. Module 2's notes do not write it. It is not assigned to Module 3. |
 
 ## 7. Order after the gates open
 
 This sequence is the recommended order for later issues. It is not authorization to start.
 
-1. Module 1 reaches GREEN under its own approved contract.
-2. M3-DEP-M1-01 specifies creation data against that contract.
+1. Module 1 reaches GREEN under the approved pull request #50 contract.
+2. M3-DEP-M1-01 specifies creation data against that contract, as a new document contract. Schema token `1` is not extended in place.
 3. M3-DEP-M1-02 places text, appearance, and image bytes in the container that contract, or a follow-on ADR, actually selects.
 4. Module 2 reaches GREEN, including whatever undo and viewport it actually approved.
 5. M3-DEP-M2-01 attaches new objects to that interaction model.
@@ -158,20 +163,20 @@ This sequence is the recommended order for later issues. It is not authorization
 | --- | --- |
 | Objective, scope, and out-of-scope are explicit | Not met. Issue #9 is still the backlog objective plus this dependency map. Archive section 9.4 is context. |
 | Dependencies identified | Met by this map. |
-| Earlier modules approved | Not met. Module 1 and Module 2 are not GREEN. |
+| Earlier modules approved | Not met. The Module 1 contract is approved for implementation. Module 1 and Module 2 are not GREEN. |
 | Stable requirement identifiers | Not met. Archive identifiers stay context. |
-| Acceptance criteria observable | Not met. Quality notes refuse an expected result where the predecessor disagrees. |
+| Acceptance criteria observable | Not met. Quality notes refuse an expected result for Module 3 behavior. The approved Module 1 rows are no longer the reason. |
 | Test approach, or a documented reason to defer | Not met. The functional note records why no expected result can be written. That deferral is not an approach for a requirement that does not exist yet. Infrastructure for images and pixels is not defined. |
 | Design behavior defined | Not met. The creation surface does not exist. The foundation screen must stay as it is. |
 | Reference workloads | Not met. None is defined. This preparation does not invent one. |
 | Blocking security questions resolved | Not met for implementation. The ingress boundary is named. Formats, limits, and the container are open. |
-| Blocking architecture resolved | Not met. Scene schema, container, undo, and the draw-list ADR are open. |
+| Blocking architecture resolved | Not met. The Module 1 scene schema is approved and closed. A Module 3 document, the container, the undo policy, and the draw-list ADR are open. |
 | Product ambiguities resolved | Not met. Section 6. |
 | Product Owner authorizes implementation | Not requested. |
 
 ## 9. Specialist records
 
-The notes under [reviews](reviews) are the role records. They do not move issue #9 to Ready for PO.
+The notes under [reviews](reviews) are the first role records. [inherited/README.md](inherited/README.md) is the later integration. Neither moves issue #9 to Ready for PO.
 
 ## 10. Repository effect
 
