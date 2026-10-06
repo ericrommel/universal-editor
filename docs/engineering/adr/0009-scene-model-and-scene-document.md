@@ -52,7 +52,7 @@ The byte cap is 1048576, compared before decode. A greater length is rejected. A
 
 A rejected document throws `DomainError` and returns no scene. The reader builds a new scene from known fields and does not return the parsed object.
 
-The duplicate walk is not the manifest function and does not reuse that function's reviver. ADR-0007's manifest rules stay on the manifest.
+The duplicate walk is not the manifest function and does not reuse that function's reviver. A reviver used to read a raw token returns the value unchanged, does not write, and does not record `this` when `this` is `Object.prototype` or another intrinsic prototype. More raw keys than parsed keys is a duplicate-key failure. Any other disagreement between the walk and the parsed value throws `Error` with the message `Scene duplicate check lost alignment.` and returns no scene. ADR-0007's manifest rules stay on the manifest.
 
 ### Out of this decision
 

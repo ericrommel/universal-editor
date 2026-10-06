@@ -136,7 +136,7 @@ Writing the same scene twice yields the same bytes. Reading those bytes yields a
 
 ### M1-NFR-004 — Reject the whole document
 
-A document that fails validation throws `DomainError` and yields no scene. The reader rejects a BOM and ill-formed UTF-8 before `JSON.parse`. Duplicate keys are rejected on every object, including escape-equivalent spellings. The scene is built from known fields and is not the parsed object. The reader does not assign, spread, or merge parsed keys onto an object. The error message does not include the document bytes, and the host `SyntaxError` or `RangeError` is not the message or the cause. `cause` is unset. The caller's previous scene value is not modified. After an accepted document and after a rejected document, `Object.prototype` is unchanged.
+A document that fails validation throws `DomainError` and yields no scene. The reader rejects a BOM and ill-formed UTF-8 before `JSON.parse`. Duplicate keys are rejected on every object, including escape-equivalent spellings. The scene is built from known fields and is not the parsed object. The reader does not assign, spread, or merge parsed keys onto an object. The error message does not include the document bytes, and the host `SyntaxError` or `RangeError` is not the message or the cause. `cause` is unset. The caller's previous scene value is not modified. After an accepted document and after a rejected document, `Object.prototype` is unchanged. A duplicate walk runs only after `JSON.parse` succeeds. More raw keys than parsed keys is `DUPLICATE_KEY`. Any other disagreement between that walk and the parsed value throws `Error` with the message `Scene duplicate check lost alignment.`, returns no scene, and is not a successful read.
 
 ### M1-NFR-005 — Module 0 regression
 
@@ -222,6 +222,8 @@ Root key order is `formatId`, `schemaVersion`, `roots`, `nodes`.
 Each rectangle, in key order: `id`, `kind`, `children`, `transform`, `width`, `height`. Each box adds `depth` after `height`. `kind` is `rectangle` or `box`. `children` is an array of id strings. `transform` has `position`, `rotation`, and `scale`, in that key order, each an array of three JSON numbers. No other fields.
 
 The reader accepts insignificant whitespace and any key order. It rejects unknown fields, including `selection`, `__proto__`, `constructor`, and `prototype`. It returns a fresh scene or throws. It does not drop one bad node and keep the rest.
+
+The duplicate walk is not the manifest function and does not reuse that function's reviver. A reviver used to read a raw token returns the value unchanged. It does not return `undefined`, it does not write, and it does not record `this` when `this` is `Object.prototype` or another intrinsic prototype. More raw keys than parsed keys is `DUPLICATE_KEY`. Any other disagreement throws `Error` with the fixed message `Scene duplicate check lost alignment.` The message does not include the document. That failure is not `DomainError` and not a successful read.
 
 An empty scene is an empty root list and no nodes. Zero input bytes are `EMPTY`, not that scene.
 

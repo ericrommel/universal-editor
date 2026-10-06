@@ -260,7 +260,7 @@ No separate benchmark and no reference hardware workload are required. This modu
 The security review's conditions are implementation tests. No exploit is part of this plan. The specification now names the cap, the codes, and the flat shape those tests assert.
 
 - SEC-M1-B-001. Covered by the document order in section 8 and by TP-M1-F-001, F-008, and N-004. The input is a `Uint8Array`. Empty input fails. The cap is compared before decode. A leading BOM fails. Decode is fatal UTF-8.
-- SEC-M1-B-002. `JSON.parse` is the only syntax authority. `SyntaxError` and `RangeError` become `INVALID_JSON`. A reviver used to read a raw token returns the value unchanged and does not record `this` when `this` is `Object.prototype`.
+- SEC-M1-B-002. `JSON.parse` is the only syntax authority. `SyntaxError` and `RangeError` become `INVALID_JSON`. The duplicate walk runs only after a successful parse. More raw keys than parsed keys is `DUPLICATE_KEY`. Any other disagreement between the walk and the parsed value throws `Error` with the message `Scene duplicate check lost alignment.`, returns no scene, and is not a successful read. A reviver used to read a raw token returns the value unchanged. It does not return `undefined`, it does not write, and it does not record `this` when `this` is `Object.prototype` or another intrinsic prototype.
 - SEC-M1-B-003. Duplicate keys on every object, including escape-equivalent spellings. Covered by TP-M1-F-010.
 - SEC-M1-B-004. The scene is built from known fields. `Object.prototype` is unchanged. Covered by TP-M1-F-010.
 - SEC-M1-B-005. Fixed messages, unset `cause`, no input echo. Covered by TP-M1-F-010 and the catalog.
