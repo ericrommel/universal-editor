@@ -1,10 +1,10 @@
 # Module 2 preparation
 
-**Status:** Integrated preparation inputs for issue #8. Not a specification. Not Product Owner approval. Implementation stays unauthorized.
-**Role:** Project Manager. The notes below are the specialist records. This file records how they fit. It does not replace them.
+**Status:** Input record for issue #8. The operational contract is [`../specification.md`](../specification.md). The decision that closes the disagreements below is [`reconciliation.md`](reconciliation.md). The test plan is [`../test-plan.md`](../test-plan.md). The reference scene is [`workload.md`](workload.md). Those files are Proposed. They are not Product Owner approval and not implementation authorization.
+**Role:** Project Manager for this index. The Tech Lead wrote the contract that supersedes the open rows. The notes below stay the specialist inputs.
 **Date:** 2026-10-06
 
-Archive section 9.3 stays context. Its identifiers are not operational requirements. Pull request #33 is not an approved Module 1 contract.
+Archive section 9.3 stays context. Its identifiers are not operational requirements. The Module 1 contract this package binds to is pull request #50 at `13f1725750ba047eeed7df6f25fa7155d45cb9d5`, which the Product Owner approved as Module 1 implementation authorization. Module 1 is not GREEN. Pull request #33 is not that contract.
 
 | Note | Issue | Role |
 | --- | --- | --- |
@@ -17,11 +17,11 @@ Archive section 9.3 stays context. Its identifiers are not operational requireme
 
 `editor-2d.md` is the editor record for the same interaction questions and for the editing seam. It is not a second specification.
 
-The evidence note, as first committed, said Module 0 was not GREEN. That sentence was stale. Module 0 is GREEN at `5e99484` (issue #1). The correction is in this branch. It does not approve a viewport or a file writer.
+The evidence note, as first committed, said Module 0 was not GREEN. That sentence was corrected before the notes were merged. Module 0 is GREEN at `5e99484` (issue #1). The correction does not approve a viewport or a file writer.
 
 ## Agreed seam
 
-These are recommendations the notes share. They are not an accepted architecture and not an ADR.
+These are the recommendations the notes share. They are not an ADR. Where a bullet says "later" or "recommends", `reconciliation.md` is the current result.
 
 - The first viewport is a later Module 2 proposal. Module 0 has no viewport. `editor` does not import `rendering` until a new ADR amends the import table in `docs/engineering/architecture.md` section 10. This package does not add that ADR and does not take the next ADR number.
 - A pointer gesture lives in editor memory. React does not own it, and pointer-move does not call `setState`. Commit replaces finite triples. Cancel drops the proposal and writes no undo step. The Module 0 finite-number rule stays: `-0` becomes `0`, and a non-finite value does not change the document.
@@ -33,42 +33,39 @@ These are recommendations the notes share. They are not an accepted architecture
 - No new runtime dependency. The verify workflow does not change. Playwright stays deferred. Headed evidence stays a recorded session on the primary Windows machine, naming Edge or Chrome.
 - No blocking security finding for this preparation. Commit, cancel, and undo are product behavior, not security controls. Diagnostics do not log pointer paths, key sequences, or scene contents.
 
-## Open disagreements
+## Disagreements closed by the contract
 
-Left open on purpose. The later specification records both sides and does not silently pick one.
+The notes disagreed on the rows below. [`reconciliation.md`](reconciliation.md) gives each row one result. The technical rows are preparation decisions. The product rows are the single proposed meaning in the specification. They are not already accepted.
 
-1. **Box move target.** The design note moves a box only by the axis handle under the pointer. The rectangle moves by dragging its face. The editor note allows a body drag to produce `move`, and accepts a combined gizmo as drawing provided one gesture produces one command. The combined affordance itself is not the dissent. The box body is.
-2. **Undo and selection.** The design note reselects the affected node on undo and on redo. The editor note does not change selection on undo or redo.
-3. **Redo shortcut.** The design note uses Ctrl+Shift+Z and Cmd+Shift+Z, and does not also use Ctrl+Y. The editor note uses Ctrl+Y and Shift+Z.
-4. **Hit-test method.** The Tech Lead recommends a later pure CPU test that returns an id or a miss, without a device. The Module 0 rendering record still treats CPU picking versus a pick buffer as deferred. This package does not close that record.
-
-The 4px movement before a manipulation starts is in the design note. The editor note does not name it and does not contradict it. The editor "begin" can be that threshold.
+| Row | Single result |
+| --- | --- |
+| Box move target | A rectangle moves by a face drag. A box moves only by the axis handle. One gesture is one command. |
+| Undo and selection | Undo and redo select the node whose triples the step restores. |
+| Redo shortcut | One redo command. Windows and Linux use Ctrl+Shift+Z and Ctrl+Y. macOS uses Cmd+Shift+Z. |
+| Hit-test method | A pure CPU function in `editor`. No device and no pick buffer. `renderNull` is unchanged. |
+| 4px threshold | A manipulation starts after more than 4 CSS pixels. That distance is editor `begin`. |
 
 ## Evidence
 
-From the evidence note. No threshold was set.
+The evidence note is the input. The test plan is the current assignment. No millisecond threshold was set.
 
-| Behavior | Class |
+| Behavior | Class in the test plan |
 | --- | --- |
-| Pointer selection of a visible object | Blocked, until a viewport and a hit rule exist |
+| Pointer selection of a visible object | Headless `hitTest`, plus the headed record for the visible change |
 | Move, rotate, and scale change the triples a headless reader sees | Headless command |
 | Selected object is visibly distinct | Headed visual record |
 | Undo, then redo | Headless command |
 | Cancel restores the gesture baseline | Headless command |
-| Save and reopen | Blocked, until a file writer exists |
-| Interactive under a reference workload | Blocked on issue #41. An observation is not a pass |
+| Save and reopen | Out of this module. No file writer |
+| Interactive under the reference scene | Observation. Not a pass |
 | Earlier approved modules stay green | `pnpm verify` on `ubuntu-24.04` and `windows-2025` |
 
 ## Still for the Product Owner
 
-No decision here is required to keep these notes. Issue #40 asks later, after a Product Owner-approved Module 1 contract. The choices that note has to present are:
+The specification section 16 lists the proposed meanings. Accepting that specification is the decision. It is not implementation authorization. Issue #42 still requires Module 1 to be GREEN before Module 2 can be ready for development.
 
-- The numeric frame. The design note recommends Y up, right-handed, intrinsic XYZ, degrees. The editor and architecture notes refuse to interpret triples until that choice is accepted. The recommendation is not accepted.
-- Whether the viewport replaces the foundation content root, as the design note recommends.
-- The four open disagreements above.
-- Whether save-and-reopen stays outside Module 2, as these notes recommend.
-- Authorization to implement. That remains issue #42, and it still requires Module 1 to be GREEN.
+The proposed frame is Y up, right-handed, intrinsic XYZ, degrees, with the position triple as the center and the fixed view in the specification. Save-and-reopen stays out of Module 2.
 
 ## Out of this package
 
-No application code, tests, fixtures, dependencies, workflow edits, or ADR. Issues #40, #41, and #42 stay blocked.
+No application code, tests, fixtures, dependencies, workflow edits, or ADR. The specification, test plan, reconciliation, and workload are the integrated draft. They do not authorize implementation.
