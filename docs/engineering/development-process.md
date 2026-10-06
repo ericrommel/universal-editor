@@ -22,9 +22,9 @@ The operating principles are:
 - allow research, architecture, design, test planning, security analysis, technical spikes, and other safe preparation for later modules before those modules are authorized for implementation;
 - do not implement future product functionality before its implementation gate is open;
 - use gates to control risk and product progression, not to stop unrelated preparation or technical work;
-- prefer persistent GitHub state over session-local plans for coordination between independent sessions.
+- prefer persistent GitHub state over transient local context for coordination between independent work.
 
-A blocked task does not imply that the whole session or team must stop. When a task is waiting for review, CI, a dependency, or a Product Owner decision, available capacity should move to another independent task that is already allowed to proceed.
+A blocked task does not imply that the whole team must stop. When a task is waiting for review, CI, a dependency, or a Product Owner decision, available capacity should move to another independent task that is already allowed to proceed.
 
 ---
 
@@ -478,7 +478,7 @@ Before READY FOR TESTING:
 
 ### 11.1 Review ownership and reviewer selection
 
-The PR owner is the session or role that creates and drives the change.
+The PR owner is the role responsible for creating and driving the change.
 
 When opening a PR, the owner must identify the reviewer roles required by the change scope and risk and request those reviews immediately. The PR should state:
 
@@ -534,7 +534,7 @@ A review applies to the material state that reviewer evaluated. A later material
 
 The PR owner owns the merge by default.
 
-Before merge authorization, another session or role must not merge the PR merely because the shared GitHub account has permission to do so. Repository permission is not merge authorization.
+Before merge authorization, another role must not merge the PR merely because the shared GitHub account has permission to do so. Repository permission is not merge authorization.
 
 A PR becomes merge-authorized only when:
 
@@ -545,9 +545,9 @@ A PR becomes merge-authorized only when:
 - any required Product Owner approval has been recorded;
 - there is no active instruction preventing merge.
 
-After merge authorization, merge authority is no longer exclusive to the PR owner. Another session may perform the merge when useful for integration or continuous flow.
+After merge authorization, merge authority is no longer exclusive to the PR owner. Another authorized role may perform the merge when useful for integration or continuous flow.
 
-For a simple change that requires one independent reviewer, that one required approval is sufficient for the review part of merge authorization. For a material change that requires two independent reviewer roles, both approvals are required before another session gains merge authority.
+For a simple change that requires one independent reviewer, that one required approval is sufficient for the review part of merge authorization. For a material change that requires two independent reviewer roles, both approvals are required before merge authority can extend beyond the PR owner.
 
 Explicit delegation may transfer merge responsibility earlier, but it does not waive review, CI, quality, or Product Owner gates.
 
