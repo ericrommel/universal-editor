@@ -1,6 +1,6 @@
 # ADR-0009: Module 1 scene model and scene document
 
-**Status:** Proposed. Not accepted. This ADR does not authorize implementation.  
+**Status:** Accepted. This ADR authorizes the package decision for the approved Module 1 contract. It does not make Module 1 GREEN.  
 **Date:** 2026-10-06  
 **Decider:** Tech Lead  
 **Consulted:** Senior Core / Platform Engineer, Senior 2D / Editor Engineer, Senior 3D / Rendering Engineer, Senior Product Designer / UX Architect, Functional Quality Engineer, Senior Application Security Engineer
@@ -67,4 +67,4 @@ Selection, viewport hit testing, gizmos, cameras, lights, materials, animation, 
 
 ## Confirmation
 
-This ADR is proposed. The Product Owner has not accepted it.
+The Product Owner approved the specification on 2026-10-06. This ADR is accepted as the package decision for that contract. Acceptance authorizes implementation of the contract. It does not make Module 1 GREEN.

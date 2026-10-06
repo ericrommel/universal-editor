@@ -313,4 +313,4 @@ Developers write the tests that demonstrate the behavior they deliver, using thi
 
 ## 10. Definition of Ready
 
-The five dissent rows now have one expected result. Module 0 is GREEN. Implementation is still unauthorized. The Product Owner has not approved this specification. Specialist concurrence on the reconciled text is recorded separately and is not a substitute for that approval.
+The five dissent rows now have one expected result. Module 0 is GREEN. The Product Owner approved the specification on 2026-10-06. Implementation of that contract is authorized. Module 1 is not GREEN. Specialist concurrence is not a substitute for the later acceptance gate.
