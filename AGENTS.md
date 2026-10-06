@@ -394,7 +394,7 @@ Merging into `main` requires the applicable review and quality gates defined by 
 
 ### Review Coordination and Merge Authority
 
-The session or role that creates and drives a Pull Request is its logical owner.
+The role that creates and drives a Pull Request is its logical owner.
 
 When opening a PR, the owner must identify the required reviewer roles based on scope and risk, request those reviews, and identify the head being reviewed.
 
@@ -404,9 +404,9 @@ Reviewers work independently on the same head and persist their result. The PR o
 
 Minimum review requirements and reviewer-selection rules are defined in `docs/engineering/development-process.md`.
 
-The PR owner owns the merge by default. Another session must not merge merely because it has repository permission.
+The PR owner owns the merge by default. Another role must not merge merely because it has repository permission.
 
-After all required reviews approve the current material head, required CI and verification are green, blocking findings are closed, required Product Owner approval is present, and no active instruction prevents merge, the PR is merge-authorized and another session may perform the merge if useful.
+After all required reviews approve the current material head, required CI and verification are green, blocking findings are closed, required Product Owner approval is present, and no active instruction prevents merge, the PR is merge-authorized and another authorized role may perform the merge if useful.
 
 Repository permission is not merge authorization. An explicit instruction not to merge always takes precedence.
 
