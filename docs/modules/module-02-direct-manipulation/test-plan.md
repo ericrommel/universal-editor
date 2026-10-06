@@ -45,7 +45,7 @@ No row has a second expected result.
 
 ### TP-M2-F-001 — Ready surface and failed startup
 
-**Expected result:** A failed startup shows the foundation screen and the Not ready state. A ready session with no nodes shows "This scene has no objects." and no handle. A ready session with a node does not show that sentence. The surface is not an HTML `canvas`. The window title stays the Module 0 title.
+**Expected result:** `starting` keeps the foundation screen and does not show the surface. A failed startup shows the foundation screen and the Not ready state. A ready session shows the one surface in place of the foundation content root. With no nodes it shows "This scene has no objects." and no handle. With a node it does not show that sentence. The surface is not an HTML `canvas`. The window title stays the Module 0 title.
 
 ### TP-M2-F-002 — Hit and select
 
@@ -53,7 +53,7 @@ Build one rectangle and one box whose projections do not overlap on an 800 by 60
 
 **Expected result:** `hitTest` returns that node's id on its projection and a miss on empty space. Down on an id selects it. A later down on the other id changes the selection. Up on a miss after 4 CSS pixels or less clears it. A drag that starts on a miss does not clear it. The scene bytes do not gain a selection field.
 
-The closer face wins when projections overlap. An identity box at the origin reports its `-X`, `+Y`, and `+Z` faces toward the viewer. A node with no projected area is a miss, including inside the 4px band.
+The closer face wins when projections overlap. If two hits tie on `z2`, the later node in the depth-first preorder of specification section 8 wins. An identity box at the origin reports its `-X`, `+Y`, and `+Z` faces toward the viewer. A node with no projected area is a miss, including inside the 4px band and including its handles.
 
 ### TP-M2-F-003 — Direct move, rotate, and scale
 
@@ -63,7 +63,7 @@ With no window, call `move`, `rotate`, and `scale` on a known id with a finite r
 
 ### TP-M2-F-004 — Face and axis targets
 
-**Expected result:** A rectangle face drag replaces `position.x` and `position.y` and copies `position.z`. A box body drag past 4 CSS pixels does not change triples. A box axis handle replaces one position component. A rectangle ring adds degrees to `rotation.z` only. A scale handle replaces one scale component and can store `0` or a negative finite value. One gesture is one command.
+**Expected result:** A rectangle face drag replaces `position.x` and `position.y` and copies `position.z`. A box body drag past 4 CSS pixels does not change triples. A box axis handle replaces one position component. A rectangle ring adds degrees to `rotation.z` only. A box ring adds degrees only to that ring's rotation component. A scale handle replaces one scale component and can store `0` or a negative finite value. One gesture is one command. A handle hit shape does not intersect that node's face hit region.
 
 ### TP-M2-F-005 — Commit after 4px
 
@@ -71,17 +71,17 @@ With no window, call `move`, `rotate`, and `scale` on a known id with a finite r
 
 ### TP-M2-F-006 — Cancel
 
-**Expected result:** Escape, lost capture, platform pointer cancel, and blur each drop the proposal and leave the baseline in the scene. No undo step is added. A later pointer up does not commit. A non-finite proposal cancels the same way and does not write a partial triple. Escape with no gesture does not clear the selection.
+**Expected result:** Escape, lost capture, platform pointer cancel, and blur each drop the proposal and leave the baseline in the scene. No undo step is added. A later pointer up does not commit. A non-finite proposal cancels the same way, does not throw, and does not write a partial triple. Escape with no gesture does not clear the selection.
 
 ### TP-M2-F-007 — Undo, redo, and reselect
 
 Select node B. Commit a direct move on node A. Then undo, then redo.
 
-**Expected result:** Undo restores A's baseline triples and selects A. Redo restores the committed triples and selects A. A second undo then redo returns those same canonical numbers. Pointer samples are not separate steps.
+**Expected result:** The selection is still B after the direct move. Undo restores A's baseline triples and selects A. Redo restores the committed triples and selects A. Only undo and redo select A. A second undo then redo returns those same canonical numbers. Pointer samples are not separate steps.
 
 ### TP-M2-F-008 — Steps that do not exist
 
-**Expected result:** A selection change, a cancel, and a commit that leaves the canonical triples unchanged add no step. Undo on an empty stack changes nothing and shows no failure screen. A new commit clears redo. Replacing the scene value clears both stacks. Undo of an id that is not in the scene throws `UNKNOWN_NODE` and leaves the scene and both stacks unchanged.
+**Expected result:** A selection change, a cancel, and a commit that leaves the canonical triples unchanged add no step. Undo on an empty stack changes nothing and shows no failure screen. A new commit clears redo. A caller-supplied scene replacement clears both stacks. Undo and redo call `replaceTransform` for a step id that is still in the held scene, and they do not throw `UNKNOWN_NODE`.
 
 ### TP-M2-F-009 — Keys
 
@@ -93,7 +93,7 @@ Select node B. Commit a direct move on node A. Then undo, then redo.
 
 ### TP-M2-F-011 — Rejected id and non-finite value
 
-**Expected result:** An unknown id throws `UNKNOWN_NODE`. A non-finite component throws `NON_FINITE_NUMBER`. The previous scene is unchanged. The message does not contain the id or the number.
+**Expected result:** A direct `move`, `rotate`, or `scale` with an unknown id throws `UNKNOWN_NODE`. The same commands with a non-finite component throw `NON_FINITE_NUMBER`, leave any active gesture in place, and do not change the scene. The message does not contain the id or the number.
 
 ### TP-M2-F-012 — View formula
 
@@ -111,7 +111,7 @@ Parent a box under a rectangle. Move the rectangle by a direct command. Then mov
 
 ### TP-M2-D-001 — Headed selection
 
-**Expected result:** One recorded session on the primary Windows machine, in current Edge or current Chrome, shows an unselected node with a 1px border and a selected node with a 2px focus silhouette and handles. The reviewer can see the difference without a log. The session names the browser. It is not a browser matrix, and CI does not open the window.
+**Expected result:** One recorded session on the primary Windows machine, in current Edge or current Chrome, shows an unselected node with a 1px border and a selected node with a 2px focus silhouette and handles. A primary click changes which node is selected, and the reviewer can see that change without a log. The session names the browser. It is not a browser matrix, and CI does not open the window.
 
 This row is manual. The headless rows do not replace it.
 

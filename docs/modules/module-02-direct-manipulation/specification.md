@@ -1,6 +1,6 @@
 # Module 2 — Direct Manipulation
 
-**Status:** Proposed. Not approved. The Product Owner has not accepted the user-visible rows in section 13. This specification does not authorize implementation.
+**Status:** Proposed. Not approved. The Product Owner has not accepted the user-visible rows in section 16. This specification does not authorize implementation.
 
 The preparation decision is `preparation/reconciliation.md`. This file is the normative contract. The test plan is `test-plan.md`. The reference scene is `preparation/workload.md`.
 
@@ -17,8 +17,8 @@ Before implementing this module, read:
 - `/docs/product-overview.md`
 - `/docs/engineering/development-process.md`
 - `/docs/engineering/architecture.md`
-- `/docs/engineering/adr/0002-ui-framework-and-shell.md`
-- `/docs/engineering/adr/0003-rendering-approach.md`
+- `/docs/engineering/adr/0002-react-for-editor-chrome.md`
+- `/docs/engineering/adr/0003-render-snapshot-and-webgpu-direction.md`
 - `/docs/engineering/adr/0006-domain-persistence-and-undo-direction.md`
 - `/docs/engineering/adr/0008-editor-state-and-shell-content.md`
 - `/docs/modules/module-00-foundation/specification.md`
@@ -73,9 +73,9 @@ A ready session also holds:
 
 Those values live in editor memory. They are not React state, not scene fields, not document fields, and not renderer objects. Pointer move updates the gesture proposal only. It does not call `setState`, and it does not write the scene.
 
-Replacing the scene value clears the selection, drops an active gesture without committing, and clears both stacks. The new scene's triples are the committed triples. Persistence still does not call the filesystem.
+A caller-supplied replacement of the scene value clears the selection, drops an active gesture without committing, and clears both stacks. The new scene's triples are the committed triples. The scene returned by the editor's own `move`, `rotate`, `scale`, undo, or redo is not that replacement. Persistence still does not call the filesystem.
 
-A command that names an id not in the scene throws `UNKNOWN_NODE` and returns no replacement scene. The previous scene, selection, gesture, and stacks stay as they were. A non-finite triple throws `NON_FINITE_NUMBER` the same way. Messages are the Module 1 sentences. They do not include an id, a number, a pointer path, or a key sequence.
+`selectNode`, `move`, `rotate`, and `scale` throw `UNKNOWN_NODE` when the id is not in the scene and return no replacement scene. The previous scene, selection, gesture, and stacks stay as they were. A non-finite argument to a direct `move`, `rotate`, or `scale` throws `NON_FINITE_NUMBER`, does not change the scene, and leaves any active gesture in place. A non-finite proposal does not throw. Section 10 cancels it. Messages are the Module 1 sentences. They do not include an id, a number, a pointer path, or a key sequence.
 
 ## 6. Frame, center, and view
 
@@ -123,9 +123,11 @@ The surface is one tab stop. Handles are not tab stops. Keyboard focus is a ring
 
 `hitTest` is a pure editor function. It takes the surface width, the surface height, a pointer position in CSS pixels, and the scene. It returns one id or a miss. It does not return a render object.
 
-A node with no projected area is not a target. Scale that flattens the drawn shape removes that area. The 4px slop does not restore it.
+A node with no projected area is a miss. Scale that flattens the drawn shape removes that area. The 4px slop does not restore it. That node's handles are not drawn and are not targets.
 
-Otherwise each face is projected with section 6. A face hits when the pointer is inside its projection or within 4 CSS pixels of that boundary. Among those hits, the greatest `z2` wins. If two hits still tie, the later node in paint order wins. Paint order is roots in `rootIds` order, and each node before its `childIds`. A parent is not preferred over a child. The selected node's handles are tested before faces and win over a face.
+Otherwise each face is projected with section 6. A face hits when the pointer is inside its projection or within 4 CSS pixels of that boundary. Among those hits, the greatest `z2` wins. If two hits still tie, the later node in paint order wins. Paint order is one depth-first preorder: walk `rootIds` in order, visit each node, then the nodes in its `childIds` recursively, and do not visit the next root until that subtree is finished. A parent is not preferred over a child.
+
+A move or scale handle hits as a disc of radius 6 CSS pixels. Its center lies on that handle's axis, 16 CSS pixels beyond that node's face hit region, so the disc does not meet the 4px band. A rotate ring hits as an 8 CSS pixel stroke whose inner edge is 8 CSS pixels outside that same face hit region. A pointer in a handle shape is not in that node's face hit region. The selected node's handles are tested before faces and win over a face, including another node's face. One pointer position starts one command.
 
 Primary-button down on a hit selects that id immediately. Down on a miss does not clear. Primary-button up on a miss clears the selection only when the pointer has moved 4 CSS pixels or less and no manipulation started. That up does not change a transform. A drag that starts on a miss does not draw a marquee and does not clear, including when it travels farther than 4 CSS pixels. Up on a hit when no manipulation committed leaves the selection made at down. A box body is a hit and is not a move target, so a drag on that body leaves the selection and the triples unchanged.
 
@@ -147,7 +149,7 @@ A box:
 - Rotate is the ring for one local axis. It adds degrees to that rotation component.
 - Scale is the handle for one local axis. It replaces that scale component.
 
-Handles are drawn only while that node is selected, outside the filled silhouette, in `color.focus`. During a manipulation the other handles of that node are not hittable.
+Handles are drawn only while that node is selected and has projected area, outside the filled silhouette, in `color.focus`. Their hit shapes are section 8. During a manipulation the other handles of that node are not hittable.
 
 A direct `move`, `rotate`, or `scale` command names an id and one replacement finite triple. It commits immediately and does not change the selection. A drag is begin, then proposal updates, then one commit. Tests may call either path with no window.
 
@@ -163,7 +165,7 @@ A manipulation starts when the pointer has moved more than 4 CSS pixels from pri
 
 Commit is primary-button up after that start, including when the pointer is outside the surface. The scene receives the proposal through the Module 1 transform replacement, so each component passes `canonicalizeFiniteTriple` and `-0` becomes `0`. The gesture is then dropped. The selection stays the id pointer-down already selected.
 
-If the proposal is non-finite, the manipulation cancels. It does not repair a component to `0` and it does not write a partial triple.
+If the proposal is non-finite, the manipulation cancels and does not throw. It drops the gesture, leaves the baseline and the selection, adds no undo step, does not repair a component to `0`, and does not write a partial triple.
 
 Cancel is Escape during the manipulation, pointer capture lost, a platform pointer cancel, or the window blurring. The proposal is dropped. The scene still has the baseline, because the gesture has not written it. Selection is unchanged. No undo step is added. A later pointer up does not commit.
 
@@ -175,7 +177,7 @@ Right button and middle button do nothing.
 
 One undo step is one committed `move`, `rotate`, or `scale` on one node whose canonical triples changed. Pointer samples are not steps.
 
-The step stores the node id and the canonical before and after triples. Undo writes the before triples and selects that id. Redo writes the after triples and selects that id. A new committed step clears the redo stack. Undo or redo on an empty stack changes nothing and shows no failure screen. Undo then redo returns the canonical after triples, including `-0` already stored as `0`.
+The step stores the node id and the canonical before and after triples. Undo calls `replaceTransform` with the before triples and selects that id. Redo calls `replaceTransform` with the after triples and selects that id. Each call stores the new frozen scene, and the triples pass `canonicalizeFiniteTriple`. The step id is still in the held scene: a caller-supplied scene replacement clears both stacks, and Module 2 does not remove a node any other way. Undo and redo do not throw `UNKNOWN_NODE`. A new committed step clears the redo stack. Undo or redo on an empty stack changes nothing and shows no failure screen. Undo then redo returns the canonical after triples, including `-0` already stored as `0`.
 
 The keys apply only when the surface is focused and no manipulation is active. During a manipulation they do not commit and do not undo.
 
@@ -290,7 +292,7 @@ After a committed move, the scene document round-trips the new position and stil
 
 ### M2-AC-008 — Rejected input
 
-An unknown id and a non-finite triple each throw the Module 1 code, yield no replacement scene, and leave the previous triples unchanged.
+An unknown id and a non-finite direct-command triple each throw the Module 1 code, yield no replacement scene, and leave the previous triples unchanged. A non-finite proposal cancels and does not throw.
 
 ## 15. Verification
 
