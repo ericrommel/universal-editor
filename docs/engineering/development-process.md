@@ -511,21 +511,34 @@ Additional reviewers may be required when the change crosses multiple risk areas
 
 Requested reviewers review the same PR head independently.
 
-Each reviewer must persist one of these results on the PR and identify its logical role:
+Because the logical roles may share one GitHub account, native GitHub **Approve** and **Request changes** actions are not the review record for this project. Reviews are recorded through comments.
 
-- **APPROVED**
-- **CHANGES REQUESTED**
-- **COMMENT / NON-BLOCKING FINDING**
+Review findings should be small and focused. When a finding applies to a specific line or file, the reviewer should use an inline review comment rather than one large PR-wide comment. Each finding should be its own thread where practical.
 
-When a reviewer finishes, that reviewer must notify the PR owner through the persistent project record.
+Every review comment must start with the logical reviewer role, for example:
+
+```text
+**Role: Senior Application Security Engineer**
+
+**Finding: BLOCKING**
+
+The parser accepts ...
+```
+
+A reviewer may use **Finding: NON-BLOCKING** when the comment does not prevent merge.
+
+The role that created a review thread owns that thread. Only that same logical role may resolve it after verifying the fix. The PR owner and other roles must not resolve another reviewer's thread, even though the shared GitHub account may technically allow it.
+
+When a reviewer has finished reviewing the current head, that reviewer notifies the PR owner with a short role-attributed completion comment. If there are no unresolved blocking findings for that reviewer, the completion comment records **Review complete: APPROVED** and identifies the reviewed head or commit.
 
 The PR owner must wait until all requested reviewers have completed their review of that head before starting normal review fixes. This prevents one reviewer from evaluating a moving target while another review is still in progress.
 
 After all requested reviews are complete:
 
-- if any reviewer requested changes, the PR owner integrates the full set of feedback;
+- the PR owner integrates the full set of blocking feedback;
 - the owner updates the PR and records the new head;
-- only reviewer roles whose review area was materially affected by the fixes need to review again;
+- affected reviewers re-check their own threads and resolve them only after the fix is verified;
+- only reviewer roles whose review area was materially affected need to review the new head;
 - unaffected approvals remain valid.
 
 A review applies to the material state that reviewer evaluated. A later material change in that reviewer's area invalidates that approval until the affected reviewer approves the new head.
