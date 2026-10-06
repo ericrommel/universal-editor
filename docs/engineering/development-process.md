@@ -503,7 +503,7 @@ Changes that materially affect code, architecture, shared contracts, tests or ve
 
 Changes that affect product scope, requirements, user-visible behavior, acceptance criteria, module boundaries, or other Product Owner concerns also require Product Owner review.
 
-Product Owner review is additional to required engineering review when both apply. Product Owner approval does not substitute for engineering review, and engineering approval does not substitute for Product Owner approval.
+If a change requires both engineering review and Product Owner approval, it must receive both. Neither one replaces the other.
 
 Additional reviewers may be required when the change crosses multiple risk areas.
 
