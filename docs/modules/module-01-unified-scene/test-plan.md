@@ -1,6 +1,6 @@
 # Module 1 — Test Plan
 
-**Status:** Proposed. Not approved. This plan does not authorize implementation.
+**Status:** Approved with the specification on 2026-10-06. This plan does not make Module 1 GREEN.
 
 **Owners:** Functional Quality Engineer and Non-Functional Quality Engineer
 
@@ -10,7 +10,7 @@
 
 ## 1. How to read a row
 
-Each scenario names the specification identifier it covers and one expected result. A row marked **Specified** is stable enough to implement after the Product Owner approves the specification. This plan does not give that approval.
+Each scenario names the specification identifier it covers and one expected result. A row marked **Specified** is stable enough to implement. The Product Owner approved the specification on 2026-10-06.
 
 Archive section 9.2 is context. Its identifiers are not the identifiers in this plan.
 
