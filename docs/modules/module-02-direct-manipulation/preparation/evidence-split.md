@@ -10,7 +10,7 @@ This note names evidence a later test would check. It is not the test plan the D
 
 Archive section 9.3 is context for the behaviors below. This note does not adopt that section's requirement or acceptance identifiers.
 
-Pull request #33 is an unapproved Module 1 proposal: a headless scene document, selection by id, no user-facing save, and no viewport. It was not checked out. Module 0 has no canvas (ADR-0003) and no user-facing file writer (ADR-0006). Module 0 is not GREEN. Developers write automated tests after implementation is authorized. This note adds none.
+Pull request #33 is an unapproved Module 1 proposal: a headless scene document, selection by id, no user-facing save, and no viewport. It was not checked out. Module 0 has no canvas (ADR-0003) and no user-facing file writer (ADR-0006). Module 0 is GREEN at `5e99484` (issue #1). That acceptance does not approve a viewport or a file writer. Developers write automated tests after implementation is authorized. This note adds none.
 
 ## How a later check runs
 
@@ -88,7 +88,7 @@ This note sets no object count and no millisecond budget. Module 0 set no frame-
 
 **Evidence class:** headless command
 
-**Assertion:** `pnpm verify` (`node scripts/verify.mjs`) exits 0 on `ubuntu-24.04` and on `windows-2025`. That command is the regression gate. It opens no window and does not repeat the Module 0 headed launch. The Linux job stays a coupling check, not a desktop result. Module 0 is not GREEN, and Module 1 is not approved, so this note names no second suite and adds no job. Tests from a later approved module stay on this same gate. No numeric threshold is added.
+**Assertion:** `pnpm verify` (`node scripts/verify.mjs`) exits 0 on `ubuntu-24.04` and on `windows-2025`. That command is the regression gate. It opens no window and does not repeat the Module 0 headed launch. The Linux job stays a coupling check, not a desktop result. Module 0 is GREEN, and its checks stay on this gate. Module 1 is not approved, so this note names no second suite and adds no job. Tests from a later approved module stay on this same gate. No numeric threshold is added.
 
 ## Disagreement
 
