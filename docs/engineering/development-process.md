@@ -8,6 +8,24 @@ Development is incremental and module-based. Each module must pass its defined q
 
 The Human Product Owner (PO) is the final authority for product scope and module acceptance.
 
+### Development Methodology
+
+The project uses an Agile continuous-flow model with Kanban-style work management.
+
+Work is not organized around fixed sprints. GitHub Issues and the project board represent the live flow of work, while roadmap modules remain the primary product increments that pass explicit readiness, implementation, verification, and Product Owner acceptance gates.
+
+The operating principles are:
+
+- pull the next useful independent work when capacity is available instead of waiting idly for unrelated work to finish;
+- use parallel specialist work where tasks are independent;
+- keep work small enough to review, verify, and integrate continuously;
+- allow research, architecture, design, test planning, security analysis, technical spikes, and other safe preparation for later modules before those modules are authorized for implementation;
+- do not implement future product functionality before its implementation gate is open;
+- use gates to control risk and product progression, not to stop unrelated preparation or technical work;
+- prefer persistent GitHub state over transient local context for coordination between independent work.
+
+A blocked task does not imply that the whole team must stop. When a task is waiting for review, CI, a dependency, or a Product Owner decision, available capacity should move to another independent task that is already allowed to proceed.
+
 ---
 
 ## 2. Delivery Workflow
@@ -89,8 +107,8 @@ When work reaches a review gate:
 - identify relevant decisions and ADRs;
 - identify known limitations, risks, assumptions, and unresolved questions;
 - identify any decision required from the Human Product Owner;
-- move the Issue to `Ready for PO`;
-- stop if Product Owner approval is required.
+- move the Issue to `Ready for PO` when a Product Owner gate is actually required;
+- stop only when the remaining decision falls within Product Owner authority. A purely technical disagreement is not a reason to stop at a PO gate.
 
 The Human Product Owner determines whether work at a PO gate:
 
@@ -180,6 +198,34 @@ The TL:
 - prevents premature implementation of future modules.
 
 The TL cannot change product requirements or waive acceptance criteria.
+
+### Engineering Decision Authority
+
+The Human Product Owner is not a technical approval gate.
+
+Technical decisions are owned by engineering. The Project Manager and Tech Lead are responsible for driving technical disagreements to closure, using the relevant specialist roles where needed. The existence of multiple reasonable technical options is not, by itself, a reason to escalate to the Product Owner.
+
+The PM and TL may resolve and document decisions about:
+
+- architecture and internal contracts;
+- implementation approach;
+- data structures and algorithms;
+- technical sequencing and decomposition;
+- test strategy and verification approach;
+- internal error handling;
+- tooling, CI, and developer workflow;
+- technical performance, security, maintainability, and operability trade-offs that do not change the intended product outcome.
+
+Escalate to the Product Owner when a decision changes or materially affects:
+
+- product intent or scope;
+- requirements or acceptance criteria;
+- user-visible behavior or workflow;
+- module boundaries or MVP scope;
+- externally visible product contracts;
+- a material product trade-off that engineering cannot resolve without changing the intended product outcome.
+
+When a disagreement remains purely technical, the PM and TL should resolve it, record the decision in the appropriate persistent artifact, and continue.
 
 ### 6.4 Senior Product Designer / UX Architect
 
@@ -416,6 +462,8 @@ Future functionality must not be implemented merely because future requirements 
 
 ## 11. Code Review
 
+Review is role-based. Several AI roles may use the same GitHub account, so GitHub account identity is not sufficient to establish review independence. Persistent review records must identify the logical reviewer role and the PR head or commit being reviewed.
+
 Before READY FOR TESTING:
 
 - implementation is reviewed;
@@ -427,6 +475,96 @@ Before READY FOR TESTING:
 - security-sensitive changes receive appropriate review;
 - unnecessary future functionality is identified;
 - known technical debt is documented.
+
+### 11.1 Review ownership and reviewer selection
+
+The PR owner is the role responsible for creating and driving the change.
+
+When opening a PR, the owner must identify the reviewer roles required by the change scope and risk and request those reviews immediately. The PR should state:
+
+- the logical PR owner;
+- the reviewer roles requested;
+- whether Product Owner review is also required;
+- the PR head or commit expected to be reviewed.
+
+Reviewer selection is risk-based rather than fixed.
+
+For material engineering changes, the Tech Lead is normally one reviewer unless the Tech Lead is the PR owner. The other reviewer should be an independent specialist whose area is materially affected, for example Core, 2D/Editor, 3D/Rendering, Functional Quality, Non-Functional Quality, DevOps, Security, or Product Design.
+
+If the Tech Lead owns the PR, another senior engineering role relevant to the change takes the integration/architecture review, and a second independent affected specialist reviews the change.
+
+The Project Manager reviews process, traceability, dependencies, readiness, and delivery state. PM review does not normally replace a required technical specialist review.
+
+### 11.2 Minimum review requirements
+
+Simple documentation or preparation-only changes that do not change product behavior, product scope, architecture, code, test gates, security boundaries, persistence, CI/CD, or operational behavior require at least one independent reviewer role.
+
+Changes that materially affect code, architecture, shared contracts, tests or verification gates, security boundaries, persistence, CI/CD, or other engineering behavior require at least two independent reviewer roles.
+
+Changes that affect product scope, requirements, user-visible behavior, acceptance criteria, module boundaries, or other Product Owner concerns also require Product Owner review.
+
+If a change requires both engineering review and Product Owner approval, it must receive both. Neither one replaces the other.
+
+Additional reviewers may be required when the change crosses multiple risk areas.
+
+### 11.3 Independent review cycle
+
+Requested reviewers review the same PR head independently.
+
+Because the logical roles may share one GitHub account, native GitHub **Approve** and **Request changes** actions are not the review record for this project. Reviews are recorded through comments.
+
+Review findings should be small and focused. When a finding applies to a specific line or file, the reviewer should use an inline review comment rather than one large PR-wide comment. Each finding should be its own thread where practical.
+
+Every review comment must start with the logical reviewer role, for example:
+
+```text
+**Role: Senior Application Security Engineer**
+
+**Finding: BLOCKING**
+
+The parser accepts ...
+```
+
+A reviewer may use **Finding: NON-BLOCKING** when the comment does not prevent merge.
+
+The role that created a review thread owns that thread. Only that same logical role may resolve it after verifying the fix. The PR owner and other roles must not resolve another reviewer's thread, even though the shared GitHub account may technically allow it.
+
+When a reviewer has finished reviewing the current head, that reviewer notifies the PR owner with a short role-attributed completion comment. If there are no unresolved blocking findings for that reviewer, the completion comment records **Review complete: APPROVED** and identifies the reviewed head or commit.
+
+The PR owner must wait until all requested reviewers have completed their review of that head before starting normal review fixes. This prevents one reviewer from evaluating a moving target while another review is still in progress.
+
+After all requested reviews are complete:
+
+- the PR owner integrates the full set of blocking feedback;
+- the owner updates the PR and records the new head;
+- affected reviewers re-check their own threads and resolve them only after the fix is verified;
+- only reviewer roles whose review area was materially affected need to review the new head;
+- unaffected approvals remain valid.
+
+A review applies to the material state that reviewer evaluated. A later material change in that reviewer's area invalidates that approval until the affected reviewer approves the new head.
+
+### 11.4 Merge ownership and authorization
+
+The PR owner owns the merge by default.
+
+Before merge authorization, another role must not merge the PR merely because the shared GitHub account has permission to do so. Repository permission is not merge authorization.
+
+A PR becomes merge-authorized only when:
+
+- all requested reviews are complete;
+- all required reviewer roles have approved the current material head;
+- required CI and verification gates are green;
+- there are no unresolved blocking findings;
+- any required Product Owner approval has been recorded;
+- there is no active instruction preventing merge.
+
+After merge authorization, merge authority is no longer exclusive to the PR owner. Another authorized role may perform the merge when useful for integration or continuous flow.
+
+For a simple change that requires one independent reviewer, that one required approval is sufficient for the review part of merge authorization. For a material change that requires two independent reviewer roles, both approvals are required before merge authority can extend beyond the PR owner.
+
+Explicit delegation may transfer merge responsibility earlier, but it does not waive review, CI, quality, or Product Owner gates.
+
+An active instruction not to merge always takes precedence.
 
 Blocking findings return the work to IN DEVELOPMENT.
 
