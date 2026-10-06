@@ -39,6 +39,14 @@ No note selects a shape set, a raster format, a container, a stacking model, a t
 
 Issue #44 tracks this record. Issues #45 through #49 stay blocked. Closing issue #7 or issue #8 does not by itself open #45 through #49 when the map also requires a single-valued contract, a container decision, or a draw ADR.
 
-## 4. Non-goals
+## 4. Module 1 and Module 2 moved while this note was written
+
+Pull request #50 proposes one result for each Module 1 row that pull request #33 left double-valued. It is not merged. Specialist notes in this directory that still say those rows disagree were written against pull requests #32 and #33. They are not a second vote against #50. This preparation does not adopt #50, and it does not extend it.
+
+If that proposal later becomes the approved contract, two constraints carry forward. Selection is not a scene-document field, so issue #45 must not put it back. The 1048576-byte document cap is not an image budget, so issue #46 still needs the container ADR-0006 has not selected.
+
+Issue #8 is now a preparation parent for issues #35 through #42. Those issues do not specify a viewport or an undo model. Issues #47, #48, and #49 stay blocked.
+
+## 5. Non-goals
 
 This note does not move issue #9 to Ready for PO. Definition of Ready is not met. Module 0 being GREEN does not open Module 3 implementation.

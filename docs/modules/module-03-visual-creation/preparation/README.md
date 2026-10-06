@@ -6,6 +6,8 @@ The executable breakdown is [dependency-map.md](dependency-map.md). Specialist n
 
 Archive section 9.4 in `docs/archive/product-engineering-specification-v1.0.md` is context. Its identifiers are not operational requirements.
 
+Pull request #50 proposes one result for each Module 1 row that previously had two. It is not merged and not an approved contract. Specialist notes that still describe those rows as open were written against pull requests #32 and #33. This index and the dependency map are the current split. Module 3 does not extend either Module 1 text until one contract is approved.
+
 | Review | Role |
 | --- | --- |
 | [reviews/tech-lead.md](reviews/tech-lead.md) | Tech Lead |

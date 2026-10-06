@@ -13,8 +13,8 @@ Checked against `main` at `5e99484` and the GitHub issues on 2026-10-06.
 | Module | Issue | State that bounds Module 3 |
 | --- | --- | --- |
 | Module 0 — Engineering Foundation | [#1](https://github.com/ericrommel/universal-editor/issues/1), closed | GREEN. The Product Owner approved the module at [issuecomment-6004334244](https://github.com/ericrommel/universal-editor/issues/1#issuecomment-6004334244). `main` is `5e99484`. |
-| Module 1 — Unified Scene | [#7](https://github.com/ericrommel/universal-editor/issues/7) | Preparation only. Pull requests [#32](https://github.com/ericrommel/universal-editor/pull/32), [#33](https://github.com/ericrommel/universal-editor/pull/33), and [#34](https://github.com/ericrommel/universal-editor/pull/34) are open. They are not implementation authorization. Five rows still have two expected results: selection storage, extents, document shape and byte cap, insert and delete, and stable error codes. The Product Owner's Module 0 approval says Module 1 may proceed beyond preparation only through its own readiness gate. That gate is not met. |
-| Module 2 — Direct Manipulation | [#8](https://github.com/ericrommel/universal-editor/issues/8) | Backlog placeholder. No comments, no specification, no branch, no viewport. |
+| Module 1 — Unified Scene | [#7](https://github.com/ericrommel/universal-editor/issues/7) | Preparation only. Pull requests [#32](https://github.com/ericrommel/universal-editor/pull/32), [#33](https://github.com/ericrommel/universal-editor/pull/33), [#34](https://github.com/ericrommel/universal-editor/pull/34), and [#50](https://github.com/ericrommel/universal-editor/pull/50) are open. None is implementation authorization. Pull request #33 was returned with two expected results on selection storage, extents, document shape and byte cap, insert and delete, and error codes. Pull request #50 proposes one result for each of those rows, including a flat scene document with a 1048576-byte cap and selection rejected as an unknown key. That proposal is not approved. The Product Owner's Module 0 approval says Module 1 may proceed beyond preparation only through its own readiness gate. That gate is not met. |
+| Module 2 — Direct Manipulation | [#8](https://github.com/ericrommel/universal-editor/issues/8) | Preparation backlog. Sub-issues [#35](https://github.com/ericrommel/universal-editor/issues/35) through [#39](https://github.com/ericrommel/universal-editor/issues/39) can be written without Module 1. [#40](https://github.com/ericrommel/universal-editor/issues/40) through [#42](https://github.com/ericrommel/universal-editor/issues/42) are blocked on that preparation and on an approved Module 1 contract. There is still no specification, viewport, or undo API. |
 | Module 3 — Visual Creation | [#9](https://github.com/ericrommel/universal-editor/issues/9) | This preparation. The issue was a backlog placeholder. Archive section 9.4 does not freeze its scope. |
 
 Development process section 2 allows research, architecture, design, and test design for a later module before the predecessor is GREEN. Section 20 allows implementation of the next module only after the predecessor is GREEN and the Product Owner has approved it. Module 3 implementation waits until Module 2 is GREEN, which waits until Module 1 is GREEN.
@@ -85,13 +85,13 @@ The provisional manifest stays the two-field writer. Raising its 4096-byte cap d
 
 ADR-0006 already records why image bytes do not belong in one JSON document. The container is still unselected. `checkEntryNames` is not an extractor. The Unicode case-fold gap is open again before the first archive reader.
 
-The 262144-byte figure in the unapproved Module 1 proposal is not a limit and is not an image budget. A document cap of that order still does not hold a typical raster.
+The 262144-byte figure in pull request #33, and the 1048576-byte figure in pull request #50, are not limits and are not image budgets. ADR-0006 still has not selected a container. A scene JSON document of either size is the shape that ADR says becomes base64 or forces a format change once images exist.
 
 Done for this package means an approved document round-trips the text and appearance it claims to store, image bytes live in the approved container, and a failed read yields no scene. Implementation waits for that approval.
 
 ## 5. Work blocked on Module 2
 
-Issue #8 has no specification. These packages also stay closed while Module 1 is open, because section 20 runs in order.
+Issue #8 has preparation sub-issues and no specification. These packages also stay closed while Module 1 is open, because section 20 runs in order. Writing Module 2's preparation notes does not open them.
 
 ### M3-DEP-M2-01 — Selection, transform, and undo participation
 

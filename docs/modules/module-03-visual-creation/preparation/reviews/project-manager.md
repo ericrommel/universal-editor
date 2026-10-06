@@ -15,8 +15,8 @@ The work that can proceed is the dependency map and the specialist notes. The wo
 | Gate | Result |
 | --- | --- |
 | Module 0 GREEN | Met. Issue #1 is closed. Approval: https://github.com/ericrommel/universal-editor/issues/1#issuecomment-6004334244. `main` is `5e99484`. |
-| Module 1 ready for development | Not met. Issue #7. Pull requests #32, #33, and #34 are open. Five rows still disagree. |
-| Module 2 specified | Not met. Issue #8 is a backlog placeholder. |
+| Module 1 ready for development | Not met. Issue #7. Pull requests #32, #33, #34, and #50 are open. #50 proposes one result per previously split row and is not approved. |
+| Module 2 specified | Not met. Issue #8 has preparation sub-issues #35 through #42 and no viewport or undo model. |
 | Module 3 Definition of Ready | Not met. See the dependency map, section 8. |
 | Product Owner decision required to continue preparation | No. Section 6 of the dependency map lists decisions that block implementation. They are premature while Module 1 has no single approved contract. This note does not ask for them. |
 
