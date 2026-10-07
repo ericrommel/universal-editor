@@ -28,6 +28,9 @@ export type EditorHistory = {
   readonly past: readonly EditorDocument[];
   readonly present: EditorDocument;
   readonly future: readonly EditorDocument[];
+  // Selection can change without a new step. Undo copies this commit,
+  // not the selection chosen afterward.
+  readonly anchor: EditorDocument;
 };
 
 export type EditorShape = {
@@ -69,11 +72,8 @@ const SOUTH = new Set<ResizeHandle>(["s", "se", "sw"]);
 const NORTH = new Set<ResizeHandle>(["n", "ne", "nw"]);
 
 export function createHistory(): EditorHistory {
-  return {
-    past: [],
-    present: { scene: createScene(), selectedId: null },
-    future: [],
-  };
+  const present = { scene: createScene(), selectedId: null };
+  return { past: [], present, future: [], anchor: present };
 }
 
 export function addShape(
@@ -197,15 +197,25 @@ export function replacePresent(
   history: EditorHistory,
   present: EditorDocument,
 ): EditorHistory {
-  return { past: history.past, present, future: history.future };
+  return {
+    past: history.past,
+    present,
+    future: history.future,
+    anchor: history.anchor,
+  };
 }
 
 export function commitPresent(
   base: EditorHistory,
   present: EditorDocument,
 ): EditorHistory {
-  if (present.scene === base.present.scene) {
-    return { past: base.past, present, future: base.future };
+  if (present.scene === base.anchor.scene) {
+    return {
+      past: base.past,
+      present,
+      future: base.future,
+      anchor: base.anchor,
+    };
   }
   return commit(base, present);
 }
@@ -218,7 +228,8 @@ export function undo(history: EditorHistory): EditorHistory {
   return {
     past: history.past.slice(0, -1),
     present: previous,
-    future: [history.present, ...history.future],
+    future: [history.anchor, ...history.future],
+    anchor: previous,
   };
 }
 
@@ -228,9 +239,10 @@ export function redo(history: EditorHistory): EditorHistory {
     return history;
   }
   return {
-    past: [...history.past, history.present],
+    past: [...history.past, history.anchor],
     present: next,
     future: history.future.slice(1),
+    anchor: next,
   };
 }
 
@@ -426,9 +438,10 @@ function commit(
   present: EditorDocument,
 ): EditorHistory {
   return {
-    past: [...history.past, history.present].slice(-HISTORY_LIMIT),
+    past: [...history.past, history.anchor].slice(-HISTORY_LIMIT),
     present,
     future: [],
+    anchor: present,
   };
 }
 

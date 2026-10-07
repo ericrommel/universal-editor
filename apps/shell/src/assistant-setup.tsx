@@ -112,7 +112,10 @@ export function AssistantSetup({
             type="radio"
             name="assistant-source"
             checked={choice === "hosted"}
-            onChange={() => setChoice("hosted")}
+            onChange={() => {
+              setChoice("hosted");
+              setMessage(null);
+            }}
           />
           Hosted provider
         </label>
@@ -121,79 +124,86 @@ export function AssistantSetup({
             type="radio"
             name="assistant-source"
             checked={choice === "local"}
-            onChange={() => setChoice("local")}
+            onChange={() => {
+              setChoice("local");
+              setMessage(null);
+            }}
           />
           Local model
         </label>
       </div>
       {choice === "hosted" ? (
         <form onSubmit={(event) => void saveHosted(event)}>
-          <label>
-            Provider
-            <select
-              value={provider}
-              disabled={busy}
-              onChange={(event) => {
-                const next =
-                  event.target.value === "compatible" ? "compatible" : "xai";
-                setProvider(next);
-                setModel(next === "xai" ? "grok-4.7" : "");
-                setApiKey("");
-              }}
-            >
-              <option value="xai">xAI</option>
-              <option value="compatible">Other hosted provider</option>
-            </select>
-          </label>
-          {provider === "xai" ? (
-            <p>
-              The model and API key are required. The service address stays with
-              xAI.{" "}
-              <a href={XAI_KEYS} target="_blank" rel="noopener noreferrer">
-                Create an xAI API key
-              </a>
-            </p>
-          ) : (
-            <div>
+          <div className="uvcp-ai-scroll">
+            <label>
+              Provider
+              <select
+                value={provider}
+                disabled={busy}
+                onChange={(event) => {
+                  const next =
+                    event.target.value === "compatible" ? "compatible" : "xai";
+                  setProvider(next);
+                  setModel(next === "xai" ? "grok-4.7" : "");
+                  setApiKey("");
+                }}
+              >
+                <option value="xai">xAI</option>
+                <option value="compatible">Other hosted provider</option>
+              </select>
+            </label>
+            {provider === "xai" ? (
               <p>
-                Enter the https address, model name, and API key that provider
-                requires.
+                The model and API key are required. The service address stays
+                with xAI.{" "}
+                <a href={XAI_KEYS} target="_blank" rel="noopener noreferrer">
+                  Create an xAI API key
+                </a>
               </p>
-              <label>
-                Address
-                <input
-                  type="url"
-                  value={baseUrl}
-                  disabled={busy}
-                  autoComplete="off"
-                  onChange={(event) => setBaseUrl(event.target.value)}
-                />
-              </label>
-            </div>
-          )}
-          <label>
-            Model
-            <input
-              value={model}
-              disabled={busy}
-              autoComplete="off"
-              onChange={(event) => setModel(event.target.value)}
-            />
-          </label>
-          <label>
-            API key
-            <input
-              type="password"
-              value={apiKey}
-              disabled={busy}
-              autoComplete="off"
-              spellCheck={false}
-              onChange={(event) => setApiKey(event.target.value)}
-            />
-          </label>
-          <p>
-            The key stays in this running session and is not saved in the scene.
-          </p>
+            ) : (
+              <div>
+                <p>
+                  Enter the https address, model name, and API key that provider
+                  requires.
+                </p>
+                <label>
+                  Address
+                  <input
+                    type="url"
+                    value={baseUrl}
+                    disabled={busy}
+                    autoComplete="off"
+                    onChange={(event) => setBaseUrl(event.target.value)}
+                  />
+                </label>
+              </div>
+            )}
+            <label>
+              Model
+              <input
+                value={model}
+                disabled={busy}
+                autoComplete="off"
+                onChange={(event) => setModel(event.target.value)}
+              />
+            </label>
+            <label>
+              API key
+              <input
+                type="password"
+                value={apiKey}
+                disabled={busy}
+                autoComplete="off"
+                spellCheck={false}
+                onChange={(event) => setApiKey(event.target.value)}
+              />
+            </label>
+            <p>
+              The key stays in this running session and is not saved in the
+              scene.
+            </p>
+            {message === null ? null : <p role="status">{message}</p>}
+          </div>
           <div className="uvcp-ai-actions">
             <button type="submit" disabled={busy}>
               Save and use
@@ -207,31 +217,34 @@ export function AssistantSetup({
         </form>
       ) : (
         <form onSubmit={(event) => void saveLocal(event)}>
-          <p>
-            This looks for Ollama already running on this computer. It does not
-            install or configure Ollama.
-          </p>
-          <div className="uvcp-ai-actions">
-            <button type="button" disabled={busy} onClick={() => void look()}>
-              Look for Ollama
-            </button>
+          <div className="uvcp-ai-scroll">
+            <p>
+              This looks for Ollama already running on this computer. It does
+              not install or configure Ollama.
+            </p>
+            <div className="uvcp-ai-actions">
+              <button type="button" disabled={busy} onClick={() => void look()}>
+                Look for Ollama
+              </button>
+            </div>
+            {localModels !== null && localModels.length > 0 ? (
+              <label>
+                Model
+                <select
+                  value={localModel}
+                  disabled={busy}
+                  onChange={(event) => setLocalModel(event.target.value)}
+                >
+                  {localModels.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+            {message === null ? null : <p role="status">{message}</p>}
           </div>
-          {localModels !== null && localModels.length > 0 ? (
-            <label>
-              Model
-              <select
-                value={localModel}
-                disabled={busy}
-                onChange={(event) => setLocalModel(event.target.value)}
-              >
-                {localModels.map((name) => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : null}
           <div className="uvcp-ai-actions">
             <button type="submit" disabled={busy || localModel.length === 0}>
               Use this model
@@ -244,7 +257,6 @@ export function AssistantSetup({
           </div>
         </form>
       )}
-      {message === null ? null : <p role="status">{message}</p>}
     </section>
   );
 }

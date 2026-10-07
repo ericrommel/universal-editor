@@ -69,6 +69,29 @@ test("move, resize, delete, and undo restore the scene", () => {
   assert.deepEqual(redone.present.scene.rootIds, []);
 });
 
+test("redo restores the selection stored at commit", () => {
+  const rectangle = addShape(createHistory(), "rectangle");
+  const box = addShape(rectangle, "box");
+  const reselected = replacePresent(box, selectShape(box.present, "s1"));
+  assert.equal(reselected.past.length, box.past.length);
+  assert.equal(reselected.present.selectedId, "s1");
+  const undone = undo(reselected);
+  assert.deepEqual(undone.present.scene.rootIds, ["s1"]);
+  assert.equal(undone.present.selectedId, "s1");
+  const redone = redo(undone);
+  assert.deepEqual(redone.present.scene.rootIds, ["s1", "s2"]);
+  assert.equal(redone.present.selectedId, "s2");
+
+  const moved = commitPresent(
+    rectangle,
+    moveShape(rectangle.present, "s1", 80, 90),
+  );
+  const cleared = replacePresent(moved, selectShape(moved.present, null));
+  const restored = redo(undo(cleared));
+  assert.equal(shapesOf(restored.present)[0]?.x, 80);
+  assert.equal(restored.present.selectedId, "s1");
+});
+
 test("a drag commits once and selection is not an edit", () => {
   const created = addShape(createHistory(), "box");
   const selected = replacePresent(created, selectShape(created.present, "s1"));

@@ -376,9 +376,11 @@ body,
   bottom: 12px;
   left: 50%;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
   width: min(400px, calc(100% - 500px));
-  max-height: min(460px, calc(100% - 300px));
-  overflow: auto;
+  max-height: calc(100% - 24px);
+  overflow: hidden;
   padding: 12px 16px 16px;
   background: #ffffff;
   border: 1px solid #7a8496;
@@ -405,9 +407,20 @@ body,
 }
 
 .uvcp-ai-setup form {
-  display: grid;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
   max-width: 28rem;
   gap: 8px;
+  overflow: hidden;
+}
+
+.uvcp-ai-scroll {
+  min-height: 0;
+  overflow: auto;
+  scrollbar-color: #7a8496 transparent;
+  scrollbar-width: thin;
 }
 
 .uvcp-ai-setup label {
@@ -423,6 +436,10 @@ body,
   flex-wrap: wrap;
   gap: 12px;
   align-items: center;
+}
+
+.uvcp-ai-setup form > .uvcp-ai-actions {
+  flex: none;
 }
 
 .uvcp-ai-choices label {
@@ -524,7 +541,7 @@ body,
   .uvcp-ai-setup {
     left: 12px;
     width: min(400px, calc(100% - 264px));
-    max-height: min(320px, calc(100% - 280px));
+    max-height: min(420px, calc(100% - 24px));
     transform: none;
   }
 
