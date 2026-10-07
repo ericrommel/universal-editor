@@ -103,8 +103,18 @@ export async function exportSelectedGltf(
   }
 }
 
+const FIXED_MESSAGES = new Set([
+  GLTF_TOO_LARGE,
+  "Interchange document is not UTF-8 text.",
+  INVALID_GLTF,
+  "Interchange document format is not supported.",
+  "Interchange document shape is not accepted.",
+  "Interchange node is not a rectangle or a box.",
+  "Expected a finite number.",
+]);
+
 function fileMessage(error: unknown): string {
-  if (error instanceof DomainError) {
+  if (error instanceof DomainError && FIXED_MESSAGES.has(error.message)) {
     return error.message;
   }
   return INVALID_GLTF;

@@ -111,8 +111,56 @@ test("external buffer URIs and hostile keys are rejected", async () => {
     utf8('{"__proto__":{"polluted":true},"asset":{"version":"2.0"}}'),
     "INVALID_SHAPE",
   );
+  await expectCode(
+    glbFromText('{"__proto__":{"polluted":true},"asset":{"version":"2.0"}}'),
+    "INVALID_SHAPE",
+  );
   const huge = new Uint8Array(4 * 1024 * 1024 + 1);
   await expectCode(huge, "TOO_LARGE");
+});
+
+test("an accessor count is rejected before it is materialized", async () => {
+  const bomb = {
+    asset: { version: "2.0" },
+    accessors: [{ componentType: 5126, count: 1_000_000, type: "VEC3" }],
+  };
+  await expectCode(utf8(JSON.stringify(bomb)), "TOO_LARGE");
+  await expectCode(glbFromText(JSON.stringify(bomb)), "TOO_LARGE");
+  const many = {
+    asset: { version: "2.0" },
+    accessors: [
+      { componentType: 5126, count: 40_000, type: "VEC3" },
+      { componentType: 5126, count: 40_000, type: "VEC3" },
+    ],
+  };
+  await expectCode(utf8(JSON.stringify(many)), "TOO_LARGE");
+});
+
+test("an optional extension name is not logged", async () => {
+  const warnings: string[] = [];
+  const warn = console.warn;
+  console.warn = (...args: unknown[]) => {
+    warnings.push(args.map((part) => String(part)).join(" "));
+  };
+  try {
+    await assert.rejects(
+      importDocument(
+        "gltf",
+        utf8(
+          JSON.stringify({
+            asset: { version: "2.0" },
+            extensionsUsed: ["OPTIONAL_EXTENSION"],
+          }),
+        ),
+      ),
+    );
+  } finally {
+    console.warn = warn;
+  }
+  assert.equal(
+    warnings.some((line) => line.includes("OPTIONAL_EXTENSION")),
+    false,
+  );
 });
 
 test("a triangle fan is not a rectangle or a box", async () => {
@@ -237,6 +285,21 @@ async function triangle(): Promise<Uint8Array> {
 
 function utf8(value: string): Uint8Array {
   return new TextEncoder().encode(value);
+}
+
+function glbFromText(json: string): Uint8Array {
+  const text = utf8(json);
+  const padded = text.length + ((4 - (text.length % 4)) % 4);
+  const bytes = new Uint8Array(20 + padded);
+  const view = new DataView(bytes.buffer);
+  view.setUint32(0, 0x46546c67, true);
+  view.setUint32(4, 2, true);
+  view.setUint32(8, bytes.length, true);
+  view.setUint32(12, padded, true);
+  view.setUint32(16, 0x4e4f534a, true);
+  bytes.set(text, 20);
+  bytes.fill(0x20, 20 + text.length);
+  return bytes;
 }
 
 async function expectCode(

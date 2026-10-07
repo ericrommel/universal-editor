@@ -3,6 +3,7 @@ import {
   Document,
   type Node as GltfNode,
   type Scene as GltfScene,
+  Logger,
   type Material,
   type Mesh,
   WebIO,
@@ -95,14 +96,12 @@ export async function exportGltf(scene: Scene): Promise<Uint8Array> {
 async function readDocument(bytes: Uint8Array): Promise<Document> {
   const io = openIo();
   try {
+    const parsed = isGlb(bytes) ? glbJson(bytes) : textJson(bytes);
+    rejectHostileJson(parsed, 0);
+    rejectLargeAccessors(parsed);
     if (isGlb(bytes)) {
       return await io.readBinary(bytes);
     }
-    if (hasUtf8Bom(bytes)) {
-      throw new DomainError("INVALID_ENCODING", INVALID_ENCODING);
-    }
-    const parsed = parseJson(decodeUtf8(bytes));
-    rejectHostileJson(parsed, 0);
     return await io.readJSON({
       json: parsed as never,
       resources: {},
@@ -492,6 +491,62 @@ type Utf8DecoderType = new (
 const Utf8Decoder = (globalThis as unknown as { TextDecoder: Utf8DecoderType })
   .TextDecoder;
 
+function textJson(bytes: Uint8Array): unknown {
+  if (hasUtf8Bom(bytes)) {
+    throw new DomainError("INVALID_ENCODING", INVALID_ENCODING);
+  }
+  return parseJson(decodeUtf8(bytes));
+}
+
+const JSON_CHUNK = 0x4e4f534a;
+
+function glbJson(bytes: Uint8Array): unknown {
+  if (bytes.byteLength < 20) {
+    throw new DomainError("INVALID_JSON", INVALID_JSON);
+  }
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const chunkLength = view.getUint32(12, true);
+  const chunkType = view.getUint32(16, true);
+  if (chunkType !== JSON_CHUNK || chunkLength > bytes.byteLength - 20) {
+    throw new DomainError("INVALID_JSON", INVALID_JSON);
+  }
+  return parseJson(decodeUtf8(bytes.subarray(20, 20 + chunkLength)));
+}
+
+function rejectLargeAccessors(json: unknown): void {
+  if (!isRecord(json) || !Array.isArray(json.accessors)) {
+    return;
+  }
+  let zeroFilled = 0;
+  for (const accessor of json.accessors) {
+    if (
+      !isRecord(accessor) ||
+      !Number.isSafeInteger(accessor.count) ||
+      (accessor.count as number) < 0
+    ) {
+      throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
+    }
+    const count = accessor.count as number;
+    if (count > MAX_VERTICES) {
+      throw new DomainError("TOO_LARGE", TOO_LARGE);
+    }
+    if (accessor.bufferView === undefined) {
+      zeroFilled += count;
+      if (zeroFilled > MAX_VERTICES) {
+        throw new DomainError("TOO_LARGE", TOO_LARGE);
+      }
+    }
+    if (
+      isRecord(accessor.sparse) &&
+      (!Number.isSafeInteger(accessor.sparse.count) ||
+        (accessor.sparse.count as number) < 0 ||
+        (accessor.sparse.count as number) > MAX_VERTICES)
+    ) {
+      throw new DomainError("TOO_LARGE", TOO_LARGE);
+    }
+  }
+}
+
 function parseJson(text: string): unknown {
   try {
     return JSON.parse(text, (key, value: unknown) => {
@@ -548,8 +603,8 @@ function rejectUri(value: unknown): void {
 function openIo(): WebIO {
   // The Node I/O service loads the host filesystem when constructed, and this
   // module runs in the browser. These methods stay in memory. read() fetches,
-  // so it is not called.
-  return new WebIO();
+  // so it is not called. The default logger prints untrusted document text.
+  return new WebIO().setLogger(new Logger(Logger.Verbosity.SILENT));
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
