@@ -55,6 +55,26 @@ test("core and persistence stay free of filesystem and workspace imports", () =>
   );
 });
 
+test("interchange may import core and must not import files or the shell", () => {
+  assert.equal(boundaryViolation("@uvcp/interchange", "@uvcp/core"), null);
+  assert.equal(
+    boundaryViolation("@uvcp/interchange", "@gltf-transform/core"),
+    null,
+  );
+  assert.match(
+    boundaryViolation("@uvcp/interchange", "node:fs"),
+    /must not import node:fs/,
+  );
+  assert.match(
+    boundaryViolation("@uvcp/interchange", "node:https"),
+    /must not import/,
+  );
+  assert.match(
+    boundaryViolation("@uvcp/shell", "@uvcp/interchange"),
+    /must not import/,
+  );
+});
+
 test("editor and platform stay free of host and network imports", () => {
   assert.match(
     boundaryViolation("@uvcp/editor", "node:fs"),

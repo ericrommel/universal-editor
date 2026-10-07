@@ -6,6 +6,7 @@
     { "path": "packages/platform" },
     { "path": "packages/rendering" },
     { "path": "packages/editor" },
+    { "path": "packages/interchange" },
     { "path": "packages/ui" },
     { "path": "apps/shell" }
   ]

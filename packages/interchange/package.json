@@ -1,0 +1,14 @@
+{
+  "name": "@uvcp/interchange",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@gltf-transform/core": "4.5.0",
+    "@uvcp/core": "workspace:*",
+    "gl-matrix": "3.4.3"
+  }
+}
