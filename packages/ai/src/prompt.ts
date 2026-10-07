@@ -9,7 +9,9 @@ const INSTRUCTIONS = [
   "Rotation is degrees clockwise around the shape center.",
   "Use an existing id to change an object. Choose a new short id to create one.",
   "A simple composition is several create, move, resize, or rotate calls in this turn.",
-  "If the request cannot be done with these tools, call none.",
+  "If the request asks for a different shape, call explainLimit with reason shape and call no other tool.",
+  "If the request asks for anything other than creating, moving, resizing, or rotating a rectangle or a box, call explainLimit with reason command and call no other tool.",
+  "Do not answer an impossible request with text or with zero tools.",
 ].join(" ");
 
 export function scenePrompt(

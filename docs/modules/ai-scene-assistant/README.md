@@ -16,16 +16,17 @@ The objects remain in the scene. Drag a shape to move it. Select it and edit Wid
 
 ## Providers
 
-Copy `.env.example` to `.env` in the repository root. `.env` is ignored by git.
+When the assistant is not ready, the screen asks for a hosted provider or a local model. Rectangle, Box, and the rest of the editor stay available.
 
-- Default: set `XAI_API_KEY`. The model is `grok-4.7`.
-- Local: set `UVCP_AI_PROVIDER=ollama` and `UVCP_AI_MODEL` to a tool-calling model served at `http://127.0.0.1:11434/v1`.
-- Another OpenAI-compatible provider: set `UVCP_AI_PROVIDER=compatible`, `UVCP_AI_BASE_URL`, `UVCP_AI_MODEL`, and, when that host requires one, `UVCP_AI_API_KEY`.
+- Hosted: choose xAI, or another hosted provider. Enter the model and the API key that provider requires. An xAI address is fixed. Another hosted provider needs an https address.
+- Local: choose Local model, then look for Ollama. The application lists models from an Ollama app that is already running and lets you pick one. It does not install or configure Ollama.
 
-Run `pnpm dev` and open the loopback URL. The key stays in that server. Plain `https` addresses are allowed for a remote provider. Plain `http` is allowed only for localhost.
+The key stays in the running app for that session. It is not written into the scene file. After a restart, enter it again. Choose AI setup to change the provider later.
+
+Developers can still put the same choices in a git-ignored `.env`, using `.env.example` as the list. That path is optional. The screen does not ask for it.
 
 `ai.scene.basic` is included. `ai.scene.arrange` is the paid capability id. Nothing in this build calls a payment service. A billing provider implements `EntitlementPort.allows` in `@uvcp/ai`.
 
 ## Limits
 
-The assistant does not save a file, delete an object, or run a command outside the five actions. A request that does not validate does not change the scene. The message on screen says what happened.
+The assistant does not save a file, delete an object, or run a command outside the five actions. A circle, text, color, or other unsupported request is explained on screen and does not change the scene. A request that does not validate does not change the scene either.
