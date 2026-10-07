@@ -1,5 +1,7 @@
+import { assistantMessages } from "@uvcp/ai";
 import {
   addShape,
+  applyAssistantActions,
   commitPresent,
   createHistory,
   deleteSelected,
@@ -11,6 +13,7 @@ import {
   placeShape,
   redo,
   replacePresent,
+  rotateShape,
   SCENE_BYTE_LIMIT,
   SCENE_TOO_LARGE,
   type ShapeKind,
@@ -28,13 +31,21 @@ type BarMessage = {
   readonly text: string;
 };
 
+type MeasurePart = "width" | "height" | "depth" | "rotation";
+
 export function CreationApp() {
   const [history, setHistory] = useState<EditorHistory>(createHistory);
   const [sizeNotice, setSizeNotice] = useState<string | null>(null);
   const [fileMessage, setFileMessage] = useState<BarMessage | null>(null);
+  const [instruction, setInstruction] = useState("");
+  const [askNotice, setAskNotice] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
   const historyRef = useRef(history);
+  const pendingRef = useRef(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  const openGeneration = useRef(0);
   historyRef.current = history;
+  pendingRef.current = pending;
   const shapes = shapesOf(history.present);
   const selected =
     shapes.find((shape) => shape.id === history.present.selectedId) ?? null;
@@ -47,12 +58,13 @@ export function CreationApp() {
     if (sceneChanged) {
       setSizeNotice(null);
       setFileMessage(null);
+      setAskNotice(null);
     }
   }, []);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (isTyping(event.target)) {
+      if (pendingRef.current || isTyping(event.target)) {
         return;
       }
       const current = historyRef.current;
@@ -78,13 +90,13 @@ export function CreationApp() {
   }, [show]);
 
   function create(kind: ShapeKind) {
+    if (pendingRef.current) {
+      return;
+    }
     show(addShape(historyRef.current, kind));
   }
 
-  function commitMeasure(
-    part: "width" | "height" | "depth",
-    value: number,
-  ): boolean {
+  function commitMeasure(part: MeasurePart, value: number): boolean {
     const current = historyRef.current;
     const shape = shapesOf(current.present).find(
       (item) => item.id === current.present.selectedId,
@@ -95,6 +107,21 @@ export function CreationApp() {
     if (!Number.isFinite(value)) {
       setSizeNotice("Enter a number.");
       return false;
+    }
+    if (part === "rotation") {
+      if (value === shape.rotation) {
+        setSizeNotice(null);
+        return true;
+      }
+      try {
+        show(
+          commitPresent(current, rotateShape(current.present, shape.id, value)),
+        );
+        return true;
+      } catch (error) {
+        setSizeNotice(editorErrorMessage(error));
+        return false;
+      }
     }
     if (!(value > 0)) {
       setSizeNotice(extentMessage(shape));
@@ -121,6 +148,56 @@ export function CreationApp() {
     }
   }
 
+  async function ask(event: { preventDefault(): void }) {
+    event.preventDefault();
+    const text = instruction.trim();
+    if (text.length === 0) {
+      setAskNotice(assistantMessages.emptyInstruction);
+      return;
+    }
+    const facts = shapesOf(historyRef.current.present).map((shape) => ({
+      id: shape.id,
+      kind: shape.kind,
+      x: shape.x,
+      y: shape.y,
+      width: shape.width,
+      height: shape.height,
+      depth: shape.depth,
+      rotation: shape.rotation,
+    }));
+    pendingRef.current = true;
+    setPending(true);
+    setAskNotice(assistantMessages.working);
+    try {
+      const response = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ instruction: text, facts }),
+      });
+      const body: unknown = await response.json();
+      if (!isAssistantResult(body)) {
+        setAskNotice(assistantMessages.badRequest);
+        return;
+      }
+      if (!body.ok) {
+        setAskNotice(body.message ?? assistantMessages.providerDown);
+        return;
+      }
+      const applied = applyAssistantActions(historyRef.current, body.actions);
+      if (!applied.ok) {
+        setAskNotice(applied.message);
+        return;
+      }
+      show(applied.history);
+      setAskNotice(applied.summary);
+    } catch {
+      setAskNotice(assistantMessages.reachServer);
+    } finally {
+      pendingRef.current = false;
+      setPending(false);
+    }
+  }
+
   return (
     <div className="uvcp-editor">
       <header className="uvcp-command">
@@ -128,10 +205,18 @@ export function CreationApp() {
           {strings.productName}
         </p>
         <div className="uvcp-command-group" role="toolbar" aria-label="Create">
-          <button type="button" onClick={() => create("rectangle")}>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => create("rectangle")}
+          >
             Rectangle
           </button>
-          <button type="button" onClick={() => create("box")}>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => create("box")}
+          >
             Box
           </button>
         </div>
@@ -139,7 +224,7 @@ export function CreationApp() {
           <button
             type="button"
             title="Undo (Ctrl+Z)"
-            disabled={history.past.length === 0}
+            disabled={pending || history.past.length === 0}
             onClick={() => show(undo(historyRef.current))}
           >
             Undo
@@ -147,7 +232,7 @@ export function CreationApp() {
           <button
             type="button"
             title="Redo (Ctrl+Y)"
-            disabled={history.future.length === 0}
+            disabled={pending || history.future.length === 0}
             onClick={() => show(redo(historyRef.current))}
           >
             Redo
@@ -157,7 +242,7 @@ export function CreationApp() {
           <button
             type="button"
             title="Delete (Delete)"
-            disabled={selected === null}
+            disabled={pending || selected === null}
             onClick={() =>
               show(
                 commitPresent(
@@ -186,6 +271,7 @@ export function CreationApp() {
           ) : null}
           <button
             type="button"
+            disabled={pending}
             onClick={() => {
               const input = fileInput.current;
               input?.click();
@@ -196,6 +282,7 @@ export function CreationApp() {
           </button>
           <button
             type="button"
+            disabled={pending}
             onClick={() => {
               save(historyRef.current);
               setFileMessage({ tone: "status", text: "Saved scene.json" });
@@ -216,22 +303,63 @@ export function CreationApp() {
               if (!file) {
                 return;
               }
-              void readFile(historyRef.current, file).then((opened) => {
-                show(opened.history);
-                setFileMessage(
-                  opened.message
-                    ? { tone: "error", text: fileError(opened.message) }
-                    : { tone: "status", text: `Opened ${file.name}` },
-                );
-              });
+              const generation = openGeneration.current + 1;
+              openGeneration.current = generation;
+              void readFile(historyRef.current, file)
+                .then((opened) => {
+                  if (generation !== openGeneration.current) {
+                    return;
+                  }
+                  if (opened.message) {
+                    setFileMessage({
+                      tone: "error",
+                      text: fileError(opened.message),
+                    });
+                    return;
+                  }
+                  show(opened.history);
+                  setFileMessage({
+                    tone: "status",
+                    text: `Opened ${file.name}`,
+                  });
+                })
+                .catch(() => {
+                  if (generation !== openGeneration.current) {
+                    return;
+                  }
+                  setFileMessage({
+                    tone: "error",
+                    text: "That file isn't valid scene JSON. The scene was not changed.",
+                  });
+                });
             }}
           />
         </div>
       </header>
+      <form className="uvcp-ask" onSubmit={(event) => void ask(event)}>
+        <label>
+          Describe a change
+          <textarea
+            rows={1}
+            value={instruction}
+            disabled={pending}
+            onChange={(event) => setInstruction(event.target.value)}
+          />
+        </label>
+        <button type="submit" disabled={pending}>
+          Apply
+        </button>
+        {askNotice ? (
+          <p className="uvcp-ask-status" role="status" title={askNotice}>
+            {askNotice}
+          </p>
+        ) : null}
+      </form>
       <div className="uvcp-workspace">
         <ObjectList
           shapes={shapes}
           selectedId={history.present.selectedId}
+          disabled={pending}
           onSelect={(id) =>
             show(
               replacePresent(
@@ -244,12 +372,14 @@ export function CreationApp() {
         <SceneStage
           shapes={shapes}
           selectedId={history.present.selectedId}
+          isBlocked={() => pendingRef.current}
           getHistory={() => historyRef.current}
           onShow={show}
         />
         <Inspector
           hasShapes={shapes.length > 0}
           selected={selected}
+          disabled={pending}
           sizeError={sizeNotice}
           onCommit={commitMeasure}
           onClearError={() => setSizeNotice(null)}
@@ -313,6 +443,19 @@ async function readFile(history: EditorHistory, file: File) {
   }
   const bytes = new Uint8Array(await file.arrayBuffer());
   return openDocument(history, bytes.byteLength, () => bytes);
+}
+
+function isAssistantResult(value: unknown): value is {
+  readonly ok: boolean;
+  readonly message?: string;
+  readonly actions?: unknown;
+} {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "ok" in value &&
+    typeof value.ok === "boolean"
+  );
 }
 
 function isTyping(target: EventTarget | null): boolean {

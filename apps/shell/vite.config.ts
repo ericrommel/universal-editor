@@ -1,6 +1,7 @@
 import { createReadStream } from "node:fs";
 import path from "node:path";
 import { defineConfig, type Plugin } from "vite";
+import { assistantApi } from "./assistant-middleware.ts";
 
 const productionPolicy =
   "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'";
@@ -89,7 +90,7 @@ export default defineConfig(({ command, isPreview }) => {
       : "";
   return {
     base: "./",
-    plugins: [cspStyles()],
+    plugins: [cspStyles(), assistantApi()],
     // Vite compiles the JSX. The React refresh plugin injects an inline
     // preamble, and this policy does not allow unsafe-inline.
     esbuild: {

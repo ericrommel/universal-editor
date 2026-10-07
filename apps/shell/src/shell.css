@@ -105,6 +105,75 @@ body,
   pointer-events: none;
 }
 
+.uvcp-ask {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 6px 12px;
+  background: #ffffff;
+  border-bottom: 1px solid #d5d9e2;
+}
+
+.uvcp-ask label {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: #3a4150;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.uvcp-ask textarea {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 28px;
+  margin: 0;
+  padding: 4px 8px;
+  resize: none;
+  border: 1px solid #7a8496;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #1c1f26;
+  font: inherit;
+  user-select: text;
+}
+
+.uvcp-ask button {
+  flex: none;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid #c5cad3;
+  border-radius: 6px;
+  background: #ffffff;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.uvcp-ask button:hover:not(:disabled) {
+  background: #f4f5f7;
+}
+
+.uvcp-ask button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.uvcp-ask-status {
+  flex: 0 1 320px;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: #3a4150;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .uvcp-workspace {
   display: grid;
   flex: 1;
@@ -288,6 +357,10 @@ body,
 
 .uvcp-field-depth {
   grid-column: 1 / -1;
+}
+
+.uvcp-field-rotation {
+  margin-top: 8px;
 }
 
 .uvcp-field input {

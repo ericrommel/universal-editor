@@ -10,10 +10,16 @@ export const ALLOWED = {
   "@uvcp/persistence": new Set(["@uvcp/core"]),
   "@uvcp/platform": new Set(),
   "@uvcp/rendering": new Set(["@uvcp/core"]),
-  "@uvcp/editor": new Set(["@uvcp/core", "@uvcp/persistence"]),
+  "@uvcp/ai": new Set(),
+  "@uvcp/editor": new Set(["@uvcp/ai", "@uvcp/core", "@uvcp/persistence"]),
   "@uvcp/interchange": new Set(["@uvcp/core"]),
   "@uvcp/ui": new Set(),
-  "@uvcp/shell": new Set(["@uvcp/ui", "@uvcp/editor", "@uvcp/platform"]),
+  "@uvcp/shell": new Set([
+    "@uvcp/ai",
+    "@uvcp/ui",
+    "@uvcp/editor",
+    "@uvcp/platform",
+  ]),
 };
 
 // Sections 18 and 20. Bare "fs" and "path" are the same modules as node:fs and node:path.
@@ -39,6 +45,19 @@ const BANNED = {
     ...FILESYSTEM,
     ...NETWORK,
     "node:child_process",
+  ],
+  "@uvcp/ai": [
+    ...REACT,
+    ...DESKTOP,
+    ...FILESYSTEM,
+    ...NETWORK,
+    "@uvcp/core",
+    "@uvcp/persistence",
+    "@uvcp/editor",
+    "@uvcp/ui",
+    "@uvcp/rendering",
+    "@uvcp/platform",
+    "@uvcp/shell",
   ],
   "@uvcp/editor": [
     ...REACT,
@@ -82,6 +101,7 @@ const BANNED = {
 };
 
 export const NO_DOM_LIB = new Set([
+  "@uvcp/ai",
   "@uvcp/core",
   "@uvcp/persistence",
   "@uvcp/platform",

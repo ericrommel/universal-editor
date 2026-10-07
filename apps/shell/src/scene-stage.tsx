@@ -64,6 +64,9 @@ type ResizeGesture = {
   readonly startY: number;
   readonly origin: Frame;
   readonly depth: number | null;
+  readonly centerX: number;
+  readonly centerY: number;
+  readonly rotation: number;
   frame: Frame;
 };
 
@@ -75,6 +78,9 @@ type DepthGesture = {
   readonly startY: number;
   readonly originDepth: number;
   readonly frame: Frame;
+  readonly centerX: number;
+  readonly centerY: number;
+  readonly rotation: number;
   depth: number;
 };
 
@@ -83,11 +89,13 @@ type Gesture = MoveGesture | ResizeGesture | DepthGesture;
 export function SceneStage({
   shapes,
   selectedId,
+  isBlocked,
   getHistory,
   onShow,
 }: {
   readonly shapes: readonly EditorShape[];
   readonly selectedId: string | null;
+  readonly isBlocked: () => boolean;
   readonly getHistory: () => EditorHistory;
   readonly onShow: (next: EditorHistory) => void;
 }) {
@@ -116,7 +124,7 @@ export function SceneStage({
   }, []);
 
   function beginMove(shape: EditorShape, event: ReactPointerEvent) {
-    if (event.button !== 0) {
+    if (isBlocked() || event.button !== 0) {
       return;
     }
     event.stopPropagation();
@@ -150,14 +158,20 @@ export function SceneStage({
     handle: ResizeHandle,
     event: ReactPointerEvent,
   ) {
-    if (event.button !== 0) {
+    if (isBlocked() || event.button !== 0) {
       return;
     }
     event.stopPropagation();
     event.preventDefault();
     const current = getHistory();
     const live = liveShape(current, shape.id) ?? shape;
-    const point = svgPoint(surface.current, event);
+    const center = centerOf(live);
+    const point = pageToLocal(
+      svgPoint(surface.current, event),
+      center.x,
+      center.y,
+      live.rotation,
+    );
     const origin = frameOf(live);
     const base = replacePresent(current, selectShape(current.present, live.id));
     gesture.current = {
@@ -169,6 +183,9 @@ export function SceneStage({
       startY: point.y,
       origin,
       depth: live.depth,
+      centerX: center.x,
+      centerY: center.y,
+      rotation: live.rotation,
       frame: origin,
     };
     surface.current?.setPointerCapture(event.pointerId);
@@ -176,7 +193,7 @@ export function SceneStage({
   }
 
   function beginDepth(shape: EditorShape, event: ReactPointerEvent) {
-    if (event.button !== 0 || shape.depth === null) {
+    if (isBlocked() || event.button !== 0 || shape.depth === null) {
       return;
     }
     event.stopPropagation();
@@ -186,7 +203,13 @@ export function SceneStage({
     if (live.depth === null) {
       return;
     }
-    const point = svgPoint(surface.current, event);
+    const center = centerOf(live);
+    const point = pageToLocal(
+      svgPoint(surface.current, event),
+      center.x,
+      center.y,
+      live.rotation,
+    );
     const origin = frameOf(live);
     const base = replacePresent(current, selectShape(current.present, live.id));
     gesture.current = {
@@ -197,6 +220,9 @@ export function SceneStage({
       startY: point.y,
       originDepth: live.depth,
       frame: origin,
+      centerX: center.x,
+      centerY: center.y,
+      rotation: live.rotation,
       depth: live.depth,
     };
     surface.current?.setPointerCapture(event.pointerId);
@@ -208,8 +234,11 @@ export function SceneStage({
     if (!active) {
       return;
     }
-    const point = svgPoint(surface.current, event);
+    const pagePoint = svgPoint(surface.current, event);
     if (active.kind === "move") {
+      if (isBlocked()) {
+        return;
+      }
       const distance = Math.hypot(
         event.clientX - active.startClientX,
         event.clientY - active.startClientY,
@@ -220,7 +249,7 @@ export function SceneStage({
       const dragged = dragPosition(
         { x: active.originX, y: active.originY },
         { x: active.startX, y: active.startY },
-        point,
+        pagePoint,
       );
       const next = roundPoint(
         containedPosition(
@@ -243,7 +272,16 @@ export function SceneStage({
       );
       return;
     }
+    const point = pageToLocal(
+      pagePoint,
+      active.centerX,
+      active.centerY,
+      active.rotation,
+    );
     if (active.kind === "resize") {
+      if (isBlocked()) {
+        return;
+      }
       const frame = roundResize(
         active.origin,
         active.handle,
@@ -261,6 +299,9 @@ export function SceneStage({
           placeShape(active.base.present, active.id, frame, active.depth),
         ),
       );
+      return;
+    }
+    if (isBlocked()) {
       return;
     }
     const depth = roundExtent(
@@ -283,7 +324,7 @@ export function SceneStage({
     const active = gesture.current;
     gesture.current = null;
     setHolding(false);
-    if (!active) {
+    if (!active || isBlocked()) {
       return;
     }
     if (active.kind === "move") {
@@ -336,6 +377,9 @@ export function SceneStage({
     <div
       className="uvcp-stage"
       onPointerDown={(event) => {
+        if (isBlocked()) {
+          return;
+        }
         if (event.target === event.currentTarget) {
           onShow(
             replacePresent(
@@ -353,6 +397,9 @@ export function SceneStage({
         role="application"
         aria-label="Page"
         onPointerDown={(event) => {
+          if (isBlocked()) {
+            return;
+          }
           if (event.target === event.currentTarget) {
             onShow(
               replacePresent(
@@ -371,6 +418,7 @@ export function SceneStage({
             key={shape.id}
             className="uvcp-shape"
             data-shape-id={shape.id}
+            transform={shapeTransform(shape)}
             onPointerDown={(event) => beginMove(shape, event)}
           >
             <ShapeFigure shape={shape} />
@@ -390,20 +438,20 @@ export function SceneStage({
           </text>
         ) : null}
         {selected ? (
-          <polygon
-            className="uvcp-selection"
-            points={selectionPoints(selected, 2 / scale)}
-            vectorEffect="non-scaling-stroke"
-            pointerEvents="none"
-          />
-        ) : null}
-        {selected ? (
-          <SelectionHandles
-            shape={selected}
-            scale={scale}
-            onResize={beginResize}
-            onDepth={beginDepth}
-          />
+          <g transform={shapeTransform(selected)}>
+            <polygon
+              className="uvcp-selection"
+              points={selectionPoints(selected, 2 / scale)}
+              vectorEffect="non-scaling-stroke"
+              pointerEvents="none"
+            />
+            <SelectionHandles
+              shape={selected}
+              scale={scale}
+              onResize={beginResize}
+              onDepth={beginDepth}
+            />
+          </g>
         ) : null}
       </svg>
     </div>
@@ -688,6 +736,44 @@ function roundResize(origin: Frame, handle: ResizeHandle, frame: Frame): Frame {
     y: movesTop ? roundUnit(origin.y + origin.height - height) : origin.y,
     width,
     height,
+  };
+}
+
+function shapeTransform(shape: EditorShape): string | undefined {
+  if (shape.rotation === 0) {
+    return undefined;
+  }
+  const center = centerOf(shape);
+  return `rotate(${shape.rotation} ${center.x} ${center.y})`;
+}
+
+function centerOf(shape: EditorShape): {
+  readonly x: number;
+  readonly y: number;
+} {
+  return {
+    x: shape.x + shape.width / 2,
+    y: shape.y + shape.height / 2,
+  };
+}
+
+function pageToLocal(
+  point: { readonly x: number; readonly y: number },
+  centerX: number,
+  centerY: number,
+  rotation: number,
+): { readonly x: number; readonly y: number } {
+  if (rotation === 0) {
+    return point;
+  }
+  const angle = (rotation * Math.PI) / 180;
+  const dx = point.x - centerX;
+  const dy = point.y - centerY;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  return {
+    x: dx * cos + dy * sin + centerX,
+    y: -dx * sin + dy * cos + centerY,
   };
 }
 

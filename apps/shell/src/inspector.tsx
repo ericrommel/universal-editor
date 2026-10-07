@@ -5,10 +5,12 @@ import { shapeLabel } from "./shape-label.ts";
 export function ObjectList({
   shapes,
   selectedId,
+  disabled,
   onSelect,
 }: {
   readonly shapes: readonly EditorShape[];
   readonly selectedId: string | null;
+  readonly disabled: boolean;
   readonly onSelect: (id: string) => void;
 }) {
   const rows = [...shapes].reverse();
@@ -28,6 +30,7 @@ export function ObjectList({
                 role="option"
                 aria-selected={selected}
                 className="uvcp-object"
+                disabled={disabled}
                 onClick={() => onSelect(shape.id)}
               >
                 {shapeLabel(shape)}
@@ -43,15 +46,17 @@ export function ObjectList({
 export function Inspector({
   hasShapes,
   selected,
+  disabled,
   sizeError,
   onCommit,
   onClearError,
 }: {
   readonly hasShapes: boolean;
   readonly selected: EditorShape | null;
+  readonly disabled: boolean;
   readonly sizeError: string | null;
   readonly onCommit: (
-    part: "width" | "height" | "depth",
+    part: "width" | "height" | "depth" | "rotation",
     value: number,
   ) => boolean;
   readonly onClearError: () => void;
@@ -73,12 +78,14 @@ export function Inspector({
         <MeasureField
           label="Width"
           value={selected.width}
+          disabled={disabled}
           onCommit={(value) => onCommit("width", value)}
           onClearError={onClearError}
         />
         <MeasureField
           label="Height"
           value={selected.height}
+          disabled={disabled}
           onCommit={(value) => onCommit("height", value)}
           onClearError={onClearError}
         />
@@ -86,11 +93,19 @@ export function Inspector({
           <MeasureField
             label="Depth"
             value={selected.depth}
+            disabled={disabled}
             onCommit={(value) => onCommit("depth", value)}
             onClearError={onClearError}
           />
         )}
       </div>
+      <MeasureField
+        label="Rotation"
+        value={selected.rotation}
+        disabled={disabled}
+        onCommit={(value) => onCommit("rotation", value)}
+        onClearError={onClearError}
+      />
       {sizeError ? (
         <p id="uvcp-size-error" className="uvcp-size-error" role="alert">
           {sizeError}
@@ -103,11 +118,13 @@ export function Inspector({
 function MeasureField({
   label,
   value,
+  disabled,
   onCommit,
   onClearError,
 }: {
   readonly label: string;
   readonly value: number;
+  readonly disabled: boolean;
   readonly onCommit: (value: number) => boolean;
   readonly onClearError: () => void;
 }) {
@@ -163,15 +180,12 @@ function MeasureField({
   }, []);
 
   return (
-    <label
-      className={
-        label === "Depth" ? "uvcp-field uvcp-field-depth" : "uvcp-field"
-      }
-    >
+    <label className={fieldClass(label)}>
       <span>{label}</span>
       <input
         ref={input}
         value={text}
+        disabled={disabled}
         inputMode="decimal"
         autoComplete="off"
         spellCheck={false}
@@ -198,6 +212,16 @@ function MeasureField({
       />
     </label>
   );
+}
+
+function fieldClass(label: string): string {
+  if (label === "Depth") {
+    return "uvcp-field uvcp-field-depth";
+  }
+  if (label === "Rotation") {
+    return "uvcp-field uvcp-field-rotation";
+  }
+  return "uvcp-field";
 }
 
 function readMeasure(text: string): number | "invalid" {
