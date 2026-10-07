@@ -27,9 +27,7 @@ The available project roles are:
 - Senior DevOps / Platform Engineer
 - Senior Application Security Engineer
 
-The Human Product Owner is not an AI role and must never be simulated by a subagent.
-
-Detailed responsibilities are defined in: `docs/engineering/development-process.md`
+Do not simulate a Product Owner. Acceptance is professional review, as defined in `docs/engineering/development-process.md`.
 
 ## Orchestration
 
@@ -51,46 +49,21 @@ mechanism.
 
 The primary session coordinates their work and resolves technical handoffs.
 
-## Product Authority
-
-The Human Product Owner owns:
-
-- product intent;
-- scope;
-- requirement changes;
-- product-level ambiguity;
-- module approval.
-
-Never create a Product Owner subagent.
-
-When a decision requires Product Owner approval, stop at the appropriate gate and present the decision to the human PO.
-
 ## Decision Authority
 
-The Human Product Owner is not the default resolver of technical choices.
+The Project Manager and Tech Lead resolve technical, architectural, sequencing, quality, security, and implementation decisions with the relevant specialists and record the result.
 
-The Project Manager and Tech Lead should resolve purely technical, architectural, sequencing, quality, security, operability, and implementation-readiness decisions with the relevant specialists and persist the result.
+There is no Product Owner gate. A product decision is settled by the roles responsible for that area and recorded on the pull request.
 
-Escalate to the Human Product Owner only when the decision changes or materially affects product intent, scope, requirements, acceptance criteria, user-visible behavior, module boundaries, or another product-level outcome.
-
-Do not stop merely because engineering has multiple reasonable options.
+Do not stop because more than one reasonable engineering option exists.
 
 ## Module Boundary
 
-Implement only the module and scope explicitly authorized by the Human Product Owner for the current task.
+Modules organize the product. They do not block implementation of a later module.
 
-Repository documentation describing future modules provides context, not implementation authorization.
+Use the existing scene, editor, rendering, and shell boundaries. Do not add a package, a dependency, or a persistence field for a capability the current behavior does not need.
 
-Do not infer authorization from:
-
-- the existence of a module specification;
-- roadmap or archived documentation;
-- dependencies on future functionality;
-- partially implemented future-facing abstractions.
-
-When future requirements affect an architectural decision, account for the known constraint without implementing the future functionality.
-
-If the authorized scope is unclear, stop and ask the Human Product Owner rather than expanding the scope.
+When an existing constraint still applies, keep it. Examples: fixed domain-error messages, the scene byte cap, and the package import table.
 
 ## Engineering Principles
 
@@ -275,7 +248,7 @@ When handling files:
 - Validate remote data before trusting it.
 - Do not disable TLS or certificate verification as a workaround.
 - Do not send project or user data to external services unless the feature explicitly requires it.
-- Do not introduce telemetry or external data collection without Product Owner approval.
+- Do not introduce telemetry or external data collection.
 
 ### Dependencies and Supply Chain
 
@@ -299,13 +272,13 @@ If a security mechanism prevents the requested implementation:
 1. Identify the conflict.
 2. Determine whether the implementation can be changed safely.
 3. Involve the Application Security Engineer when necessary.
-4. Escalate product-level trade-offs to the Human Product Owner.
+4. Record a product trade-off on the pull request and have the affected roles accept it.
 
 ### Destructive Operations
 
 Prefer reversible operations during development.
 
-Do not perform destructive or irreversible actions against shared, external, or production resources without explicit Human Product Owner authorization.
+Do not perform destructive or irreversible actions against shared, external, or production resources without explicit authorization. `main` is one of those resources.
 
 ### Security Findings
 
@@ -351,14 +324,7 @@ For work associated with a GitHub Issue:
 - when work reaches a review gate, post a concise completion summary to the issue;
 - include relevant decisions, artifacts, verification performed, known limitations, risks, and unresolved questions;
 - link or reference the Pull Request containing the proposed repository changes;
-- move the issue to the appropriate review status;
-- stop when Human Product Owner approval is required.
-
-Do not move work into a state that implies Product Owner approval.
-
-`Ready for Development` requires explicit Human Product Owner authorization when it represents a module implementation gate.
-
-`Done` must not be used for a module until the Human Product Owner has explicitly approved the module.
+- move the issue to the appropriate review status when a pull request is open.
 
 ## Repository Workflow
 
@@ -366,19 +332,19 @@ All repository changes must be made on a dedicated branch.
 
 ### Branch Safety
 
-- Never modify or commit directly to `main`.
+- `main` is protected. Never commit, push, merge, or force-push to `main`.
+- `master` is the integration branch. Do not commit directly on `master`.
 - Before making any repository change, verify the current branch.
-- If the current branch is `main`, create and switch to an appropriate working branch before modifying files.
-- Keep each branch scoped to the authorized task or coherent unit of work.
+- If the current branch is `main` or `master`, create and switch to a working branch before modifying files.
+- Keep each branch scoped to the task.
 - Do not mix unrelated changes into the same branch.
-- Do not force-push, rewrite shared history, or perform destructive Git operations unless explicitly authorized by the Human Product Owner.
-- Do not merge a branch into `main` without the required review and approval.
-- Do not bypass required CI, review, testing, or quality gates in order to merge.
+- Do not force-push or rewrite shared history.
+- Do not merge into `master` until the requested reviews approve the head and required CI is green.
 - Repository documentation changes follow the same branch and review rules as source-code changes.
 
 ### Pull Requests
 
-Changes intended for `main` must be submitted through a Pull Request.
+Changes intended for `master` must be submitted through a Pull Request. Do not open a pull request into `main`.
 
 A Pull Request should:
 
@@ -390,7 +356,7 @@ A Pull Request should:
 
 Agents may prepare branches, commits, and Pull Requests as part of authorized work, but must not treat creation of a Pull Request as approval to merge.
 
-Merging into `main` requires the applicable review and quality gates defined by the development process.
+Merging into `master` requires the review and verification rules in `docs/engineering/development-process.md`.
 
 ### Review Coordination and Merge Authority
 
@@ -414,7 +380,7 @@ Minimum review requirements and reviewer-selection rules are defined in `docs/en
 
 The PR owner owns the merge by default. Another role must not merge merely because it has repository permission.
 
-After all required reviews approve the current material head, required CI and verification are green, blocking findings are closed, required Product Owner approval is present, and no active instruction prevents merge, the PR is merge-authorized and another authorized role may perform the merge if useful.
+After all required reviews approve the current material head, required CI and verification are green, and blocking findings are closed, the PR is merge-authorized.
 
 Repository permission is not merge authorization. An explicit instruction not to merge always takes precedence.
 
@@ -433,7 +399,5 @@ Examples:
 **Role: Functional Quality Engineer**
 
 **Role: Application Security Engineer**
-
-Do not present the Human Product Owner as the author of an AI-generated project update.
 
 If multiple specialist roles contributed to the same handoff, identify the primary authoring role and list the contributing roles separately.
