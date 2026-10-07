@@ -70,6 +70,14 @@ body,
   cursor: pointer;
 }
 
+.uvcp-editor button:focus-visible,
+.uvcp-editor textarea:focus-visible,
+.uvcp-editor input:focus-visible,
+.uvcp-editor select:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 2px;
+}
+
 .uvcp-command button:hover:not(:disabled) {
   background: #f4f5f7;
 }
@@ -114,6 +122,24 @@ body,
   padding: 6px 12px;
   background: #ffffff;
   border-bottom: 1px solid #d5d9e2;
+}
+
+.uvcp-ask form {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.uvcp-ask-note {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: #3a4150;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .uvcp-ask label {
@@ -179,6 +205,7 @@ body,
   flex: 1;
   grid-template-columns: 220px minmax(0, 1fr) 240px;
   min-height: 0;
+  width: 100%;
 }
 
 .uvcp-objects,
@@ -336,6 +363,113 @@ body,
   border-left: 1px solid #d5d9e2;
 }
 
+.uvcp-body {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.uvcp-ai-setup {
+  position: absolute;
+  z-index: 3;
+  bottom: 12px;
+  left: 50%;
+  box-sizing: border-box;
+  width: min(400px, calc(100% - 500px));
+  max-height: min(460px, calc(100% - 300px));
+  overflow: auto;
+  padding: 12px 16px 16px;
+  background: #ffffff;
+  border: 1px solid #7a8496;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(28, 31, 38, 0.12);
+  transform: translateX(-50%);
+}
+
+.uvcp-ai-setup h2 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.uvcp-ai-setup p {
+  margin: 8px 0;
+  max-width: 40rem;
+  color: #3a4150;
+}
+
+.uvcp-ai-setup a {
+  color: #1d4ed8;
+  white-space: nowrap;
+}
+
+.uvcp-ai-setup form {
+  display: grid;
+  max-width: 28rem;
+  gap: 8px;
+}
+
+.uvcp-ai-setup label {
+  display: grid;
+  gap: 4px;
+  color: #3a4150;
+  font-size: 12px;
+}
+
+.uvcp-ai-choices,
+.uvcp-ai-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.uvcp-ai-choices label {
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  align-items: center;
+  color: #1c1f26;
+  font-size: 13px;
+}
+
+.uvcp-ai-setup input,
+.uvcp-ai-setup select {
+  user-select: text;
+}
+
+.uvcp-ai-setup input:not([type="radio"]),
+.uvcp-ai-setup select {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid #7a8496;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #1c1f26;
+  font: inherit;
+}
+
+.uvcp-ai-setup button {
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid #c5cad3;
+  border-radius: 6px;
+  background: #ffffff;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.uvcp-ai-setup button:hover:not(:disabled) {
+  background: #f4f5f7;
+}
+
+.uvcp-ai-setup button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .uvcp-units {
   margin: 4px 0 12px;
   color: #3a4150;
@@ -387,6 +521,13 @@ body,
 }
 
 @media (max-width: 960px) {
+  .uvcp-ai-setup {
+    left: 12px;
+    width: min(400px, calc(100% - 264px));
+    max-height: min(320px, calc(100% - 280px));
+    transform: none;
+  }
+
   .uvcp-workspace {
     grid-template-columns: minmax(0, 1fr) 240px;
     grid-template-rows: minmax(120px, 1fr) minmax(160px, 42%);

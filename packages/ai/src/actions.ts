@@ -75,7 +75,7 @@ export function actionsFromCalls(
   entitlement: EntitlementPort,
 ): ActionPlan {
   if (calls.length === 0) {
-    return fail(assistantMessages.noChange);
+    return fail(assistantMessages.unavailable);
   }
   if (calls.length > LIMITS.actions) {
     return fail(assistantMessages.tooMany);
@@ -88,6 +88,10 @@ export function actionsFromCalls(
   }
   if (entitlement.allows("ai.scene.basic") === "denied") {
     return fail(assistantMessages.basicDenied);
+  }
+  const limited = unsupportedMessage(calls);
+  if (limited !== null) {
+    return fail(limited);
   }
   const raw: unknown[] = [];
   for (const call of calls) {
@@ -137,6 +141,38 @@ export function readFacts(value: unknown): readonly SceneFact[] | null {
     facts.push(fact);
   }
   return facts;
+}
+
+function unsupportedMessage(calls: readonly ProposedCall[]): string | null {
+  let shape = false;
+  let command = false;
+  let other = false;
+  for (const call of calls) {
+    if (call.name === "explainLimit") {
+      const reason = isRecord(call.input) ? call.input.reason : undefined;
+      if (reason === "shape") {
+        shape = true;
+      } else if (reason === "command") {
+        command = true;
+      } else {
+        other = true;
+      }
+      continue;
+    }
+    if (!isBasicTool(call.name)) {
+      other = true;
+    }
+  }
+  if (!shape && !command && !other) {
+    return null;
+  }
+  if (shape && !command && !other) {
+    return assistantMessages.unsupportedShape;
+  }
+  if (command && !shape && !other) {
+    return assistantMessages.unsupportedCommand;
+  }
+  return assistantMessages.unavailable;
 }
 
 function readAction(value: unknown): SceneAction | string {
