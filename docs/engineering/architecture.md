@@ -141,7 +141,8 @@ pnpm workspace, packages private, scope `@uvcp/*`. Nothing is published.
 apps/shell/            Vite application. Composition root.
 packages/core/         Domain helpers. No I/O.
 packages/persistence/  Manifest codec and entry-name rules.
-packages/editor/       Startup session.
+packages/ai/           Scene-assistant actions, entitlement port, and model adapter.
+packages/editor/       Startup session and the in-memory scene.
 packages/rendering/    Snapshot port and null renderer.
 packages/platform/     Host boundary. No capability in Module 0.
 packages/ui/           React foundation screen, tokens, and strings.
@@ -158,13 +159,16 @@ Allowed imports:
 | `persistence` | `core` |
 | `platform` | nothing in the workspace |
 | `rendering` | `core` |
-| `editor` | `core`, `persistence` |
+| `ai` | nothing in the workspace |
+| `editor` | `ai`, `core`, `persistence` |
 | `ui` | nothing in the workspace |
-| `shell` | `ui`, `editor`, `platform` |
+| `shell` | `ai`, `ui`, `editor`, `platform` |
 
 No cycles. A type-only import counts. A test import counts. `editor` must not import `ui`, React, `rendering`, or `platform`. `rendering` must not import `ui`, `editor`, `platform`, or a GPU library. `shell` must not import `core`, `persistence`, or `rendering` directly; startup goes through `editor`.
 
 These edges are enforced by package manifests, TypeScript project references, and `scripts/check-boundaries.mjs`. A forbidden import fails `pnpm verify`. See ADR-0005.
+
+`@uvcp/ai` is the working-line amendment in ADR-0010. `editor` may import it for the action parser. `shell` may import it so the loopback server can call a model. The shell still must not import `core`, `persistence`, or `rendering`. `editor` still must not call the renderer.
 
 A later viewport module must amend this table in a new ADR before `editor` may call the renderer.
 

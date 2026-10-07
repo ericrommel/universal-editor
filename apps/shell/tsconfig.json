@@ -9,8 +9,9 @@
     "allowImportingTsExtensions": true,
     "rewriteRelativeImportExtensions": true
   },
-  "include": ["src", "vite.config.ts"],
+  "include": ["src", "vite.config.ts", "assistant-middleware.ts"],
   "references": [
+    { "path": "../../packages/ai" },
     { "path": "../../packages/ui" },
     { "path": "../../packages/editor" },
     { "path": "../../packages/platform" }

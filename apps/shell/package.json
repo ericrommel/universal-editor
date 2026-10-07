@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@uvcp/ai": "workspace:*",
     "@uvcp/editor": "workspace:*",
     "@uvcp/platform": "workspace:*",
     "@uvcp/ui": "workspace:*",

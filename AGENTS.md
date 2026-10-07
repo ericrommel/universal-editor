@@ -12,6 +12,14 @@ Do not simulate all roles yourself when specialist review is required. Create an
 
 Independent primary sessions may be used when useful. Sessions should use the repository and persistent project records as their shared source of truth. Do not use manual copy/paste of plans, reasoning, or responses between sessions as a coordination mechanism.
 
+## Working line
+
+`main` is protected. Do not commit to it, and do not merge this line into it.
+
+`master` is the working integration branch. Feature branches merge into `master` after the required role reviews and a green `pnpm verify`. On `master`, roles review and accept the work. There is no Product Owner gate on this line. The protected `main` line still follows `docs/engineering/development-process.md`.
+
+The process and the scene assistant are recorded in `docs/engineering/working-line.md` and `docs/engineering/adr/0010-scene-assistant.md`.
+
 ## Team
 
 The available project roles are:

@@ -1,5 +1,8 @@
-export type { FoundationScreenProps } from "./foundation-screen.tsx";
-export { FoundationScreen } from "./foundation-screen.tsx";
+export type {
+  Appearance,
+  FoundationScreenProps,
+} from "./foundation-screen.tsx";
+export { FoundationScreen, useAppearance } from "./foundation-screen.tsx";
 export type {
   FoundationPresentation,
   FoundationStatus,
