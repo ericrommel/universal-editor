@@ -12,6 +12,7 @@
   "references": [
     { "path": "../ai" },
     { "path": "../core" },
+    { "path": "../interchange" },
     { "path": "../persistence" }
   ]
 }

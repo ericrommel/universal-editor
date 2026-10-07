@@ -41,6 +41,11 @@ test("the production build check names a canvas, an escaped asset, and the failu
     "build directory is absent",
   ]);
   withBuild((dir) => {
+    fs.appendFileSync(path.join(dir, "assets", "app.js"), "\nnode:fs");
+    const problems = readProductionBuild(dir).problems;
+    assert.ok(problems.some((problem) => problem.includes("Node file module")));
+  });
+  withBuild((dir) => {
     fs.appendFileSync(
       path.join(dir, "assets", "app.js"),
       "\nUVCP_FORCE_INIT_FAILURE",

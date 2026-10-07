@@ -82,6 +82,34 @@ declare const process: {
   };
 };
 
+// The glTF library's Node I/O service dynamically imports the host filesystem.
+// The editor uses in-memory WebIO only. Remove those imports so the browser
+// bundle cannot reach them. A later call on that Node path rejects.
+export function stripNodeBuiltinImports(code: string): string {
+  return code
+    .replaceAll('import("node:fs")', "Promise.reject(new Error())")
+    .replaceAll("import('node:fs')", "Promise.reject(new Error())")
+    .replaceAll('import("node:path")', "Promise.reject(new Error())")
+    .replaceAll("import('node:path')", "Promise.reject(new Error())");
+}
+
+function browserGltfIo(): Plugin {
+  return {
+    name: "uvcp-browser-gltf-io",
+    enforce: "pre",
+    transform(code, id) {
+      const file = (id.split("?", 1)[0] ?? id).replaceAll("\\", "/");
+      if (!file.includes("@gltf-transform/core/")) {
+        return null;
+      }
+      if (!code.includes("node:fs") && !code.includes("node:path")) {
+        return null;
+      }
+      return { code: stripNodeBuiltinImports(code), map: null };
+    },
+  };
+}
+
 export default defineConfig(({ command, isPreview }) => {
   // Preview uses command "serve" as well. Only the dev server may read this.
   const devFailure =
@@ -90,7 +118,7 @@ export default defineConfig(({ command, isPreview }) => {
       : "";
   return {
     base: "./",
-    plugins: [cspStyles(), assistantApi()],
+    plugins: [cspStyles(), browserGltfIo(), assistantApi()],
     // Vite compiles the JSX. The React refresh plugin injects an inline
     // preamble, and this policy does not allow unsafe-inline.
     esbuild: {

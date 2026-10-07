@@ -4,7 +4,7 @@
 
 glTF is the first target because the scene is a hierarchy of rectangles and boxes with finite transforms. OpenTimelineIO needs a timeline this scene does not have. STEP and DXF need a CAD kernel, and the usual Open CASCADE binding is LGPL, which this repository does not accept. USD's maintained API is C++ and Python.
 
-The glTF adapter uses `@gltf-transform/core` and `gl-matrix`. It does not read paths and it does not enable network fetches.
+The glTF adapter uses `@gltf-transform/core` and `gl-matrix`. Reads and writes use `WebIO` in memory. The Node I/O service is not constructed, because constructing it loads the host filesystem. `WebIO.read` is not called, so a document cannot cause a network fetch.
 
 ## glTF mapping
 
@@ -16,4 +16,4 @@ The glTF adapter uses `@gltf-transform/core` and `gl-matrix`. It does not read p
 - Materials, cameras, animations, and textures are not part of the scene. Export writes one matte material so a viewer can open the mesh. Import does not keep it.
 - The byte cap is 4 MiB, checked before parse. It is not the scene-document cap. Buffer URIs must be `data:` URIs. File, relative, and network URIs are rejected. `__proto__`, `constructor`, and `prototype` keys are rejected.
 
-`renderNull` is unchanged. The shell does not import this package.
+`renderNull` is unchanged. The shell does not import this package. The editor calls `importDocument` and `exportDocument`. The toolbar imports a file into the open project, shows those shapes on the sheet, and exports the project or the selection. Sheet placement is editor behavior and does not change this mapping.

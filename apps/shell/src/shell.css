@@ -66,6 +66,10 @@ body,
   color: inherit;
 }
 
+.uvcp-editor-bar button:disabled {
+  opacity: 0.45;
+}
+
 .uvcp-editor-open input {
   display: block;
   max-width: 180px;

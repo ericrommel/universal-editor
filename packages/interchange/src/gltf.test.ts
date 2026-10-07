@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { Document, NodeIO, Primitive } from "@gltf-transform/core";
+import { Document, Primitive, WebIO } from "@gltf-transform/core";
 import { createScene, DomainError, insertNode } from "@uvcp/core";
 import { exportDocument, importDocument } from "./index.ts";
 
@@ -179,7 +179,7 @@ async function externalCube(): Promise<Uint8Array> {
     .setMesh(mesh)
     .setRotation([0, Math.sin(Math.PI / 4), 0, Math.cos(Math.PI / 4)]);
   document.createScene().addChild(node);
-  return new NodeIO().writeBinary(document);
+  return new WebIO().writeBinary(document);
 }
 
 async function groundQuad(): Promise<Uint8Array> {
@@ -209,7 +209,7 @@ async function groundQuad(): Promise<Uint8Array> {
         .createNode("floor")
         .setMesh(document.createMesh().addPrimitive(primitive)),
     );
-  return new NodeIO().writeBinary(document);
+  return new WebIO().writeBinary(document);
 }
 
 async function triangle(): Promise<Uint8Array> {
@@ -232,7 +232,7 @@ async function triangle(): Promise<Uint8Array> {
         .createNode("wedge")
         .setMesh(document.createMesh().addPrimitive(primitive)),
     );
-  return new NodeIO().writeBinary(document);
+  return new WebIO().writeBinary(document);
 }
 
 function utf8(value: string): Uint8Array {

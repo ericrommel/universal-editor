@@ -5,7 +5,7 @@ import {
   type Scene as GltfScene,
   type Material,
   type Mesh,
-  NodeIO,
+  WebIO,
 } from "@gltf-transform/core";
 import {
   createScene,
@@ -28,6 +28,9 @@ const PLANE_EPSILON = 1e-4;
 const TRIANGLES = 4;
 
 const TOO_LARGE = "Interchange document exceeds the size limit.";
+
+export const GLTF_BYTE_LIMIT = MAX_BYTES;
+export const GLTF_TOO_LARGE = TOO_LARGE;
 const INVALID_ENCODING = "Interchange document is not UTF-8 text.";
 const INVALID_JSON = "Interchange document is not valid glTF.";
 const UNSUPPORTED_FORMAT = "Interchange document format is not supported.";
@@ -86,12 +89,11 @@ export async function exportGltf(scene: Scene): Promise<Uint8Array> {
   for (const rootId of scene.rootIds) {
     gltfScene.addChild(exportNode(document, buffer, material, scene, rootId));
   }
-  const io = new NodeIO();
-  return io.writeBinary(document);
+  return openIo().writeBinary(document);
 }
 
 async function readDocument(bytes: Uint8Array): Promise<Document> {
-  const io = new NodeIO();
+  const io = openIo();
   try {
     if (isGlb(bytes)) {
       return await io.readBinary(bytes);
@@ -541,6 +543,13 @@ function rejectUri(value: unknown): void {
   if (lower.includes("javascript") || lower.includes("://")) {
     throw new DomainError("UNSUPPORTED_FORMAT", UNSUPPORTED_FORMAT);
   }
+}
+
+function openIo(): WebIO {
+  // The Node I/O service loads the host filesystem when constructed, and this
+  // module runs in the browser. These methods stay in memory. read() fetches,
+  // so it is not called.
+  return new WebIO();
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
