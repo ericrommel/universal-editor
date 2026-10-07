@@ -1,34 +1,43 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { assistantMessages } from "@uvcp/ai";
-import { sceneModel } from "@uvcp/ai/provider";
-import { handleAssistantRequest } from "@uvcp/ai/request";
+import {
+  emptyProviderSession,
+  modelFor,
+  type ProviderSession,
+  resolveProvider,
+} from "@uvcp/ai/provider";
+import { handleAiRoutes } from "@uvcp/ai/request";
 import type { Plugin } from "vite";
 
-// The model call stays in the loopback process. The browser never receives
-// the provider key, and the static file build does not contain one.
+// Credentials stay in this loopback process for the session. The browser
+// receives the provider and model names, not the key, and nothing is written
+// into the scene or the static build.
 export function assistantApi(): Plugin {
+  const session = emptyProviderSession();
   return {
     name: "uvcp-assistant-api",
     configureServer(server) {
       server.middlewares.use((request, response, next) => {
-        void dispatch(request, response, next);
+        void dispatch(session, request, response, next);
       });
     },
     configurePreviewServer(server) {
       server.middlewares.use((request, response, next) => {
-        void dispatch(request, response, next);
+        void dispatch(session, request, response, next);
       });
     },
   };
 }
 
 async function dispatch(
+  session: ProviderSession,
   request: IncomingMessage,
   response: ServerResponse,
   next: () => void,
 ): Promise<void> {
   const url = request.url ?? "";
-  if ((url.split("?", 1)[0] ?? "") !== "/api/ai") {
+  const path = url.split("?", 1)[0] ?? "";
+  if (path !== "/api/ai" && !path.startsWith("/api/ai/")) {
     next();
     return;
   }
@@ -41,7 +50,7 @@ async function dispatch(
     return;
   }
   try {
-    await respond(request, response, body);
+    await respond(session, request, response, body);
   } catch {
     write(response, 200, {
       ok: false,
@@ -51,23 +60,26 @@ async function dispatch(
 }
 
 async function respond(
+  session: ProviderSession,
   request: IncomingMessage,
   response: ServerResponse,
   body: string,
 ): Promise<void> {
-  const result = await handleAssistantRequest({
+  const result = await handleAiRoutes({
     method: request.method ?? "GET",
     url: request.url ?? "",
     origin: header(request, "origin"),
     host: header(request, "host"),
     contentType: header(request, "content-type"),
     body,
+    session,
+    env: process.env,
     run: async (input) => {
-      const setup = sceneModel(process.env);
+      const setup = resolveProvider(session.current, process.env);
       if (!setup.ok) {
         return { ok: false, message: setup.message };
       }
-      return setup.model.propose(input);
+      return modelFor(setup).propose(input);
     },
   });
   if (result === null) {
@@ -99,15 +111,7 @@ function header(request: IncomingMessage, name: string): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
-function write(
-  response: ServerResponse,
-  status: number,
-  body: {
-    readonly ok: boolean;
-    readonly message?: string;
-    readonly actions?: unknown;
-  },
-): void {
+function write(response: ServerResponse, status: number, body: object): void {
   response.statusCode = status;
   response.setHeader("content-type", "application/json; charset=utf-8");
   response.setHeader("cache-control", "no-store");

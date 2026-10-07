@@ -34,6 +34,12 @@ import {
 import { strings } from "@uvcp/ui";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useRef, useState } from "react";
+import { AssistantSetup, loadAssistantStatus } from "./assistant-setup.tsx";
+
+type AssistantGate =
+  | { readonly kind: "checking" }
+  | { readonly kind: "ready"; readonly model: string }
+  | { readonly kind: "needed" };
 
 type Gesture = {
   readonly base: EditorHistory;
@@ -51,6 +57,8 @@ export function CreationApp() {
   const [notice, setNotice] = useState<string | null>(null);
   const [instruction, setInstruction] = useState("");
   const [pending, setPending] = useState(false);
+  const [gate, setGate] = useState<AssistantGate>({ kind: "checking" });
+  const [setupOpen, setSetupOpen] = useState(false);
   const surface = useRef<SVGSVGElement | null>(null);
   const gesture = useRef<Gesture | null>(null);
   const historyRef = useRef(history);
@@ -58,6 +66,8 @@ export function CreationApp() {
   historyRef.current = history;
   const shapes = shapesOf(history.present);
   const sheet = sheetShapes(history.present);
+  const assistantReady = gate.kind === "ready" && !setupOpen;
+  const showSetup = gate.kind === "needed" || setupOpen;
   const selected =
     shapes.find((shape) => shape.id === history.present.selectedId) ?? null;
 
@@ -88,6 +98,31 @@ export function CreationApp() {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  useEffect(() => {
+    let live = true;
+    loadAssistantStatus()
+      .then((status) => {
+        if (!live) {
+          return;
+        }
+        setGate(
+          status.configured
+            ? { kind: "ready", model: status.model }
+            : { kind: "needed" },
+        );
+      })
+      .catch(() => {
+        if (!live) {
+          return;
+        }
+        setGate({ kind: "needed" });
+        setNotice(assistantMessages.reachServer);
+      });
+    return () => {
+      live = false;
+    };
   }, []);
 
   function show(next: EditorHistory, message: string | null = null) {
@@ -130,6 +165,10 @@ export function CreationApp() {
         return;
       }
       if (!body.ok) {
+        if (body.message === assistantMessages.needsSetup) {
+          setGate({ kind: "needed" });
+          setSetupOpen(true);
+        }
         setNotice(body.message ?? assistantMessages.providerDown);
         return;
       }
@@ -147,20 +186,36 @@ export function CreationApp() {
     <div className="uvcp-editor">
       <header className="uvcp-editor-bar">
         <h1>{strings.productName}</h1>
-        <form className="uvcp-editor-ask" onSubmit={(event) => void ask(event)}>
-          <label>
-            Describe a change
-            <textarea
-              rows={2}
-              value={instruction}
-              disabled={pending}
-              onChange={(event) => setInstruction(event.target.value)}
-            />
-          </label>
-          <button type="submit" disabled={pending}>
-            Apply
+        {assistantReady ? (
+          <form
+            className="uvcp-editor-ask"
+            onSubmit={(event) => void ask(event)}
+          >
+            <label>
+              Describe a change
+              <textarea
+                rows={2}
+                value={instruction}
+                disabled={pending}
+                onChange={(event) => setInstruction(event.target.value)}
+              />
+            </label>
+            <button type="submit" disabled={pending}>
+              Apply
+            </button>
+          </form>
+        ) : (
+          <p className="uvcp-editor-ask">
+            {gate.kind === "checking"
+              ? "Checking the assistant."
+              : "Choose a provider below before describing a change."}
+          </p>
+        )}
+        {gate.kind === "ready" && !setupOpen ? (
+          <button type="button" onClick={() => setSetupOpen(true)}>
+            AI setup
           </button>
-        </form>
+        ) : null}
         <button
           type="button"
           disabled={pending}
@@ -254,6 +309,17 @@ export function CreationApp() {
           Export selection
         </button>
       </header>
+      {showSetup ? (
+        <AssistantSetup
+          currentModel={gate.kind === "ready" ? gate.model : null}
+          onConfigured={(model) => {
+            setGate({ kind: "ready", model });
+            setSetupOpen(false);
+            setNotice(assistantMessages.ready);
+          }}
+          onClose={gate.kind === "ready" ? () => setSetupOpen(false) : null}
+        />
+      ) : null}
       <div className="uvcp-editor-body">
         <svg
           ref={surface}
@@ -593,6 +659,8 @@ function isAssistantResult(value: unknown): value is {
 
 function isTyping(target: EventTarget | null): boolean {
   return (
-    target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement
   );
 }

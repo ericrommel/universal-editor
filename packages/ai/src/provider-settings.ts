@@ -40,6 +40,89 @@ export function providerSettings(
   return fail(assistantMessages.badProvider);
 }
 
+export type ProviderSession = {
+  current: ProviderSettings | null;
+};
+
+export type ProviderView = {
+  readonly configured: boolean;
+  readonly source: "session" | "environment" | "none";
+  readonly mode: "hosted" | "local" | null;
+  readonly provider: "xai" | "ollama" | "compatible" | null;
+  readonly model: string | null;
+};
+
+export function emptyProviderSession(): ProviderSession {
+  return { current: null };
+}
+
+export function resolveProvider(
+  session: ProviderSettings | null,
+  env: Readonly<Record<string, string | undefined>>,
+): ProviderSetup {
+  if (session !== null) {
+    return { ok: true, settings: session };
+  }
+  if (!developerEnv(env)) {
+    return fail(assistantMessages.needsSetup);
+  }
+  return providerSettings(env);
+}
+
+export function providerView(
+  session: ProviderSettings | null,
+  env: Readonly<Record<string, string | undefined>>,
+): ProviderView {
+  const resolved = resolveProvider(session, env);
+  if (!resolved.ok) {
+    return {
+      configured: false,
+      source: "none",
+      mode: null,
+      provider: null,
+      model: null,
+    };
+  }
+  return {
+    configured: true,
+    source: session === null ? "environment" : "session",
+    mode: resolved.settings.kind === "ollama" ? "local" : "hosted",
+    provider: resolved.settings.kind,
+    model: resolved.settings.model,
+  };
+}
+
+export function settingsFromChoice(value: unknown): ProviderSetup {
+  if (!isRecord(value) || typeof value.provider !== "string") {
+    return fail(assistantMessages.badProvider);
+  }
+  if (value.provider === "xai") {
+    return xaiChoice(value);
+  }
+  if (value.provider === "compatible") {
+    return hostedChoice(value);
+  }
+  if (value.provider === "ollama") {
+    return ollamaChoice(value);
+  }
+  return fail(assistantMessages.badProvider);
+}
+
+export function acceptedModelName(value: string): boolean {
+  return MODEL_NAME.test(value);
+}
+
+export function hostedUrlAllowed(value: string): boolean {
+  if (!baseUrlAllowed(value)) {
+    return false;
+  }
+  try {
+    return new URL(value).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export function baseUrlAllowed(value: string): boolean {
   let url: URL;
   try {
@@ -71,7 +154,7 @@ function xaiSettings(
   if (apiKey === null) {
     return fail(
       env.XAI_API_KEY === undefined
-        ? assistantMessages.missingXaiKey
+        ? assistantMessages.needsSetup
         : assistantMessages.badKey,
     );
   }
@@ -129,6 +212,132 @@ function readModel(
   return model;
 }
 
+function developerEnv(
+  env: Readonly<Record<string, string | undefined>>,
+): boolean {
+  return (
+    env.XAI_API_KEY !== undefined ||
+    env.UVCP_AI_PROVIDER !== undefined ||
+    env.UVCP_AI_BASE_URL !== undefined ||
+    env.UVCP_AI_MODEL !== undefined ||
+    env.UVCP_AI_API_KEY !== undefined
+  );
+}
+
+function xaiChoice(value: Record<string, unknown>): ProviderSetup {
+  if (!closed(value, ["provider", "model", "apiKey"])) {
+    return fail(assistantMessages.badRequest);
+  }
+  const apiKey = requiredKey(value.apiKey);
+  if (!apiKey.ok) {
+    return apiKey;
+  }
+  const model = optionalModel(value.model, DEFAULT_XAI_MODEL);
+  if (!model.ok) {
+    return model;
+  }
+  return {
+    ok: true,
+    settings: {
+      kind: "xai",
+      model: model.value,
+      apiKey: apiKey.value,
+      baseURL: XAI_BASE_URL,
+    },
+  };
+}
+
+function hostedChoice(value: Record<string, unknown>): ProviderSetup {
+  if (!closed(value, ["provider", "model", "baseUrl", "apiKey"])) {
+    return fail(assistantMessages.badRequest);
+  }
+  if (typeof value.baseUrl !== "string" || value.baseUrl.length === 0) {
+    return fail(assistantMessages.needAddress);
+  }
+  if (!hostedUrlAllowed(value.baseUrl)) {
+    return fail(assistantMessages.hostedAddress);
+  }
+  const model = requiredModel(value.model);
+  if (!model.ok) {
+    return model;
+  }
+  const apiKey = requiredKey(value.apiKey);
+  if (!apiKey.ok) {
+    return apiKey;
+  }
+  return {
+    ok: true,
+    settings: {
+      kind: "compatible",
+      model: model.value,
+      apiKey: apiKey.value,
+      baseURL: value.baseUrl,
+    },
+  };
+}
+
+function ollamaChoice(value: Record<string, unknown>): ProviderSetup {
+  if (!closed(value, ["provider", "model"])) {
+    return fail(assistantMessages.badRequest);
+  }
+  const model = requiredModel(value.model);
+  if (!model.ok) {
+    return model;
+  }
+  return {
+    ok: true,
+    settings: {
+      kind: "ollama",
+      model: model.value,
+      apiKey: "local",
+      baseURL: DEFAULT_OLLAMA_URL,
+    },
+  };
+}
+
+type ReadText =
+  | { readonly ok: true; readonly value: string }
+  | { readonly ok: false; readonly message: string };
+
+function requiredKey(value: unknown): ReadText {
+  if (typeof value !== "string" || value.length === 0) {
+    return fail(assistantMessages.needKey);
+  }
+  const apiKey = readKey(value);
+  if (apiKey === null) {
+    return fail(assistantMessages.badKey);
+  }
+  return { ok: true, value: apiKey };
+}
+
+function requiredModel(value: unknown): ReadText {
+  if (typeof value !== "string" || value.length === 0) {
+    return fail(assistantMessages.needModel);
+  }
+  if (!MODEL_NAME.test(value)) {
+    return fail(assistantMessages.badModel);
+  }
+  return { ok: true, value };
+}
+
+function optionalModel(value: unknown, fallback: string): ReadText {
+  if (value === undefined) {
+    return { ok: true, value: fallback };
+  }
+  return requiredModel(value);
+}
+
+function closed(
+  value: Record<string, unknown>,
+  keys: readonly string[],
+): boolean {
+  return Object.keys(value).every((key) => keys.includes(key));
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 function readKey(value: string | undefined): string | null {
   if (
     value === undefined ||
@@ -143,6 +352,9 @@ function readKey(value: string | undefined): string | null {
   return value;
 }
 
-function fail(message: string): ProviderSetup {
+function fail(message: string): {
+  readonly ok: false;
+  readonly message: string;
+} {
   return { ok: false, message };
 }
