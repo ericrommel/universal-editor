@@ -43,7 +43,7 @@ Implement the behavior the product needs. Prefer the existing packages and the s
 
 Record behavior in the module document that owns it. State the behavior. Leave out process narration and unused alternatives.
 
-Keep the package boundaries in `scripts/boundaries.mjs`.
+Keep the package boundaries in `scripts/boundaries.mjs` and `docs/engineering/architecture.md`.
 
 `node scripts/verify.mjs` is the verification gate. Node is exactly the version in `.node-version`. Do not claim a result the command did not produce.
 
@@ -54,3 +54,5 @@ Treat scene documents, imported files, and other external input as untrusted.
 Do not log secrets, tokens, or document contents. Do not add telemetry. Do not weaken a security control to make a test pass. Domain errors use fixed messages and do not echo input.
 
 A security finding is fixed or recorded as blocking before merge.
+
+The secure-development rules in `AGENTS.md` still apply.

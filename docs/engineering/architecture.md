@@ -142,6 +142,7 @@ apps/shell/            Vite application. Composition root.
 packages/core/         Domain helpers. No I/O.
 packages/persistence/  Manifest codec and entry-name rules.
 packages/editor/       Startup session.
+packages/interchange/  Format adapters over the scene value. glTF is the first.
 packages/rendering/    Snapshot port and null renderer.
 packages/platform/     Host boundary. No capability in Module 0.
 packages/ui/           React foundation screen, tokens, and strings.
@@ -159,6 +160,7 @@ Allowed imports:
 | `platform` | nothing in the workspace |
 | `rendering` | `core` |
 | `editor` | `core`, `persistence` |
+| `interchange` | `core` |
 | `ui` | nothing in the workspace |
 | `shell` | `ui`, `editor`, `platform` |
 
