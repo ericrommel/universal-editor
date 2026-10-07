@@ -93,6 +93,8 @@ test("assistant edits stay in the editor document until undo", () => {
   assert.deepEqual(shapesOf(edited.history.present), editedShapes);
 
   const rejected = applyAssistantActions(edited.history, [
+    { type: "move", id: "r1", x: 1, y: 1 },
+    { type: "resize", id: "b1", width: 10, height: 10, depth: 10 },
     {
       type: "createRectangle",
       id: "r2",
@@ -111,6 +113,7 @@ test("assistant edits stay in the editor document until undo", () => {
       `Scene extent is not accepted. ${assistantMessages.unchanged}`,
     );
   }
+  assert.deepEqual(shapesOf(rejected.history.present), editedShapes);
   assert.deepEqual(shapesOf(edited.history.present), editedShapes);
   assert.deepEqual(
     shapesOf(undo(edited.history).present),
