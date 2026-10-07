@@ -18,3 +18,9 @@ export type {
 export { capabilities, includedEntitlement } from "./entitlement.ts";
 export { assistantMessages, LIMITS } from "./messages.ts";
 export { scenePrompt } from "./prompt.ts";
+export {
+  assistantProviders,
+  defaultModelFor,
+  isProviderId,
+  type ProviderId,
+} from "./providers.ts";

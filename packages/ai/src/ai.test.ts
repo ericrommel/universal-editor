@@ -9,6 +9,7 @@ import {
 import { detectLocalModels } from "./local-models.ts";
 import { assistantMessages } from "./messages.ts";
 import {
+  acceptedModelName,
   baseUrlAllowed,
   emptyProviderSession,
   providerSettings,
@@ -16,6 +17,7 @@ import {
   resolveProvider,
   settingsFromChoice,
 } from "./provider-settings.ts";
+import { assistantProviders } from "./providers.ts";
 import { handleAiRoutes, handleAssistantRequest } from "./request.ts";
 
 const entitlement: EntitlementPort = includedEntitlement;
@@ -309,7 +311,10 @@ test("an in-app choice overrides developer settings and hides the key", async ()
   assert.equal(saved?.body.mode, "hosted");
   assert.equal(saved?.body.provider, "xai");
   assert.equal(saved?.body.model, "grok-4.7");
+  assert.equal(saved?.body.credential, true);
   assert.equal(JSON.stringify(saved).includes(key), false);
+  assert.equal(JSON.stringify(saved).includes("api.x.ai"), false);
+  assert.equal(JSON.stringify(saved).includes("baseURL"), false);
   assert.equal(session.current?.kind, "xai");
   if (session.current?.kind === "xai") {
     assert.equal(session.current.baseURL, "https://api.x.ai/v1");
@@ -335,6 +340,7 @@ test("an in-app choice overrides developer settings and hides the key", async ()
   }
   const fromEnv = providerView(null, { XAI_API_KEY: key });
   assert.equal(fromEnv.source, "environment");
+  assert.equal(fromEnv.credential, false);
   assert.equal(JSON.stringify(fromEnv).includes(key), false);
 });
 
@@ -407,4 +413,177 @@ test("local detection reads Ollama and does not follow a redirect", async () => 
     });
   });
   assert.deepEqual(found, { ok: true, models: ["qwen2.5:7b"] });
+});
+
+test("named providers lock their address and do not reveal a key", () => {
+  const key = "test-key-not-real";
+  const xaiKey = "xai-key-not-real";
+  const locked = {
+    openai: ["https://api.openai.com/v1", "gpt-6-astra"],
+    anthropic: ["https://api.anthropic.com/v1/", "claude-sonnet-5-5"],
+    gemini: [
+      "https://generativelanguage.googleapis.com/v1beta/openai/",
+      "gemini-3.8-flash",
+    ],
+    openrouter: ["https://openrouter.ai/api/v1", "openrouter/auto"],
+    xai: ["https://api.x.ai/v1", "grok-4.7"],
+  } as const;
+  assert.deepEqual(
+    assistantProviders.map((item) => item.id),
+    [
+      "openai",
+      "anthropic",
+      "gemini",
+      "openrouter",
+      "xai",
+      "ollama",
+      "compatible",
+    ],
+  );
+  for (const [provider, expected] of Object.entries(locked)) {
+    const setup = settingsFromChoice({ provider, apiKey: key });
+    assert.equal(setup.ok, true, provider);
+    if (!setup.ok) {
+      continue;
+    }
+    assert.equal(setup.settings.baseURL, expected[0], provider);
+    assert.equal(setup.settings.model, expected[1], provider);
+    const view = providerView(setup.settings, {});
+    assert.equal(view.credential, true);
+    assert.equal(view.provider, provider);
+    assert.equal(JSON.stringify(view).includes(key), false);
+    const steered = settingsFromChoice({
+      provider,
+      apiKey: key,
+      baseUrl: "https://evil.example/v1",
+    });
+    assert.equal(steered.ok, false, provider);
+    assert.equal(JSON.stringify(steered).includes(key), false);
+    const fromEnv = providerSettings({
+      UVCP_AI_PROVIDER: provider,
+      UVCP_AI_API_KEY: key,
+      XAI_API_KEY: xaiKey,
+      UVCP_AI_BASE_URL: "http://169.254.169.254/latest",
+    });
+    assert.equal(fromEnv.ok, true, provider);
+    if (!fromEnv.ok) {
+      continue;
+    }
+    assert.equal(fromEnv.settings.baseURL, expected[0], provider);
+    if (provider === "xai") {
+      assert.equal(fromEnv.settings.apiKey, xaiKey);
+    } else {
+      assert.equal(fromEnv.settings.apiKey, key);
+    }
+  }
+  const ignored = providerSettings({
+    UVCP_AI_PROVIDER: "openai",
+    XAI_API_KEY: xaiKey,
+  });
+  assert.equal(ignored.ok, false);
+  assert.equal(JSON.stringify(ignored).includes(xaiKey), false);
+  const catalog = JSON.stringify(assistantProviders);
+  assert.equal(catalog.includes("api.openai.com"), false);
+  assert.equal(catalog.includes("api.anthropic.com"), false);
+  assert.equal(catalog.includes("generativelanguage.googleapis.com"), false);
+  assert.equal(catalog.includes("openrouter.ai/api"), false);
+  assert.equal(catalog.includes("api.x.ai"), false);
+  assert.equal(catalog.includes("127.0.0.1"), false);
+  assert.equal(catalog.includes("XAI_API_KEY"), false);
+  assert.equal(catalog.includes("UVCP_AI_"), false);
+  assert.equal(acceptedModelName("openrouter/auto"), true);
+  assert.equal(acceptedModelName("openai/gpt-6-astra"), true);
+  assert.equal(acceptedModelName("qwen2.5:7b"), true);
+  assert.equal(acceptedModelName("/hidden"), false);
+  assert.equal(acceptedModelName(".hidden"), false);
+  assert.equal(acceptedModelName("a".repeat(128)), true);
+  assert.equal(acceptedModelName("a".repeat(129)), false);
+});
+
+test("a saved key is reused only for the same provider", async () => {
+  const xaiKey = "xai-key-not-real";
+  const openaiKey = "openai-key-not-real";
+  const compatKey = "compat-key-not-real";
+  const session = emptyProviderSession();
+  const post = (body: unknown) =>
+    handleAiRoutes({
+      method: "POST",
+      url: "/api/ai/setup",
+      origin: undefined,
+      host: "127.0.0.1:5173",
+      contentType: "application/json",
+      body: JSON.stringify(body),
+      session,
+      env: { XAI_API_KEY: xaiKey, UVCP_AI_PROVIDER: "xai" },
+      run: async () => ({ ok: true, actions: [] }),
+    });
+
+  const saved = await post({ provider: "xai", apiKey: xaiKey });
+  assert.equal(saved?.body.credential, true);
+  assert.equal(JSON.stringify(saved).includes(xaiKey), false);
+
+  const switched = await post({ provider: "openai", apiKey: openaiKey });
+  assert.equal(switched?.body.ok, true);
+  assert.equal(switched?.body.provider, "openai");
+  assert.equal(switched?.body.model, "gpt-6-astra");
+  assert.equal(session.current?.kind, "openai");
+  assert.equal(session.current?.apiKey, openaiKey);
+  assert.equal(session.current?.baseURL, "https://api.openai.com/v1");
+  assert.equal(JSON.stringify(switched).includes(openaiKey), false);
+  assert.equal(JSON.stringify(switched).includes(xaiKey), false);
+
+  const renamed = await post({ provider: "openai", model: "gpt-6-custom" });
+  assert.equal(renamed?.body.ok, true);
+  assert.equal(renamed?.body.model, "gpt-6-custom");
+  assert.equal(session.current?.apiKey, openaiKey);
+  assert.equal(JSON.stringify(renamed).includes(openaiKey), false);
+
+  const blocked = await post({ provider: "anthropic" });
+  assert.equal(blocked?.body.ok, false);
+  assert.equal(blocked?.body.message, assistantMessages.needKey);
+  assert.equal(session.current?.kind, "openai");
+  assert.equal(session.current?.apiKey, openaiKey);
+  assert.equal(JSON.stringify(blocked).includes(openaiKey), false);
+
+  const compatible = await post({
+    provider: "compatible",
+    model: "example-model",
+    baseUrl: "https://example.invalid/v1",
+    apiKey: compatKey,
+  });
+  assert.equal(compatible?.body.ok, true);
+  assert.equal(session.current?.baseURL, "https://example.invalid/v1");
+  assert.equal(JSON.stringify(compatible).includes(compatKey), false);
+  assert.equal(JSON.stringify(compatible).includes("example.invalid"), false);
+
+  const moved = await post({
+    provider: "compatible",
+    model: "example-model",
+    baseUrl: "https://other.example/v1",
+  });
+  assert.equal(moved?.body.ok, false);
+  assert.equal(moved?.body.message, assistantMessages.needKey);
+  assert.equal(session.current?.baseURL, "https://example.invalid/v1");
+  assert.equal(session.current?.apiKey, compatKey);
+  assert.equal(JSON.stringify(moved).includes(compatKey), false);
+
+  const kept = await post({
+    provider: "compatible",
+    model: "example-model-2",
+  });
+  assert.equal(kept?.body.ok, true);
+  assert.equal(kept?.body.model, "example-model-2");
+  assert.equal(session.current?.apiKey, compatKey);
+  assert.equal(session.current?.baseURL, "https://example.invalid/v1");
+  assert.equal(JSON.stringify(kept).includes(compatKey), false);
+
+  const local = await post({ provider: "ollama", model: "qwen2.5:7b" });
+  assert.equal(local?.body.ok, true);
+  assert.equal(local?.body.provider, "ollama");
+  assert.equal(local?.body.mode, "local");
+  assert.equal(local?.body.credential, false);
+  assert.equal(session.current?.apiKey, "local");
+  assert.equal(session.current?.baseURL, "http://127.0.0.1:11434/v1");
+  assert.equal(JSON.stringify(local).includes(compatKey), false);
+  assert.equal(JSON.stringify(local).includes("127.0.0.1"), false);
 });

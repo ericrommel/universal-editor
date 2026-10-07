@@ -16,12 +16,11 @@ The objects remain in the scene. Drag a shape to move it. Select it and edit Wid
 
 ## Providers
 
-When the assistant is not ready, the screen asks for a hosted provider or a local model. Rectangle, Box, and the rest of the editor stay available.
+When the assistant is not ready, choose a provider on the screen. Rectangle, Box, and the rest of the editor stay available.
 
-- Hosted: choose xAI, or another hosted provider. Enter the model and the API key that provider requires. An xAI address is fixed. Another hosted provider needs an https address.
-- Local: choose Local model, then look for Ollama. The application lists models from an Ollama app that is already running and lets you pick one. It does not install or configure Ollama.
+The list is OpenAI, Anthropic, Gemini, OpenRouter, xAI, Ollama, and another provider. A hosted provider asks for a model and an API key. Where a model is already filled in, change it if you use a different one. Another provider also asks for an https address. Ollama asks you to look for models that are already running on this computer. The application does not install or configure Ollama.
 
-The key stays in the running app for that session. It is not written into the scene file. After a restart, enter it again. Choose AI setup to change the provider later.
+The key stays in the running app for that session. It is not written into the scene file, and it is not shown again after you save. Choose AI setup to switch provider or model. The new choice is used immediately. After a restart, enter the key again.
 
 Developers can still put the same choices in a git-ignored `.env`, using `.env.example` as the list. That path is optional. The screen does not ask for it.
 

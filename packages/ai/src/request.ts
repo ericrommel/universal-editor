@@ -13,6 +13,7 @@ import {
   providerView,
   settingsFromChoice,
 } from "./provider-settings.ts";
+import type { ProviderId } from "./providers.ts";
 
 export type AssistantBody = {
   readonly ok: boolean;
@@ -21,8 +22,9 @@ export type AssistantBody = {
   readonly configured?: boolean;
   readonly source?: "session" | "environment" | "none";
   readonly mode?: "hosted" | "local" | null;
-  readonly provider?: "xai" | "ollama" | "compatible" | null;
+  readonly provider?: ProviderId | null;
   readonly model?: string | null;
+  readonly credential?: boolean;
   readonly models?: readonly string[];
 };
 
@@ -157,7 +159,7 @@ async function saveSetup(
   } catch {
     return json(400, { ok: false, message: assistantMessages.badRequest });
   }
-  const choice = settingsFromChoice(parsed);
+  const choice = settingsFromChoice(parsed, session.current);
   if (!choice.ok) {
     return json(200, { ok: false, message: choice.message });
   }

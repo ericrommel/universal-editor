@@ -26,14 +26,18 @@ import {
 import { strings } from "@uvcp/ui";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useRef, useState } from "react";
-import { AssistantSetup, loadAssistantStatus } from "./assistant-setup.tsx";
+import {
+  AssistantSetup,
+  loadAssistantStatus,
+  type SavedAssistant,
+} from "./assistant-setup.tsx";
 
 const VIEW_WIDTH = 960;
 const VIEW_HEIGHT = 600;
 
 type AssistantGate =
   | { readonly kind: "checking" }
-  | { readonly kind: "ready"; readonly model: string }
+  | ({ readonly kind: "ready" } & SavedAssistant)
   | { readonly kind: "needed" };
 
 type Gesture = {
@@ -103,7 +107,12 @@ export function CreationApp() {
         }
         setGate(
           status.configured
-            ? { kind: "ready", model: status.model }
+            ? {
+                kind: "ready",
+                provider: status.provider,
+                model: status.model,
+                credential: status.credential,
+              }
             : { kind: "needed" },
         );
       })
@@ -202,7 +211,9 @@ export function CreationApp() {
           <p className="uvcp-editor-ask">
             {gate.kind === "checking"
               ? "Checking the assistant."
-              : "Choose a provider below before describing a change."}
+              : gate.kind === "ready"
+                ? "The current choice stays in use until you save or cancel."
+                : "Choose a provider below before describing a change."}
           </p>
         )}
         {gate.kind === "ready" && !setupOpen ? (
@@ -270,9 +281,17 @@ export function CreationApp() {
       </header>
       {showSetup ? (
         <AssistantSetup
-          currentModel={gate.kind === "ready" ? gate.model : null}
-          onConfigured={(model) => {
-            setGate({ kind: "ready", model });
+          saved={
+            gate.kind === "ready"
+              ? {
+                  provider: gate.provider,
+                  model: gate.model,
+                  credential: gate.credential,
+                }
+              : null
+          }
+          onConfigured={(choice) => {
+            setGate({ kind: "ready", ...choice });
             setSetupOpen(false);
             setNotice(assistantMessages.ready);
           }}
