@@ -1,28 +1,29 @@
 import { URL } from "node:url";
 import { assistantMessages, LIMITS } from "./messages.ts";
+import { defaultModelFor, isProviderId, type ProviderId } from "./providers.ts";
 
-export type ProviderSettings =
-  | {
-      readonly kind: "xai";
-      readonly model: string;
-      readonly apiKey: string;
-      readonly baseURL: "https://api.x.ai/v1";
-    }
-  | {
-      readonly kind: "ollama" | "compatible";
-      readonly model: string;
-      readonly apiKey: string;
-      readonly baseURL: string;
-    };
+export type ProviderSettings = {
+  readonly kind: ProviderId;
+  readonly model: string;
+  readonly apiKey: string;
+  readonly baseURL: string;
+};
 
 export type ProviderSetup =
   | { readonly ok: true; readonly settings: ProviderSettings }
   | { readonly ok: false; readonly message: string };
 
-const MODEL_NAME = /^[A-Za-z0-9_.:-]{1,128}$/;
-const XAI_BASE_URL = "https://api.x.ai/v1" as const;
-const DEFAULT_XAI_MODEL = "grok-4.7";
+const MODEL_NAME = /^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,127}$/;
 const DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434/v1";
+const LOCKED_URL = {
+  openai: "https://api.openai.com/v1",
+  anthropic: "https://api.anthropic.com/v1/",
+  gemini: "https://generativelanguage.googleapis.com/v1beta/openai/",
+  openrouter: "https://openrouter.ai/api/v1",
+  xai: "https://api.x.ai/v1",
+} as const;
+
+type LockedKind = keyof typeof LOCKED_URL;
 
 export function providerSettings(
   env: Readonly<Record<string, string | undefined>>,
@@ -37,6 +38,9 @@ export function providerSettings(
   if (selected === "compatible") {
     return localSettings(env, null);
   }
+  if (isLockedKind(selected) && selected !== "xai") {
+    return namedSettings(env, selected);
+  }
   return fail(assistantMessages.badProvider);
 }
 
@@ -48,8 +52,9 @@ export type ProviderView = {
   readonly configured: boolean;
   readonly source: "session" | "environment" | "none";
   readonly mode: "hosted" | "local" | null;
-  readonly provider: "xai" | "ollama" | "compatible" | null;
+  readonly provider: ProviderId | null;
   readonly model: string | null;
+  readonly credential: boolean;
 };
 
 export function emptyProviderSession(): ProviderSession {
@@ -81,6 +86,7 @@ export function providerView(
       mode: null,
       provider: null,
       model: null,
+      credential: false,
     };
   }
   return {
@@ -89,21 +95,28 @@ export function providerView(
     mode: resolved.settings.kind === "ollama" ? "local" : "hosted",
     provider: resolved.settings.kind,
     model: resolved.settings.model,
+    credential: session !== null && session.kind !== "ollama",
   };
 }
 
-export function settingsFromChoice(value: unknown): ProviderSetup {
+export function settingsFromChoice(
+  value: unknown,
+  previous: ProviderSettings | null = null,
+): ProviderSetup {
   if (!isRecord(value) || typeof value.provider !== "string") {
     return fail(assistantMessages.badProvider);
   }
-  if (value.provider === "xai") {
-    return xaiChoice(value);
+  if (!isProviderId(value.provider)) {
+    return fail(assistantMessages.badProvider);
   }
   if (value.provider === "compatible") {
-    return hostedChoice(value);
+    return hostedChoice(value, previous);
   }
   if (value.provider === "ollama") {
     return ollamaChoice(value);
+  }
+  if (isLockedKind(value.provider)) {
+    return namedChoice(value, value.provider, previous);
   }
   return fail(assistantMessages.badProvider);
 }
@@ -158,13 +171,35 @@ function xaiSettings(
         : assistantMessages.badKey,
     );
   }
-  const model = readModel(env.UVCP_AI_MODEL, DEFAULT_XAI_MODEL);
+  const model = readModel(env.UVCP_AI_MODEL, defaultModelFor("xai"));
   if (model === null) {
     return fail(assistantMessages.badModel);
   }
   return {
     ok: true,
-    settings: { kind: "xai", model, apiKey, baseURL: XAI_BASE_URL },
+    settings: { kind: "xai", model, apiKey, baseURL: LOCKED_URL.xai },
+  };
+}
+
+function namedSettings(
+  env: Readonly<Record<string, string | undefined>>,
+  kind: Exclude<LockedKind, "xai">,
+): ProviderSetup {
+  const apiKey = readKey(env.UVCP_AI_API_KEY);
+  if (apiKey === null) {
+    return fail(
+      env.UVCP_AI_API_KEY === undefined
+        ? assistantMessages.needsSetup
+        : assistantMessages.badKey,
+    );
+  }
+  const model = readModel(env.UVCP_AI_MODEL, defaultModelFor(kind));
+  if (model === null) {
+    return fail(assistantMessages.badModel);
+  }
+  return {
+    ok: true,
+    settings: { kind, model, apiKey, baseURL: LOCKED_URL[kind] },
   };
 }
 
@@ -224,44 +259,49 @@ function developerEnv(
   );
 }
 
-function xaiChoice(value: Record<string, unknown>): ProviderSetup {
+function namedChoice(
+  value: Record<string, unknown>,
+  kind: LockedKind,
+  previous: ProviderSettings | null,
+): ProviderSetup {
   if (!closed(value, ["provider", "model", "apiKey"])) {
     return fail(assistantMessages.badRequest);
   }
-  const apiKey = requiredKey(value.apiKey);
-  if (!apiKey.ok) {
-    return apiKey;
-  }
-  const model = optionalModel(value.model, DEFAULT_XAI_MODEL);
+  const model = optionalModel(value.model, defaultModelFor(kind));
   if (!model.ok) {
     return model;
+  }
+  const apiKey = reusedKey(value.apiKey, previous, kind);
+  if (!apiKey.ok) {
+    return apiKey;
   }
   return {
     ok: true,
     settings: {
-      kind: "xai",
+      kind,
       model: model.value,
       apiKey: apiKey.value,
-      baseURL: XAI_BASE_URL,
+      baseURL: LOCKED_URL[kind],
     },
   };
 }
 
-function hostedChoice(value: Record<string, unknown>): ProviderSetup {
+function hostedChoice(
+  value: Record<string, unknown>,
+  previous: ProviderSettings | null,
+): ProviderSetup {
   if (!closed(value, ["provider", "model", "baseUrl", "apiKey"])) {
     return fail(assistantMessages.badRequest);
   }
-  if (typeof value.baseUrl !== "string" || value.baseUrl.length === 0) {
-    return fail(assistantMessages.needAddress);
-  }
-  if (!hostedUrlAllowed(value.baseUrl)) {
-    return fail(assistantMessages.hostedAddress);
+  const address = readHostedAddress(value.baseUrl, previous);
+  if (!address.ok) {
+    return address;
   }
   const model = requiredModel(value.model);
   if (!model.ok) {
     return model;
   }
-  const apiKey = requiredKey(value.apiKey);
+  const apiKey = compatibleKey(value.apiKey, previous, address.value);
   if (!apiKey.ok) {
     return apiKey;
   }
@@ -271,7 +311,7 @@ function hostedChoice(value: Record<string, unknown>): ProviderSetup {
       kind: "compatible",
       model: model.value,
       apiKey: apiKey.value,
-      baseURL: value.baseUrl,
+      baseURL: address.value,
     },
   };
 }
@@ -295,9 +335,66 @@ function ollamaChoice(value: Record<string, unknown>): ProviderSetup {
   };
 }
 
+function readHostedAddress(
+  value: unknown,
+  previous: ProviderSettings | null,
+): ReadText {
+  if (value === undefined || value === "") {
+    if (previous !== null && previous.kind === "compatible") {
+      return { ok: true, value: previous.baseURL };
+    }
+    return fail(assistantMessages.needAddress);
+  }
+  if (typeof value !== "string" || !hostedUrlAllowed(value)) {
+    return fail(
+      typeof value === "string"
+        ? assistantMessages.hostedAddress
+        : assistantMessages.needAddress,
+    );
+  }
+  return { ok: true, value };
+}
+
+function compatibleKey(
+  value: unknown,
+  previous: ProviderSettings | null,
+  baseURL: string,
+): ReadText {
+  if (
+    (value === undefined || value === "") &&
+    previous !== null &&
+    previous.kind === "compatible" &&
+    previous.baseURL === baseURL
+  ) {
+    return { ok: true, value: previous.apiKey };
+  }
+  if (value === undefined || value === "") {
+    return fail(assistantMessages.needKey);
+  }
+  return requiredKey(value);
+}
+
 type ReadText =
   | { readonly ok: true; readonly value: string }
   | { readonly ok: false; readonly message: string };
+
+function reusedKey(
+  value: unknown,
+  previous: ProviderSettings | null,
+  kind: LockedKind,
+): ReadText {
+  if (
+    (value === undefined || value === "") &&
+    previous !== null &&
+    previous.kind === kind
+  ) {
+    return { ok: true, value: previous.apiKey };
+  }
+  if (value === undefined || value === "") {
+    return fail(assistantMessages.needKey);
+  }
+  return requiredKey(value);
+}
 
 function requiredKey(value: unknown): ReadText {
   if (typeof value !== "string" || value.length === 0) {
@@ -320,8 +417,11 @@ function requiredModel(value: unknown): ReadText {
   return { ok: true, value };
 }
 
-function optionalModel(value: unknown, fallback: string): ReadText {
+function optionalModel(value: unknown, fallback: string | null): ReadText {
   if (value === undefined) {
+    if (fallback === null || !MODEL_NAME.test(fallback)) {
+      return fail(assistantMessages.badModel);
+    }
     return { ok: true, value: fallback };
   }
   return requiredModel(value);
@@ -332,6 +432,10 @@ function closed(
   keys: readonly string[],
 ): boolean {
   return Object.keys(value).every((key) => keys.includes(key));
+}
+
+function isLockedKind(value: string): value is LockedKind {
+  return Object.hasOwn(LOCKED_URL, value);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

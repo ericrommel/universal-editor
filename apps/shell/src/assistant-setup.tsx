@@ -1,10 +1,19 @@
-import { assistantMessages } from "@uvcp/ai";
+import {
+  assistantMessages,
+  assistantProviders,
+  isProviderId,
+  type ProviderId,
+} from "@uvcp/ai";
 import { useState } from "react";
 
-const XAI_KEYS = "https://console.x.ai/team/default/api-keys";
+export type SavedAssistant = {
+  readonly provider: ProviderId;
+  readonly model: string;
+  readonly credential: boolean;
+};
 
 export async function loadAssistantStatus(): Promise<
-  | { readonly configured: true; readonly model: string }
+  | ({ readonly configured: true } & SavedAssistant)
   | { readonly configured: false }
 > {
   const response = await fetch("/api/ai/status");
@@ -14,44 +23,80 @@ export async function loadAssistantStatus(): Promise<
     body.ok !== true ||
     body.configured !== true ||
     typeof body.model !== "string" ||
-    body.model.length === 0
+    body.model.length === 0 ||
+    typeof body.provider !== "string" ||
+    !isProviderId(body.provider)
   ) {
     return { configured: false };
   }
-  return { configured: true, model: body.model };
+  return {
+    configured: true,
+    provider: body.provider,
+    model: body.model,
+    credential: body.credential === true,
+  };
 }
 
 export function AssistantSetup({
-  currentModel,
+  saved,
   onConfigured,
   onClose,
 }: {
-  readonly currentModel: string | null;
-  readonly onConfigured: (model: string) => void;
+  readonly saved: SavedAssistant | null;
+  readonly onConfigured: (choice: SavedAssistant) => void;
   readonly onClose: (() => void) | null;
 }) {
-  const [choice, setChoice] = useState<"hosted" | "local">("hosted");
-  const [provider, setProvider] = useState<"xai" | "compatible">("xai");
-  const [model, setModel] = useState("grok-4.7");
+  const initial = saved?.provider ?? assistantProviders[0].id;
+  const [provider, setProvider] = useState<ProviderId>(initial);
+  const [model, setModel] = useState(
+    saved?.provider === initial ? saved.model : defaultModel(initial),
+  );
   const [apiKey, setApiKey] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
   const [localModels, setLocalModels] = useState<readonly string[] | null>(
     null,
   );
-  const [localModel, setLocalModel] = useState("");
+  const [localModel, setLocalModel] = useState(
+    saved?.provider === "ollama" ? saved.model : "",
+  );
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const entry =
+    assistantProviders.find((item) => item.id === provider) ??
+    assistantProviders[0];
+  const keepSaved =
+    saved !== null && saved.provider === provider && saved.credential;
+  const keyMissing =
+    !entry.local &&
+    apiKey.length === 0 &&
+    (!keepSaved || (entry.address && baseUrl.length > 0));
+  const addressMissing = entry.address && baseUrl.length === 0 && !keepSaved;
+  const modelMissing = entry.local
+    ? localModel.length === 0
+    : model.length === 0;
 
-  async function saveHosted(event: { preventDefault(): void }) {
-    event.preventDefault();
-    const payload =
-      provider === "xai"
-        ? { provider, model, apiKey }
-        : { provider, model, apiKey, baseUrl };
-    const saved = await postSetup(payload, setBusy, setMessage);
-    if (saved !== null) {
-      setApiKey("");
-      onConfigured(saved);
+  function choose(next: string) {
+    if (!isProviderId(next)) {
+      return;
+    }
+    const found = assistantProviders.find((item) => item.id === next);
+    if (found === undefined) {
+      return;
+    }
+    setProvider(found.id);
+    setApiKey("");
+    setBaseUrl("");
+    setMessage(null);
+    if (saved !== null && saved.provider === found.id) {
+      setModel(saved.model);
+      if (found.local) {
+        setLocalModel(saved.model);
+      }
+      return;
+    }
+    setModel(found.defaultModel ?? "");
+    if (found.local) {
+      setLocalModel("");
     }
   }
 
@@ -86,174 +131,190 @@ export function AssistantSetup({
     }
   }
 
-  async function saveLocal(event: { preventDefault(): void }) {
+  async function save(event: { preventDefault(): void }) {
     event.preventDefault();
-    const saved = await postSetup(
-      { provider: "ollama", model: localModel },
-      setBusy,
-      setMessage,
-    );
-    if (saved !== null) {
-      onConfigured(saved);
+    const payload: Record<string, string> = entry.local
+      ? { provider: "ollama", model: localModel }
+      : { provider: entry.id, model };
+    if (!entry.local && entry.address && baseUrl.length > 0) {
+      payload.baseUrl = baseUrl;
+    }
+    if (!entry.local && apiKey.length > 0) {
+      payload.apiKey = apiKey;
+    }
+    const choice = await postSetup(payload, setBusy, setMessage);
+    if (choice !== null) {
+      setApiKey("");
+      onConfigured(choice);
     }
   }
 
+  const knownModels = localModels ?? [];
+  const modelOptions =
+    localModel.length > 0 && !knownModels.includes(localModel)
+      ? [localModel, ...knownModels]
+      : knownModels;
+
   return (
     <section className="uvcp-ai-setup" aria-labelledby="uvcp-ai-setup-title">
-      <h2 id="uvcp-ai-setup-title">Set up the assistant</h2>
-      {currentModel === null ? null : <p>Using {currentModel}.</p>}
+      <h2 id="uvcp-ai-setup-title">
+        {saved === null ? "Set up the assistant" : "Change provider"}
+      </h2>
+      {saved === null ? null : <p>Using {saved.model}.</p>}
       <p>
-        Choose a hosted provider or a local model. The scene editor keeps
-        working either way.
+        Choose the provider you already use. The scene editor keeps working
+        either way.
       </p>
-      <div className="uvcp-ai-choices">
+      <form onSubmit={(event) => void save(event)}>
         <label>
-          <input
-            type="radio"
-            name="assistant-source"
-            checked={choice === "hosted"}
-            onChange={() => setChoice("hosted")}
-          />
-          Hosted provider
+          Provider
+          <select
+            value={provider}
+            disabled={busy}
+            onChange={(event) => choose(event.target.value)}
+          >
+            {assistantProviders.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.label}
+              </option>
+            ))}
+          </select>
         </label>
-        <label>
-          <input
-            type="radio"
-            name="assistant-source"
-            checked={choice === "local"}
-            onChange={() => setChoice("local")}
-          />
-          Local model
-        </label>
-      </div>
-      {choice === "hosted" ? (
-        <form onSubmit={(event) => void saveHosted(event)}>
-          <label>
-            Provider
-            <select
-              value={provider}
-              disabled={busy}
-              onChange={(event) => {
-                const next =
-                  event.target.value === "compatible" ? "compatible" : "xai";
-                setProvider(next);
-                setModel(next === "xai" ? "grok-4.7" : "");
-                setApiKey("");
-              }}
-            >
-              <option value="xai">xAI</option>
-              <option value="compatible">Other hosted provider</option>
-            </select>
-          </label>
-          {provider === "xai" ? (
-            <p>
-              The model and API key are required. The service address stays with
-              xAI.{" "}
-              <a href={XAI_KEYS} target="_blank" rel="noopener noreferrer">
-                Create an xAI API key
-              </a>
-            </p>
-          ) : (
-            <div>
-              <p>
-                Enter the https address, model name, and API key that provider
-                requires.
-              </p>
-              <label>
-                Address
-                <input
-                  type="url"
-                  value={baseUrl}
-                  disabled={busy}
-                  autoComplete="off"
-                  onChange={(event) => setBaseUrl(event.target.value)}
-                />
-              </label>
-            </div>
-          )}
-          <label>
-            Model
-            <input
-              value={model}
-              disabled={busy}
-              autoComplete="off"
-              onChange={(event) => setModel(event.target.value)}
-            />
-          </label>
-          <label>
-            API key
-            <input
-              type="password"
-              value={apiKey}
-              disabled={busy}
-              autoComplete="off"
-              spellCheck={false}
-              onChange={(event) => setApiKey(event.target.value)}
-            />
-          </label>
-          <p>
-            The key stays in this running session and is not saved in the scene.
-          </p>
-          <div className="uvcp-ai-actions">
-            <button type="submit" disabled={busy}>
-              Save and use
-            </button>
-            {onClose === null ? null : (
-              <button type="button" disabled={busy} onClick={onClose}>
-                Cancel
-              </button>
-            )}
-          </div>
-        </form>
-      ) : (
-        <form onSubmit={(event) => void saveLocal(event)}>
-          <p>
-            This looks for Ollama already running on this computer. It does not
-            install or configure Ollama.
-          </p>
+        <p>{entry.hint}</p>
+        {entry.local ? (
           <div className="uvcp-ai-actions">
             <button type="button" disabled={busy} onClick={() => void look()}>
               Look for Ollama
             </button>
           </div>
-          {localModels !== null && localModels.length > 0 ? (
+        ) : null}
+        {entry.local && modelOptions.length > 0 ? (
+          <label>
+            Model
+            <select
+              value={localModel}
+              disabled={busy}
+              onChange={(event) => setLocalModel(event.target.value)}
+            >
+              {modelOptions.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+        {entry.address ? (
+          <div>
+            {keepSaved && baseUrl.length === 0 ? (
+              <p>
+                An address is already saved for this session. It is not shown
+                again. Enter a new https address only together with a new API
+                key.
+              </p>
+            ) : null}
             <label>
-              Model
-              <select
-                value={localModel}
+              Address
+              <input
+                type="url"
+                value={baseUrl}
                 disabled={busy}
-                onChange={(event) => setLocalModel(event.target.value)}
-              >
-                {localModels.map((name) => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                ))}
-              </select>
+                required={addressMissing}
+                autoComplete="off"
+                placeholder={
+                  keepSaved && baseUrl.length === 0
+                    ? "Saved for this session"
+                    : ""
+                }
+                onChange={(event) => setBaseUrl(event.target.value)}
+              />
             </label>
-          ) : null}
-          <div className="uvcp-ai-actions">
-            <button type="submit" disabled={busy || localModel.length === 0}>
-              Use this model
-            </button>
-            {onClose === null ? null : (
-              <button type="button" disabled={busy} onClick={onClose}>
-                Cancel
-              </button>
-            )}
           </div>
-        </form>
-      )}
+        ) : null}
+        {entry.local ? null : (
+          <label>
+            Model
+            <input
+              value={model}
+              disabled={busy}
+              required={model.length === 0}
+              autoComplete="off"
+              spellCheck={false}
+              onChange={(event) => setModel(event.target.value)}
+            />
+          </label>
+        )}
+        {entry.local ? null : (
+          <div>
+            {keepSaved && apiKey.length === 0 && baseUrl.length === 0 ? (
+              <p>
+                A key is already saved for this session. Leave the API key empty
+                to keep it.
+              </p>
+            ) : null}
+            <label>
+              API key
+              <input
+                type="password"
+                value={apiKey}
+                disabled={busy}
+                required={keyMissing}
+                autoComplete="off"
+                spellCheck={false}
+                placeholder={
+                  keepSaved && apiKey.length === 0 && baseUrl.length === 0
+                    ? "Saved for this session"
+                    : ""
+                }
+                onChange={(event) => setApiKey(event.target.value)}
+              />
+            </label>
+            {entry.keyUrl === null ? null : (
+              <p>
+                <a
+                  href={entry.keyUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {entry.keyLabel}
+                </a>
+              </p>
+            )}
+            <p>
+              The key stays in this running session and is not saved in the
+              scene.
+            </p>
+          </div>
+        )}
+        <div className="uvcp-ai-actions">
+          <button
+            type="submit"
+            disabled={busy || keyMissing || addressMissing || modelMissing}
+          >
+            {entry.local ? "Use this model" : "Save and use"}
+          </button>
+          {onClose === null ? null : (
+            <button type="button" disabled={busy} onClick={onClose}>
+              Cancel
+            </button>
+          )}
+        </div>
+      </form>
       {message === null ? null : <p role="status">{message}</p>}
     </section>
   );
+}
+
+function defaultModel(id: ProviderId): string {
+  const found = assistantProviders.find((item) => item.id === id);
+  return found?.defaultModel ?? "";
 }
 
 async function postSetup(
   payload: unknown,
   setBusy: (busy: boolean) => void,
   setMessage: (message: string | null) => void,
-): Promise<string | null> {
+): Promise<SavedAssistant | null> {
   setBusy(true);
   setMessage(null);
   try {
@@ -267,12 +328,18 @@ async function postSetup(
       !isRecord(body) ||
       body.ok !== true ||
       typeof body.model !== "string" ||
-      body.model.length === 0
+      body.model.length === 0 ||
+      typeof body.provider !== "string" ||
+      !isProviderId(body.provider)
     ) {
       setMessage(messageOf(body) ?? assistantMessages.badRequest);
       return null;
     }
-    return body.model;
+    return {
+      provider: body.provider,
+      model: body.model,
+      credential: body.credential === true,
+    };
   } catch {
     setMessage(assistantMessages.reachServer);
     return null;
