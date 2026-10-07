@@ -161,6 +161,38 @@ test("an accessor count is rejected before it is materialized", async () => {
   );
 });
 
+test("a coerced view index is rejected before it is read", async () => {
+  for (const bufferView of ["0", [0]] as const) {
+    const document = interleavedDocument(0, 3);
+    for (const accessor of document.accessors) {
+      (accessor as { bufferView: unknown }).bufferView = bufferView;
+    }
+    const json = JSON.stringify(document);
+    await expectCode(utf8(json), "INVALID_SHAPE");
+    await expectCode(glbFromParts(json, new Uint8Array(64)), "INVALID_SHAPE");
+  }
+  const sparseFlag = interleavedDocument(0, 1);
+  const flagged = sparseFlag.accessors[0];
+  if (flagged === undefined) {
+    throw new Error("missing accessor");
+  }
+  (flagged as { sparse: unknown }).sparse = 1;
+  await expectCode(utf8(JSON.stringify(sparseFlag)), "INVALID_SHAPE");
+  const sparseValues = interleavedDocument(0, 1);
+  const accessor = sparseValues.accessors[0];
+  if (accessor === undefined) {
+    throw new Error("missing accessor");
+  }
+  accessor.sparse = {
+    count: 65536,
+    indices: { bufferView: 1, componentType: 5123 },
+    values: { bufferView: "0" } as unknown as {
+      readonly bufferView: number;
+    },
+  };
+  await expectCode(utf8(JSON.stringify(sparseValues)), "INVALID_SHAPE");
+});
+
 test("an optional extension name is not logged", async () => {
   const warnings: string[] = [];
   const warn = console.warn;

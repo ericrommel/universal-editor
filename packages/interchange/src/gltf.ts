@@ -553,11 +553,18 @@ function rejectLargeAccessors(json: unknown): void {
     if (count > MAX_VERTICES) {
       throw new DomainError("TOO_LARGE", TOO_LARGE);
     }
+    // The reader resolves bufferView with property-key coercion, so a string
+    // or an array still selects a view and can be copied before that view is
+    // read. Only a safe integer is a view index. Anything else stops here.
+    requireViewIndex(accessor.bufferView);
     if (accessor.bufferView === undefined) {
       zeroFilled += count;
       if (zeroFilled > MAX_VERTICES) {
         throw new DomainError("TOO_LARGE", TOO_LARGE);
       }
+    }
+    if (accessor.sparse !== undefined && !isRecord(accessor.sparse)) {
+      throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
     }
     // A view whose byteStride is not the packed element size is copied into a
     // new array of count × element size before that view is read. The copy is
@@ -573,6 +580,8 @@ function rejectLargeAccessors(json: unknown): void {
         throw new DomainError("TOO_LARGE", TOO_LARGE);
       }
       const sparseCount = accessor.sparse.count as number;
+      requireSparsePiece(accessor.sparse.indices);
+      requireSparsePiece(accessor.sparse.values);
       if (accessor.bufferView !== undefined) {
         expanded += copy;
       }
@@ -598,6 +607,26 @@ function rejectLargeAccessors(json: unknown): void {
       throw new DomainError("TOO_LARGE", TOO_LARGE);
     }
   }
+}
+
+function requireViewIndex(value: unknown): void {
+  if (value === undefined) {
+    return;
+  }
+  if (typeof value === "number" && Number.isSafeInteger(value) && value >= 0) {
+    return;
+  }
+  throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
+}
+
+function requireSparsePiece(value: unknown): void {
+  if (value === undefined) {
+    return;
+  }
+  if (!isRecord(value)) {
+    throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
+  }
+  requireViewIndex(value.bufferView);
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
