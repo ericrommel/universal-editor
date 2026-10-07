@@ -40,6 +40,27 @@ const UNSUPPORTED_NODE = "Interchange node is not a rectangle or a box.";
 
 const HOSTILE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 
+const COMPONENT_BYTES: Readonly<Record<number, number>> = {
+  5120: 1,
+  5121: 1,
+  5122: 2,
+  5123: 2,
+  5125: 4,
+  5126: 4,
+  5130: 8,
+  5131: 2,
+};
+
+const ELEMENT_COMPONENTS: Readonly<Record<string, number>> = {
+  SCALAR: 1,
+  VEC2: 2,
+  VEC3: 3,
+  VEC4: 4,
+  MAT2: 4,
+  MAT3: 9,
+  MAT4: 16,
+};
+
 type Vec3 = readonly [number, number, number];
 
 type MeshShape =
@@ -517,7 +538,9 @@ function rejectLargeAccessors(json: unknown): void {
   if (!isRecord(json) || !Array.isArray(json.accessors)) {
     return;
   }
+  const views = Array.isArray(json.bufferViews) ? json.bufferViews : [];
   let zeroFilled = 0;
+  let expanded = 0;
   for (const accessor of json.accessors) {
     if (
       !isRecord(accessor) ||
@@ -536,15 +559,77 @@ function rejectLargeAccessors(json: unknown): void {
         throw new DomainError("TOO_LARGE", TOO_LARGE);
       }
     }
-    if (
-      isRecord(accessor.sparse) &&
-      (!Number.isSafeInteger(accessor.sparse.count) ||
+    // A view whose byteStride is not the packed element size is copied into a
+    // new array of count × element size before that view is read. The copy is
+    // not limited by the file, so the copies share the byte cap.
+    const copy = interleavedBytes(accessor, views);
+    expanded += copy;
+    if (isRecord(accessor.sparse)) {
+      if (
+        !Number.isSafeInteger(accessor.sparse.count) ||
         (accessor.sparse.count as number) < 0 ||
-        (accessor.sparse.count as number) > MAX_VERTICES)
-    ) {
+        (accessor.sparse.count as number) > MAX_VERTICES
+      ) {
+        throw new DomainError("TOO_LARGE", TOO_LARGE);
+      }
+      const sparseCount = accessor.sparse.count as number;
+      if (accessor.bufferView !== undefined) {
+        expanded += copy;
+      }
+      expanded += interleavedBytes(
+        {
+          ...accessor,
+          ...asRecord(accessor.sparse.indices),
+          count: sparseCount,
+          type: "SCALAR",
+        },
+        views,
+      );
+      expanded += interleavedBytes(
+        {
+          ...accessor,
+          ...asRecord(accessor.sparse.values),
+          count: sparseCount,
+        },
+        views,
+      );
+    }
+    if (expanded > MAX_BYTES) {
       throw new DomainError("TOO_LARGE", TOO_LARGE);
     }
   }
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return isRecord(value) ? value : {};
+}
+
+function interleavedBytes(
+  accessor: Record<string, unknown>,
+  views: readonly unknown[],
+): number {
+  if (
+    !Number.isSafeInteger(accessor.bufferView) ||
+    (accessor.bufferView as number) < 0
+  ) {
+    return 0;
+  }
+  const view = views[accessor.bufferView as number];
+  if (!isRecord(view) || view.byteStride === undefined) {
+    return 0;
+  }
+  const components = ELEMENT_COMPONENTS[String(accessor.type)];
+  const componentBytes = COMPONENT_BYTES[accessor.componentType as number];
+  if (components === undefined || componentBytes === undefined) {
+    return 0;
+  }
+  if (view.byteStride === components * componentBytes) {
+    return 0;
+  }
+  if (!Number.isSafeInteger(accessor.count) || (accessor.count as number) < 0) {
+    return 0;
+  }
+  return (accessor.count as number) * components * componentBytes;
 }
 
 function parseJson(text: string): unknown {

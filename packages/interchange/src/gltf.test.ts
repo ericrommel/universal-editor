@@ -134,6 +134,31 @@ test("an accessor count is rejected before it is materialized", async () => {
     ],
   };
   await expectCode(utf8(JSON.stringify(many)), "TOO_LARGE");
+
+  const stride = interleavedDocument(0, 3);
+  await expectCode(utf8(JSON.stringify(stride)), "TOO_LARGE");
+  await expectCode(
+    glbFromParts(JSON.stringify(stride), new Uint8Array(64)),
+    "TOO_LARGE",
+  );
+  const sparse = interleavedDocument(0, 1);
+  const sparseAccessor = sparse.accessors[0];
+  if (sparseAccessor === undefined) {
+    throw new Error("missing accessor");
+  }
+  sparseAccessor.sparse = {
+    count: 1,
+    indices: { bufferView: 1, componentType: 5123 },
+    values: { bufferView: 1 },
+  };
+  await expectCode(utf8(JSON.stringify(sparse)), "TOO_LARGE");
+  await expectCode(
+    glbFromParts(
+      JSON.stringify(interleavedDocument(64, 2)),
+      new Uint8Array(64),
+    ),
+    "UNSUPPORTED_FORMAT",
+  );
 });
 
 test("an optional extension name is not logged", async () => {
@@ -285,6 +310,54 @@ async function triangle(): Promise<Uint8Array> {
 
 function utf8(value: string): Uint8Array {
   return new TextEncoder().encode(value);
+}
+
+function interleavedDocument(byteStride: number, count: number) {
+  return {
+    asset: { version: "2.0" },
+    buffers: [{ byteLength: 64 }],
+    bufferViews: [
+      { buffer: 0, byteLength: 64, byteStride },
+      { buffer: 0, byteLength: 64 },
+    ],
+    accessors: Array.from({ length: count }, () => ({
+      bufferView: 0,
+      componentType: 5126,
+      count: 65536,
+      type: "MAT4",
+      sparse: undefined as
+        | {
+            readonly count: number;
+            readonly indices: {
+              readonly bufferView: number;
+              readonly componentType: number;
+            };
+            readonly values: { readonly bufferView: number };
+          }
+        | undefined,
+    })),
+  };
+}
+
+function glbFromParts(json: string, bin: Uint8Array): Uint8Array {
+  const text = utf8(json);
+  const jsonLength = text.length + ((4 - (text.length % 4)) % 4);
+  const binLength = bin.length + ((4 - (bin.length % 4)) % 4);
+  const total = 12 + 8 + jsonLength + 8 + binLength;
+  const bytes = new Uint8Array(total);
+  const view = new DataView(bytes.buffer);
+  view.setUint32(0, 0x46546c67, true);
+  view.setUint32(4, 2, true);
+  view.setUint32(8, total, true);
+  view.setUint32(12, jsonLength, true);
+  view.setUint32(16, 0x4e4f534a, true);
+  bytes.set(text, 20);
+  bytes.fill(0x20, 20 + text.length, 20 + jsonLength);
+  const binHeader = 20 + jsonLength;
+  view.setUint32(binHeader, binLength, true);
+  view.setUint32(binHeader + 4, 0x004e4942, true);
+  bytes.set(bin, binHeader + 8);
+  return bytes;
 }
 
 function glbFromText(json: string): Uint8Array {
