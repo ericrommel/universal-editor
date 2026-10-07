@@ -12,98 +12,327 @@ body,
   height: 100%;
   background: #f4f5f7;
   color: #1c1f26;
-  font-family: system-ui, "Segoe UI", sans-serif;
+  font-family:
+    system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  user-select: none;
 }
 
-.uvcp-editor-bar {
+.uvcp-command {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex: none;
+  flex-wrap: nowrap;
   align-items: center;
-  padding: 12px 16px;
+  gap: 16px;
+  height: 40px;
+  padding: 0 12px;
+  overflow: hidden;
   background: #ffffff;
-  border-bottom: 1px solid #7a8496;
+  border-bottom: 1px solid #d5d9e2;
 }
 
-.uvcp-editor-bar h1 {
-  margin: 0 12px 0 0;
-  font-size: 16px;
-  font-weight: 600;
+.uvcp-product {
+  flex: 0 1 240px;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: rgb(88, 96, 112);
+  font-size: 12px;
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.uvcp-editor-bar button,
-.uvcp-editor-properties button {
-  font: inherit;
-  padding: 6px 10px;
-  border: 1px solid #7a8496;
+.uvcp-command-group {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.uvcp-file-group {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-left: auto;
+}
+
+.uvcp-command button {
+  flex: none;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid #c5cad3;
   border-radius: 6px;
   background: #ffffff;
   color: inherit;
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
-.uvcp-editor-open input {
-  display: block;
-  max-width: 180px;
+.uvcp-command button:hover:not(:disabled) {
+  background: #f4f5f7;
 }
 
-.uvcp-editor-body {
+.uvcp-command button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.uvcp-file-message {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 320px;
+  margin: 0;
+  overflow: hidden;
+  color: #3a4150;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.uvcp-file-message.is-error {
+  color: rgb(153, 27, 27);
+}
+
+.uvcp-file-input {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.uvcp-workspace {
   display: grid;
-  grid-template-columns: 1fr 220px;
-  min-height: 0;
   flex: 1;
+  grid-template-columns: 220px minmax(0, 1fr) 240px;
+  min-height: 0;
 }
 
-.uvcp-editor-surface {
-  width: 100%;
-  height: 100%;
+.uvcp-objects,
+.uvcp-inspector,
+.uvcp-stage {
+  min-width: 0;
+  min-height: 0;
+}
+
+.uvcp-objects {
+  display: flex;
+  flex-direction: column;
   background: #ffffff;
+  border-right: 1px solid #d5d9e2;
+}
+
+.uvcp-objects h2,
+.uvcp-inspector h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.uvcp-objects h2 {
+  padding: 12px 12px 8px;
+}
+
+.uvcp-muted,
+.uvcp-inspector-empty {
+  margin: 0;
+  color: #3a4150;
+  font-size: 13px;
+}
+
+.uvcp-muted {
+  padding: 0 12px 12px;
+}
+
+.uvcp-object-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  margin: 0;
+  padding: 0 8px 12px;
+  overflow: auto;
+}
+
+.uvcp-object {
+  width: 100%;
+  height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.uvcp-object:hover {
+  background: #f4f5f7;
+}
+
+.uvcp-object[aria-selected="true"],
+.uvcp-object[aria-selected="true"]:hover {
+  background: #dbe7ff;
+}
+
+.uvcp-stage {
+  container-type: size;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  overflow: hidden;
+  background: #f4f5f7;
+}
+
+.uvcp-page {
+  box-sizing: border-box;
+  display: block;
+  width: min(100cqw, calc(100cqh * 8 / 5));
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 8 / 5;
+  height: auto;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #7a8496;
   touch-action: none;
 }
 
 .uvcp-shape {
+  cursor: grab;
+}
+
+.uvcp-page.is-holding,
+.uvcp-page.is-holding .uvcp-shape {
+  cursor: grabbing;
+}
+
+.uvcp-face {
+  stroke: #1d4ed8;
+  stroke-width: 1.5;
+}
+
+.uvcp-face-front {
   fill: #dbe7ff;
-  stroke: #1d4ed8;
-  stroke-width: 2;
 }
 
-.uvcp-shape-selected {
-  fill: #bfdbfe;
-  stroke-width: 3;
-}
-
-.uvcp-shape-depth {
+.uvcp-face-back {
   fill: #93c5fd;
-  stroke: #1d4ed8;
-  stroke-width: 1;
 }
 
-.uvcp-editor-properties {
+.uvcp-face-top {
+  fill: #d4e4fe;
+}
+
+.uvcp-face-side {
+  fill: #b9d0f8;
+}
+
+.uvcp-empty {
+  fill: #3a4150;
+  font-size: 18px;
+}
+
+.uvcp-selection {
+  fill: none;
+  stroke: #1c1f26;
+  stroke-width: 1.5;
+}
+
+.uvcp-handle {
+  fill: #ffffff;
+  stroke: #1c1f26;
+  stroke-width: 1.5;
+}
+
+.uvcp-handle-hit {
+  fill: transparent;
+  stroke: none;
+}
+
+.uvcp-depth-label {
+  fill: #1c1f26;
+}
+
+.uvcp-inspector {
   padding: 16px;
-  border-left: 1px solid #7a8496;
+  overflow: auto;
   background: #ffffff;
+  border-left: 1px solid #d5d9e2;
 }
 
-.uvcp-editor-properties label {
+.uvcp-units {
+  margin: 4px 0 12px;
+  color: #3a4150;
+  font-size: 12px;
+}
+
+.uvcp-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.uvcp-field {
   display: grid;
   gap: 4px;
-  margin: 8px 0;
+  color: #3a4150;
+  font-size: 12px;
 }
 
-.uvcp-editor-properties input {
-  font: inherit;
-  padding: 6px;
+.uvcp-field-depth {
+  grid-column: 1 / -1;
+}
+
+.uvcp-field input {
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
   border: 1px solid #7a8496;
   border-radius: 6px;
+  background: #ffffff;
+  color: #1c1f26;
+  font: inherit;
+  user-select: text;
 }
 
-@media (max-width: 720px) {
-  .uvcp-editor-body {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto;
+.uvcp-field input:focus {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 1px;
+}
+
+.uvcp-size-error {
+  margin: 8px 0 0;
+  color: rgb(153, 27, 27);
+  font-size: 13px;
+}
+
+@media (max-width: 960px) {
+  .uvcp-workspace {
+    grid-template-columns: minmax(0, 1fr) 240px;
+    grid-template-rows: minmax(120px, 1fr) minmax(160px, 42%);
   }
 
-  .uvcp-editor-properties {
-    border-left: 0;
-    border-top: 1px solid #7a8496;
+  .uvcp-stage {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  .uvcp-objects {
+    grid-column: 2;
+    grid-row: 1;
+    border-right: 0;
+    border-left: 1px solid #d5d9e2;
+  }
+
+  .uvcp-inspector {
+    grid-column: 2;
+    grid-row: 2;
   }
 }

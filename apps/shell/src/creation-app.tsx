@@ -1,53 +1,54 @@
 import {
   addShape,
-  boxShift,
   commitPresent,
   createHistory,
   deleteSelected,
-  dragPosition,
   type EditorHistory,
   type EditorShape,
   editorErrorMessage,
   exportDocument,
-  moveShape,
   openDocument,
+  placeShape,
   redo,
   replacePresent,
-  resizeShape,
   SCENE_BYTE_LIMIT,
   SCENE_TOO_LARGE,
+  type ShapeKind,
   selectShape,
   shapesOf,
   undo,
 } from "@uvcp/editor";
 import { strings } from "@uvcp/ui";
-import type { PointerEvent as ReactPointerEvent } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Inspector, ObjectList } from "./inspector.tsx";
+import { SceneStage } from "./scene-stage.tsx";
 
-const VIEW_WIDTH = 960;
-const VIEW_HEIGHT = 600;
-
-type Gesture = {
-  readonly base: EditorHistory;
-  readonly id: string;
-  readonly originX: number;
-  readonly originY: number;
-  readonly startX: number;
-  readonly startY: number;
-  x: number;
-  y: number;
+type BarMessage = {
+  readonly tone: "error" | "status";
+  readonly text: string;
 };
 
 export function CreationApp() {
   const [history, setHistory] = useState<EditorHistory>(createHistory);
-  const [notice, setNotice] = useState<string | null>(null);
-  const surface = useRef<SVGSVGElement | null>(null);
-  const gesture = useRef<Gesture | null>(null);
+  const [sizeNotice, setSizeNotice] = useState<string | null>(null);
+  const [fileMessage, setFileMessage] = useState<BarMessage | null>(null);
   const historyRef = useRef(history);
+  const fileInput = useRef<HTMLInputElement>(null);
   historyRef.current = history;
   const shapes = shapesOf(history.present);
   const selected =
     shapes.find((shape) => shape.id === history.present.selectedId) ?? null;
+
+  const show = useCallback((next: EditorHistory) => {
+    const sceneChanged =
+      next.present.scene !== historyRef.current.present.scene;
+    historyRef.current = next;
+    setHistory(next);
+    if (sceneChanged) {
+      setSizeNotice(null);
+      setFileMessage(null);
+    }
+  }, []);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -55,310 +56,241 @@ export function CreationApp() {
         return;
       }
       const current = historyRef.current;
+      const key = event.key.toLowerCase();
       if (event.key === "Delete" || event.key === "Backspace") {
-        setHistory(commitPresent(current, deleteSelected(current.present)));
-        setNotice(null);
+        event.preventDefault();
+        show(commitPresent(current, deleteSelected(current.present)));
+      } else if (event.key === "Escape") {
+        show(replacePresent(current, selectShape(current.present, null)));
+      } else if (event.ctrlKey && key === "z" && !event.shiftKey) {
+        event.preventDefault();
+        show(undo(current));
       } else if (
         event.ctrlKey &&
-        event.key.toLowerCase() === "z" &&
-        !event.shiftKey
+        (key === "y" || (event.shiftKey && key === "z"))
       ) {
-        setHistory(undo(current));
-        setNotice(null);
-      } else if (
-        event.ctrlKey &&
-        (event.key.toLowerCase() === "y" ||
-          (event.shiftKey && event.key.toLowerCase() === "z"))
-      ) {
-        setHistory(redo(current));
-        setNotice(null);
+        event.preventDefault();
+        show(redo(current));
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [show]);
 
-  function show(next: EditorHistory, message: string | null = null) {
-    setHistory(next);
-    setNotice(message);
+  function create(kind: ShapeKind) {
+    show(addShape(historyRef.current, kind));
+  }
+
+  function commitMeasure(
+    part: "width" | "height" | "depth",
+    value: number,
+  ): boolean {
+    const current = historyRef.current;
+    const shape = shapesOf(current.present).find(
+      (item) => item.id === current.present.selectedId,
+    );
+    if (!shape) {
+      return false;
+    }
+    if (!Number.isFinite(value)) {
+      setSizeNotice("Enter a number.");
+      return false;
+    }
+    if (!(value > 0)) {
+      setSizeNotice(extentMessage(shape));
+      return false;
+    }
+    const frame = {
+      x: shape.x,
+      y: shape.y,
+      width: part === "width" ? value : shape.width,
+      height: part === "height" ? value : shape.height,
+    };
+    const depth = part === "depth" ? value : shape.depth;
+    try {
+      const next = placeShape(current.present, shape.id, frame, depth);
+      if (next.scene === current.present.scene) {
+        setSizeNotice(null);
+        return true;
+      }
+      show(commitPresent(current, next));
+      return true;
+    } catch (error) {
+      setSizeNotice(extentMessage(shape, error));
+      return false;
+    }
   }
 
   return (
     <div className="uvcp-editor">
-      <header className="uvcp-editor-bar">
-        <h1>{strings.productName}</h1>
-        <button
-          type="button"
-          onClick={() => show(addShape(history, "rectangle"))}
-        >
-          Rectangle
-        </button>
-        <button type="button" onClick={() => show(addShape(history, "box"))}>
-          Box
-        </button>
-        <button
-          type="button"
-          onClick={() =>
-            show(commitPresent(history, deleteSelected(history.present)))
-          }
-        >
-          Delete
-        </button>
-        <button type="button" onClick={() => show(undo(history))}>
-          Undo
-        </button>
-        <button type="button" onClick={() => show(redo(history))}>
-          Redo
-        </button>
-        <button type="button" onClick={() => save(history)}>
-          Save
-        </button>
-        <label className="uvcp-editor-open">
-          Open
+      <header className="uvcp-command">
+        <p className="uvcp-product" title={strings.productName}>
+          {strings.productName}
+        </p>
+        <div className="uvcp-command-group" role="toolbar" aria-label="Create">
+          <button type="button" onClick={() => create("rectangle")}>
+            Rectangle
+          </button>
+          <button type="button" onClick={() => create("box")}>
+            Box
+          </button>
+        </div>
+        <div className="uvcp-command-group" role="toolbar" aria-label="History">
+          <button
+            type="button"
+            title="Undo (Ctrl+Z)"
+            disabled={history.past.length === 0}
+            onClick={() => show(undo(historyRef.current))}
+          >
+            Undo
+          </button>
+          <button
+            type="button"
+            title="Redo (Ctrl+Y)"
+            disabled={history.future.length === 0}
+            onClick={() => show(redo(historyRef.current))}
+          >
+            Redo
+          </button>
+        </div>
+        <div className="uvcp-command-group">
+          <button
+            type="button"
+            title="Delete (Delete)"
+            disabled={selected === null}
+            onClick={() =>
+              show(
+                commitPresent(
+                  historyRef.current,
+                  deleteSelected(historyRef.current.present),
+                ),
+              )
+            }
+          >
+            Delete
+          </button>
+        </div>
+        <div className="uvcp-command-group uvcp-file-group">
+          {fileMessage ? (
+            <p
+              className={
+                fileMessage.tone === "error"
+                  ? "uvcp-file-message is-error"
+                  : "uvcp-file-message"
+              }
+              role={fileMessage.tone === "error" ? "alert" : "status"}
+              title={fileMessage.text}
+            >
+              {fileMessage.text}
+            </p>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => {
+              const input = fileInput.current;
+              input?.click();
+              input?.blur();
+            }}
+          >
+            Open
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              save(historyRef.current);
+              setFileMessage({ tone: "status", text: "Saved scene.json" });
+            }}
+          >
+            Save
+          </button>
           <input
+            ref={fileInput}
+            className="uvcp-file-input"
             type="file"
             accept="application/json,.json"
+            tabIndex={-1}
+            aria-hidden="true"
             onChange={(event) => {
               const file = event.currentTarget.files?.[0];
               event.currentTarget.value = "";
-              if (file) {
-                void readFile(history, file).then((opened) => {
-                  show(opened.history, opened.message);
-                });
+              if (!file) {
+                return;
               }
+              void readFile(historyRef.current, file).then((opened) => {
+                show(opened.history);
+                setFileMessage(
+                  opened.message
+                    ? { tone: "error", text: fileError(opened.message) }
+                    : { tone: "status", text: `Opened ${file.name}` },
+                );
+              });
             }}
           />
-        </label>
+        </div>
       </header>
-      <div className="uvcp-editor-body">
-        <svg
-          ref={surface}
-          className="uvcp-editor-surface"
-          viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
-          role="application"
-          aria-label="Scene"
-          onPointerDown={(event) => {
-            if (event.target === event.currentTarget) {
-              gesture.current = null;
-              show(replacePresent(history, selectShape(history.present, null)));
-            }
-          }}
-        >
-          {shapes.map((shape) => (
-            <ShapeView
-              key={shape.id}
-              shape={shape}
-              selected={shape.id === history.present.selectedId}
-              onPointerDown={(event) => {
-                const point = svgPoint(surface.current, event);
-                const base = replacePresent(
-                  history,
-                  selectShape(history.present, shape.id),
-                );
-                gesture.current = {
-                  base,
-                  id: shape.id,
-                  originX: shape.x,
-                  originY: shape.y,
-                  startX: point.x,
-                  startY: point.y,
-                  x: shape.x,
-                  y: shape.y,
-                };
-                event.currentTarget.setPointerCapture(event.pointerId);
-                show(base);
-              }}
-              onPointerMove={(event) => {
-                const active = gesture.current;
-                if (!active || active.id !== shape.id) {
-                  return;
-                }
-                const point = svgPoint(surface.current, event);
-                const next = dragPosition(
-                  { x: active.originX, y: active.originY },
-                  { x: active.startX, y: active.startY },
-                  point,
-                );
-                active.x = next.x;
-                active.y = next.y;
-                show(
-                  replacePresent(
-                    active.base,
-                    moveShape(active.base.present, active.id, next.x, next.y),
-                  ),
-                );
-              }}
-              onPointerUp={() => {
-                const active = gesture.current;
-                gesture.current = null;
-                if (!active) {
-                  return;
-                }
-                if (
-                  active.x === active.originX &&
-                  active.y === active.originY
-                ) {
-                  return;
-                }
-                show(
-                  commitPresent(
-                    active.base,
-                    moveShape(
-                      active.base.present,
-                      active.id,
-                      active.x,
-                      active.y,
-                    ),
-                  ),
-                );
-              }}
-            />
-          ))}
-        </svg>
-        <aside className="uvcp-editor-properties">
-          {selected ? (
-            <ShapeFields
-              key={selected.id}
-              shape={selected}
-              onResize={(id, width, height, depth) => {
-                try {
-                  show(
-                    commitPresent(
-                      history,
-                      resizeShape(history.present, id, width, height, depth),
-                    ),
-                  );
-                } catch (error) {
-                  setNotice(editorErrorMessage(error));
-                }
-              }}
-            />
-          ) : (
-            <p>Select a shape.</p>
-          )}
-          {notice ? <p role="status">{notice}</p> : null}
-        </aside>
+      <div className="uvcp-workspace">
+        <ObjectList
+          shapes={shapes}
+          selectedId={history.present.selectedId}
+          onSelect={(id) =>
+            show(
+              replacePresent(
+                historyRef.current,
+                selectShape(historyRef.current.present, id),
+              ),
+            )
+          }
+        />
+        <SceneStage
+          shapes={shapes}
+          selectedId={history.present.selectedId}
+          getHistory={() => historyRef.current}
+          onShow={show}
+        />
+        <Inspector
+          hasShapes={shapes.length > 0}
+          selected={selected}
+          sizeError={sizeNotice}
+          onCommit={commitMeasure}
+          onClearError={() => setSizeNotice(null)}
+        />
       </div>
     </div>
   );
 }
 
-function ShapeView({
-  shape,
-  selected,
-  onPointerDown,
-  onPointerMove,
-  onPointerUp,
-}: {
-  readonly shape: EditorShape;
-  readonly selected: boolean;
-  readonly onPointerDown: (event: ReactPointerEvent<SVGGElement>) => void;
-  readonly onPointerMove: (event: ReactPointerEvent<SVGGElement>) => void;
-  readonly onPointerUp: () => void;
-}) {
-  const shift = shape.depth === null ? null : boxShift(shape.depth);
+function extentMessage(shape: EditorShape, error?: unknown): string {
+  if (error !== undefined && !isExtentOrNumber(error)) {
+    return editorErrorMessage(error);
+  }
+  return shape.kind === "box"
+    ? "Width, height, and depth have to be greater than zero."
+    : "Width and height have to be greater than zero.";
+}
+
+function isExtentOrNumber(error: unknown): boolean {
+  const message = editorErrorMessage(error);
   return (
-    <g
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-    >
-      {shift ? (
-        <rect
-          x={shape.x + shift.dx}
-          y={shape.y + shift.dy}
-          width={shape.width}
-          height={shape.height}
-          className="uvcp-shape-depth"
-        />
-      ) : null}
-      <rect
-        x={shape.x}
-        y={shape.y}
-        width={shape.width}
-        height={shape.height}
-        className={selected ? "uvcp-shape uvcp-shape-selected" : "uvcp-shape"}
-      >
-        <title>{shape.id}</title>
-      </rect>
-    </g>
+    message === "Scene extent is not accepted." ||
+    message === "Expected a finite number."
   );
 }
 
-function ShapeFields({
-  shape,
-  onResize,
-}: {
-  readonly shape: EditorShape;
-  readonly onResize: (
-    id: string,
-    width: number,
-    height: number,
-    depth: number | null,
-  ) => void;
-}) {
-  const [width, setWidth] = useState(String(shape.width));
-  const [height, setHeight] = useState(String(shape.height));
-  const [depth, setDepth] = useState(
-    shape.depth === null ? "" : String(shape.depth),
-  );
-  return (
-    <form
-      onSubmit={(event) => {
-        event.preventDefault();
-        onResize(
-          shape.id,
-          Number(width),
-          Number(height),
-          shape.depth === null ? null : Number(depth),
-        );
-      }}
-    >
-      <p>{shape.kind}</p>
-      <label>
-        Width
-        <input
-          value={width}
-          onChange={(event) => setWidth(event.target.value)}
-        />
-      </label>
-      <label>
-        Height
-        <input
-          value={height}
-          onChange={(event) => setHeight(event.target.value)}
-        />
-      </label>
-      {shape.depth === null ? null : (
-        <label>
-          Depth
-          <input
-            value={depth}
-            onChange={(event) => setDepth(event.target.value)}
-          />
-        </label>
-      )}
-      <button type="submit">Apply size</button>
-    </form>
-  );
-}
-
-function svgPoint(
-  svg: SVGSVGElement | null,
-  event: ReactPointerEvent<SVGElement>,
-): { readonly x: number; readonly y: number } {
-  if (!svg) {
-    return { x: 0, y: 0 };
+function fileError(message: string): string {
+  if (
+    message === "Scene document is not valid JSON." ||
+    message === "Scene document contains a duplicate key." ||
+    message === "Scene document is not UTF-8 text."
+  ) {
+    return "That file isn't valid scene JSON. The scene was not changed.";
   }
-  const matrix = svg.getScreenCTM();
-  if (!matrix) {
-    return { x: 0, y: 0 };
+  if (message === "Scene document is empty.") {
+    return "That file is empty. The scene was not changed.";
   }
-  const point = svg.createSVGPoint();
-  point.x = event.clientX;
-  point.y = event.clientY;
-  const local = point.matrixTransform(matrix.inverse());
-  return { x: local.x, y: local.y };
+  if (message === SCENE_TOO_LARGE) {
+    return message;
+  }
+  return "That file doesn't contain shapes this editor can read. The scene was not changed.";
 }
 
 function save(history: EditorHistory) {

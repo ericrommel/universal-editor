@@ -3,7 +3,9 @@ import test from "node:test";
 import { readScene } from "@uvcp/persistence";
 import {
   addShape,
+  boxShift,
   commitPresent,
+  containedPosition,
   createHistory,
   deleteSelected,
   dragPosition,
@@ -11,8 +13,11 @@ import {
   exportDocument,
   moveShape,
   openDocument,
+  placeShape,
   redo,
   replacePresent,
+  resizedDepth,
+  resizedFrame,
   resizeShape,
   SCENE_BYTE_LIMIT,
   SCENE_TOO_LARGE,
@@ -123,4 +128,103 @@ test("drag position is the pointer delta and an oversized file is not read", () 
   );
   assert.equal(rejected.message, "Scene document format is not supported.");
   assert.equal(rejected.history.present.scene.rootIds.length, 0);
+});
+
+test("a new shape does not cover the previous one", () => {
+  let history = addShape(createHistory(), "rectangle");
+  history = addShape(history, "rectangle");
+  const first = shapesOf(history.present)[0];
+  const second = shapesOf(history.present)[1];
+  assert.ok(first && second);
+  const separated =
+    first.x + first.width <= second.x ||
+    second.x + second.width <= first.x ||
+    first.y + first.height <= second.y ||
+    second.y + second.height <= first.y;
+  assert.equal(separated, true);
+});
+
+test("resize handles keep the opposite edge and stay positive", () => {
+  const origin = { x: 10, y: 20, width: 30, height: 40 };
+  assert.deepEqual(resizedFrame(origin, "e", 5, 9), {
+    x: 10,
+    y: 20,
+    width: 35,
+    height: 40,
+  });
+  assert.deepEqual(resizedFrame(origin, "n", 0, -4), {
+    x: 10,
+    y: 16,
+    width: 30,
+    height: 44,
+  });
+  const collapsed = resizedFrame(origin, "nw", 100, 100);
+  assert.equal(collapsed.width, 0.001);
+  assert.equal(collapsed.height, 0.001);
+  assert.equal(collapsed.x, 40 - 0.001);
+  assert.equal(collapsed.y, 60 - 0.001);
+});
+
+test("the depth handle follows the offset face", () => {
+  const step = boxShift(1);
+  assert.equal(resizedDepth(48, step.dx, step.dy), 49);
+  assert.equal(resizedDepth(2, -step.dx * 10, -step.dy * 10), 0.001);
+});
+
+test("a drag stays partly on the page", () => {
+  assert.deepEqual(containedPosition({ width: 160, height: 100 }, 40, 50), {
+    x: 40,
+    y: 50,
+  });
+  assert.deepEqual(containedPosition({ width: 160, height: 100 }, -500, -500), {
+    x: 24 - 160,
+    y: 24 - 100,
+  });
+  assert.deepEqual(containedPosition({ width: 10, height: 10 }, 2000, 2000), {
+    x: 960 - 10,
+    y: 600 - 10,
+  });
+});
+
+test("placeShape writes one frame and ignores an identical frame", () => {
+  const created = addShape(createHistory(), "rectangle");
+  const shape = shapesOf(created.present)[0];
+  assert.ok(shape);
+  const same = placeShape(
+    created.present,
+    shape.id,
+    {
+      x: shape.x,
+      y: shape.y,
+      width: shape.width,
+      height: shape.height,
+    },
+    9,
+  );
+  assert.equal(same, created.present);
+  const placed = placeShape(
+    created.present,
+    shape.id,
+    {
+      x: shape.x + 10,
+      y: shape.y,
+      width: shape.width + 5,
+      height: shape.height,
+    },
+    9,
+  );
+  const next = shapesOf(placed)[0];
+  assert.equal(next?.x, shape.x + 10);
+  assert.equal(next?.width, shape.width + 5);
+  assert.equal(next?.depth, null);
+  assert.equal(placed.selectedId, shape.id);
+  const box = addShape(createHistory(), "box");
+  const deepened = placeShape(
+    box.present,
+    "s1",
+    { x: 3, y: 4, width: 50, height: 60 },
+    20,
+  );
+  assert.equal(shapesOf(deepened)[0]?.depth, 20);
+  assert.equal(shapesOf(deepened)[0]?.x, 3);
 });
