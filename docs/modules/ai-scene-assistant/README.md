@@ -12,7 +12,7 @@ Type a request and choose Apply. The assistant can:
 
 Example: "Create a rectangle named r1 and a box named b1 beside it."
 
-The objects remain in the scene. Select one and choose Update to edit its position, rotation, or size without another request.
+The objects remain in the scene. Drag a shape to move it. Select it and edit Width, Height, Depth, and Rotation, then choose Apply size. Rectangle, Box, Undo, Redo, Save, and Open stay on the screen. Those controls wait while Apply is working.
 
 ## Providers
 

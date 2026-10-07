@@ -49,6 +49,7 @@ export function CreationApp() {
   const surface = useRef<SVGSVGElement | null>(null);
   const gesture = useRef<Gesture | null>(null);
   const historyRef = useRef(history);
+  const pendingRef = useRef(false);
   historyRef.current = history;
   const shapes = shapesOf(history.present);
   const selected =
@@ -56,7 +57,7 @@ export function CreationApp() {
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (isTyping(event.target)) {
+      if (pendingRef.current || isTyping(event.target)) {
         return;
       }
       const current = historyRef.current;
@@ -95,6 +96,8 @@ export function CreationApp() {
       setNotice(assistantMessages.emptyInstruction);
       return;
     }
+    pendingRef.current = true;
+    gesture.current = null;
     setPending(true);
     setNotice(assistantMessages.working);
     try {
@@ -124,11 +127,12 @@ export function CreationApp() {
         setNotice(body.message ?? assistantMessages.providerDown);
         return;
       }
-      const applied = applyAssistantActions(history, body.actions);
+      const applied = applyAssistantActions(historyRef.current, body.actions);
       show(applied.history, applied.ok ? applied.summary : applied.message);
     } catch {
       setNotice(assistantMessages.reachServer);
     } finally {
+      pendingRef.current = false;
       setPending(false);
     }
   }
@@ -153,28 +157,42 @@ export function CreationApp() {
         </form>
         <button
           type="button"
+          disabled={pending}
           onClick={() => show(addShape(history, "rectangle"))}
         >
           Rectangle
         </button>
-        <button type="button" onClick={() => show(addShape(history, "box"))}>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => show(addShape(history, "box"))}
+        >
           Box
         </button>
         <button
           type="button"
+          disabled={pending}
           onClick={() =>
             show(commitPresent(history, deleteSelected(history.present)))
           }
         >
           Delete
         </button>
-        <button type="button" onClick={() => show(undo(history))}>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => show(undo(history))}
+        >
           Undo
         </button>
-        <button type="button" onClick={() => show(redo(history))}>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => show(redo(history))}
+        >
           Redo
         </button>
-        <button type="button" onClick={() => save(history)}>
+        <button type="button" disabled={pending} onClick={() => save(history)}>
           Save
         </button>
         <label className="uvcp-editor-open">
@@ -182,6 +200,7 @@ export function CreationApp() {
           <input
             type="file"
             accept="application/json,.json"
+            disabled={pending}
             onChange={(event) => {
               const file = event.currentTarget.files?.[0];
               event.currentTarget.value = "";
@@ -202,6 +221,9 @@ export function CreationApp() {
           role="application"
           aria-label="Scene"
           onPointerDown={(event) => {
+            if (pendingRef.current) {
+              return;
+            }
             if (event.target === event.currentTarget) {
               gesture.current = null;
               show(replacePresent(history, selectShape(history.present, null)));
@@ -214,6 +236,9 @@ export function CreationApp() {
               shape={shape}
               selected={shape.id === history.present.selectedId}
               onPointerDown={(event) => {
+                if (pendingRef.current) {
+                  return;
+                }
                 const point = svgPoint(surface.current, event);
                 const base = replacePresent(
                   history,
@@ -234,7 +259,7 @@ export function CreationApp() {
               }}
               onPointerMove={(event) => {
                 const active = gesture.current;
-                if (!active || active.id !== shape.id) {
+                if (pendingRef.current || !active || active.id !== shape.id) {
                   return;
                 }
                 const point = svgPoint(surface.current, event);
@@ -255,7 +280,7 @@ export function CreationApp() {
               onPointerUp={() => {
                 const active = gesture.current;
                 gesture.current = null;
-                if (!active) {
+                if (!active || pendingRef.current) {
                   return;
                 }
                 if (
@@ -264,15 +289,11 @@ export function CreationApp() {
                 ) {
                   return;
                 }
+                const current = historyRef.current;
                 show(
                   commitPresent(
-                    active.base,
-                    moveShape(
-                      active.base.present,
-                      active.id,
-                      active.x,
-                      active.y,
-                    ),
+                    current,
+                    moveShape(current.present, active.id, active.x, active.y),
                   ),
                 );
               }}
@@ -282,8 +303,9 @@ export function CreationApp() {
         <aside className="uvcp-editor-properties">
           {selected ? (
             <ShapeFields
-              key={selected.id}
+              key={`${selected.id}:${selected.width}:${selected.height}:${selected.depth ?? ""}:${selected.rotation}`}
               shape={selected}
+              disabled={pending}
               onResize={(id, width, height, depth, degrees) => {
                 try {
                   const resized = resizeShape(
@@ -358,9 +380,11 @@ function ShapeView({
 
 function ShapeFields({
   shape,
+  disabled,
   onResize,
 }: {
   readonly shape: EditorShape;
+  readonly disabled: boolean;
   readonly onResize: (
     id: string,
     width: number,
@@ -393,6 +417,7 @@ function ShapeFields({
         Width
         <input
           value={width}
+          disabled={disabled}
           onChange={(event) => setWidth(event.target.value)}
         />
       </label>
@@ -400,6 +425,7 @@ function ShapeFields({
         Height
         <input
           value={height}
+          disabled={disabled}
           onChange={(event) => setHeight(event.target.value)}
         />
       </label>
@@ -408,6 +434,7 @@ function ShapeFields({
           Depth
           <input
             value={depth}
+            disabled={disabled}
             onChange={(event) => setDepth(event.target.value)}
           />
         </label>
@@ -416,10 +443,13 @@ function ShapeFields({
         Rotation
         <input
           value={rotation}
+          disabled={disabled}
           onChange={(event) => setRotation(event.target.value)}
         />
       </label>
-      <button type="submit">Apply size</button>
+      <button type="submit" disabled={disabled}>
+        Apply size
+      </button>
     </form>
   );
 }
