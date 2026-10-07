@@ -400,6 +400,4 @@ Examples:
 
 **Role: Application Security Engineer**
 
-Do not present the Human Product Owner as the author of an AI-generated project update.
-
 If multiple specialist roles contributed to the same handoff, identify the primary authoring role and list the contributing roles separately.
