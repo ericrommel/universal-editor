@@ -9,6 +9,7 @@
   "dependencies": {
     "@uvcp/ai": "workspace:*",
     "@uvcp/core": "workspace:*",
+    "@uvcp/interchange": "workspace:*",
     "@uvcp/persistence": "workspace:*"
   }
 }

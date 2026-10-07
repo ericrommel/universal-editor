@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import config from "../vite.config.ts";
+import config, { stripNodeBuiltinImports } from "../vite.config.ts";
 
 const sentinel = "SENTINEL_INPUT_BYTES_9f3a";
 
@@ -27,6 +27,18 @@ test("the dev failure variable is inlined only for the dev server", () => {
       process.env.UVCP_FORCE_INIT_FAILURE = previous;
     }
   }
+});
+
+test("the browser bundle transform removes Node file imports", () => {
+  const source =
+    'return Promise.all([import("node:fs"), import("node:path")]);';
+  const stripped = stripNodeBuiltinImports(source);
+  assert.equal(stripped.includes("node:fs"), false);
+  assert.equal(stripped.includes("node:path"), false);
+  assert.equal(
+    stripNodeBuiltinImports("import('node:fs')").includes("node:fs"),
+    false,
+  );
 });
 
 function defined(command: "build" | "serve", isPreview: boolean): string {

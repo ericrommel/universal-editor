@@ -1,4 +1,4 @@
-import { Document, NodeIO } from "@gltf-transform/core";
+import { Document, WebIO } from "@gltf-transform/core";
 import { createScene, insertNode } from "@uvcp/core";
 import { exportDocument } from "./index.ts";
 
@@ -88,5 +88,5 @@ export async function unitCubeBytes(): Promise<Uint8Array> {
     .setRotation([0, Math.sin(Math.PI / 4), 0, Math.cos(Math.PI / 4)])
     .setMesh(document.createMesh().addPrimitive(primitive));
   document.createScene().addChild(node);
-  return new NodeIO().writeBinary(document);
+  return new WebIO().writeBinary(document);
 }

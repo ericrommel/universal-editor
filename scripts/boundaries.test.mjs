@@ -82,6 +82,11 @@ test("interchange may import core and must not import files or the shell", () =>
 });
 
 test("editor and platform stay free of host and network imports", () => {
+  assert.equal(boundaryViolation("@uvcp/editor", "@uvcp/interchange"), null);
+  assert.match(
+    boundaryViolation("@uvcp/interchange", "@uvcp/editor"),
+    /must not import @uvcp\/editor/,
+  );
   assert.match(
     boundaryViolation("@uvcp/editor", "node:fs"),
     /must not import node:fs/,

@@ -133,6 +133,14 @@ export function readProductionBuild(distDir) {
     if (CANVAS_ELEMENT.test(text)) {
       problems.push(`${relative} contains a canvas element`);
     }
+    if (
+      !file.endsWith(".map") &&
+      (text.includes("node:fs") ||
+        text.includes("node:path") ||
+        text.includes("__vite-browser-external"))
+    ) {
+      problems.push(`${relative} references a Node file module`);
+    }
   }
   return { problems, indexHtml, assets };
 }

@@ -2,6 +2,8 @@ import type { Scene } from "@uvcp/core";
 import { registerFormat, requireFormat } from "./format.ts";
 import { gltfFormat } from "./gltf.ts";
 
+export { GLTF_BYTE_LIMIT, GLTF_TOO_LARGE } from "./gltf.ts";
+
 registerFormat(gltfFormat);
 
 export async function importDocument(

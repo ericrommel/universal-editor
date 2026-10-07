@@ -3,9 +3,10 @@ import {
   Document,
   type Node as GltfNode,
   type Scene as GltfScene,
+  Logger,
   type Material,
   type Mesh,
-  NodeIO,
+  WebIO,
 } from "@gltf-transform/core";
 import {
   createScene,
@@ -28,6 +29,9 @@ const PLANE_EPSILON = 1e-4;
 const TRIANGLES = 4;
 
 const TOO_LARGE = "Interchange document exceeds the size limit.";
+
+export const GLTF_BYTE_LIMIT = MAX_BYTES;
+export const GLTF_TOO_LARGE = TOO_LARGE;
 const INVALID_ENCODING = "Interchange document is not UTF-8 text.";
 const INVALID_JSON = "Interchange document is not valid glTF.";
 const UNSUPPORTED_FORMAT = "Interchange document format is not supported.";
@@ -35,6 +39,27 @@ const INVALID_SHAPE = "Interchange document shape is not accepted.";
 const UNSUPPORTED_NODE = "Interchange node is not a rectangle or a box.";
 
 const HOSTILE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
+const COMPONENT_BYTES: Readonly<Record<number, number>> = {
+  5120: 1,
+  5121: 1,
+  5122: 2,
+  5123: 2,
+  5125: 4,
+  5126: 4,
+  5130: 8,
+  5131: 2,
+};
+
+const ELEMENT_COMPONENTS: Readonly<Record<string, number>> = {
+  SCALAR: 1,
+  VEC2: 2,
+  VEC3: 3,
+  VEC4: 4,
+  MAT2: 4,
+  MAT3: 9,
+  MAT4: 16,
+};
 
 type Vec3 = readonly [number, number, number];
 
@@ -86,21 +111,18 @@ export async function exportGltf(scene: Scene): Promise<Uint8Array> {
   for (const rootId of scene.rootIds) {
     gltfScene.addChild(exportNode(document, buffer, material, scene, rootId));
   }
-  const io = new NodeIO();
-  return io.writeBinary(document);
+  return openIo().writeBinary(document);
 }
 
 async function readDocument(bytes: Uint8Array): Promise<Document> {
-  const io = new NodeIO();
+  const io = openIo();
   try {
+    const parsed = isGlb(bytes) ? glbJson(bytes) : textJson(bytes);
+    rejectHostileJson(parsed, 0);
+    rejectLargeAccessors(parsed);
     if (isGlb(bytes)) {
       return await io.readBinary(bytes);
     }
-    if (hasUtf8Bom(bytes)) {
-      throw new DomainError("INVALID_ENCODING", INVALID_ENCODING);
-    }
-    const parsed = parseJson(decodeUtf8(bytes));
-    rejectHostileJson(parsed, 0);
     return await io.readJSON({
       json: parsed as never,
       resources: {},
@@ -490,6 +512,155 @@ type Utf8DecoderType = new (
 const Utf8Decoder = (globalThis as unknown as { TextDecoder: Utf8DecoderType })
   .TextDecoder;
 
+function textJson(bytes: Uint8Array): unknown {
+  if (hasUtf8Bom(bytes)) {
+    throw new DomainError("INVALID_ENCODING", INVALID_ENCODING);
+  }
+  return parseJson(decodeUtf8(bytes));
+}
+
+const JSON_CHUNK = 0x4e4f534a;
+
+function glbJson(bytes: Uint8Array): unknown {
+  if (bytes.byteLength < 20) {
+    throw new DomainError("INVALID_JSON", INVALID_JSON);
+  }
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const chunkLength = view.getUint32(12, true);
+  const chunkType = view.getUint32(16, true);
+  if (chunkType !== JSON_CHUNK || chunkLength > bytes.byteLength - 20) {
+    throw new DomainError("INVALID_JSON", INVALID_JSON);
+  }
+  return parseJson(decodeUtf8(bytes.subarray(20, 20 + chunkLength)));
+}
+
+function rejectLargeAccessors(json: unknown): void {
+  if (!isRecord(json) || !Array.isArray(json.accessors)) {
+    return;
+  }
+  const views = Array.isArray(json.bufferViews) ? json.bufferViews : [];
+  let zeroFilled = 0;
+  let expanded = 0;
+  for (const accessor of json.accessors) {
+    if (
+      !isRecord(accessor) ||
+      !Number.isSafeInteger(accessor.count) ||
+      (accessor.count as number) < 0
+    ) {
+      throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
+    }
+    const count = accessor.count as number;
+    if (count > MAX_VERTICES) {
+      throw new DomainError("TOO_LARGE", TOO_LARGE);
+    }
+    // The reader resolves bufferView with property-key coercion, so a string
+    // or an array still selects a view and can be copied before that view is
+    // read. Only a safe integer is a view index. Anything else stops here.
+    requireViewIndex(accessor.bufferView);
+    if (accessor.bufferView === undefined) {
+      zeroFilled += count;
+      if (zeroFilled > MAX_VERTICES) {
+        throw new DomainError("TOO_LARGE", TOO_LARGE);
+      }
+    }
+    if (accessor.sparse !== undefined && !isRecord(accessor.sparse)) {
+      throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
+    }
+    // A view whose byteStride is not the packed element size is copied into a
+    // new array of count × element size before that view is read. The copy is
+    // not limited by the file, so the copies share the byte cap.
+    const copy = interleavedBytes(accessor, views);
+    expanded += copy;
+    if (isRecord(accessor.sparse)) {
+      if (
+        !Number.isSafeInteger(accessor.sparse.count) ||
+        (accessor.sparse.count as number) < 0 ||
+        (accessor.sparse.count as number) > MAX_VERTICES
+      ) {
+        throw new DomainError("TOO_LARGE", TOO_LARGE);
+      }
+      const sparseCount = accessor.sparse.count as number;
+      requireSparsePiece(accessor.sparse.indices);
+      requireSparsePiece(accessor.sparse.values);
+      if (accessor.bufferView !== undefined) {
+        expanded += copy;
+      }
+      expanded += interleavedBytes(
+        {
+          ...accessor,
+          ...asRecord(accessor.sparse.indices),
+          count: sparseCount,
+          type: "SCALAR",
+        },
+        views,
+      );
+      expanded += interleavedBytes(
+        {
+          ...accessor,
+          ...asRecord(accessor.sparse.values),
+          count: sparseCount,
+        },
+        views,
+      );
+    }
+    if (expanded > MAX_BYTES) {
+      throw new DomainError("TOO_LARGE", TOO_LARGE);
+    }
+  }
+}
+
+function requireViewIndex(value: unknown): void {
+  if (value === undefined) {
+    return;
+  }
+  if (typeof value === "number" && Number.isSafeInteger(value) && value >= 0) {
+    return;
+  }
+  throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
+}
+
+function requireSparsePiece(value: unknown): void {
+  if (value === undefined) {
+    return;
+  }
+  if (!isRecord(value)) {
+    throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
+  }
+  requireViewIndex(value.bufferView);
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return isRecord(value) ? value : {};
+}
+
+function interleavedBytes(
+  accessor: Record<string, unknown>,
+  views: readonly unknown[],
+): number {
+  if (
+    !Number.isSafeInteger(accessor.bufferView) ||
+    (accessor.bufferView as number) < 0
+  ) {
+    return 0;
+  }
+  const view = views[accessor.bufferView as number];
+  if (!isRecord(view) || view.byteStride === undefined) {
+    return 0;
+  }
+  const components = ELEMENT_COMPONENTS[String(accessor.type)];
+  const componentBytes = COMPONENT_BYTES[accessor.componentType as number];
+  if (components === undefined || componentBytes === undefined) {
+    return 0;
+  }
+  if (view.byteStride === components * componentBytes) {
+    return 0;
+  }
+  if (!Number.isSafeInteger(accessor.count) || (accessor.count as number) < 0) {
+    return 0;
+  }
+  return (accessor.count as number) * components * componentBytes;
+}
+
 function parseJson(text: string): unknown {
   try {
     return JSON.parse(text, (key, value: unknown) => {
@@ -541,6 +712,13 @@ function rejectUri(value: unknown): void {
   if (lower.includes("javascript") || lower.includes("://")) {
     throw new DomainError("UNSUPPORTED_FORMAT", UNSUPPORTED_FORMAT);
   }
+}
+
+function openIo(): WebIO {
+  // The Node I/O service loads the host filesystem when constructed, and this
+  // module runs in the browser. These methods stay in memory. read() fetches,
+  // so it is not called. The default logger prints untrusted document text.
+  return new WebIO().setLogger(new Logger(Logger.Verbosity.SILENT));
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { Document, NodeIO, Primitive } from "@gltf-transform/core";
+import { Document, Primitive, WebIO } from "@gltf-transform/core";
 import { createScene, DomainError, insertNode } from "@uvcp/core";
 import { exportDocument, importDocument } from "./index.ts";
 
@@ -111,8 +111,113 @@ test("external buffer URIs and hostile keys are rejected", async () => {
     utf8('{"__proto__":{"polluted":true},"asset":{"version":"2.0"}}'),
     "INVALID_SHAPE",
   );
+  await expectCode(
+    glbFromText('{"__proto__":{"polluted":true},"asset":{"version":"2.0"}}'),
+    "INVALID_SHAPE",
+  );
   const huge = new Uint8Array(4 * 1024 * 1024 + 1);
   await expectCode(huge, "TOO_LARGE");
+});
+
+test("an accessor count is rejected before it is materialized", async () => {
+  const bomb = {
+    asset: { version: "2.0" },
+    accessors: [{ componentType: 5126, count: 1_000_000, type: "VEC3" }],
+  };
+  await expectCode(utf8(JSON.stringify(bomb)), "TOO_LARGE");
+  await expectCode(glbFromText(JSON.stringify(bomb)), "TOO_LARGE");
+  const many = {
+    asset: { version: "2.0" },
+    accessors: [
+      { componentType: 5126, count: 40_000, type: "VEC3" },
+      { componentType: 5126, count: 40_000, type: "VEC3" },
+    ],
+  };
+  await expectCode(utf8(JSON.stringify(many)), "TOO_LARGE");
+
+  const stride = interleavedDocument(0, 3);
+  await expectCode(utf8(JSON.stringify(stride)), "TOO_LARGE");
+  await expectCode(
+    glbFromParts(JSON.stringify(stride), new Uint8Array(64)),
+    "TOO_LARGE",
+  );
+  const sparse = interleavedDocument(0, 1);
+  const sparseAccessor = sparse.accessors[0];
+  if (sparseAccessor === undefined) {
+    throw new Error("missing accessor");
+  }
+  sparseAccessor.sparse = {
+    count: 1,
+    indices: { bufferView: 1, componentType: 5123 },
+    values: { bufferView: 1 },
+  };
+  await expectCode(utf8(JSON.stringify(sparse)), "TOO_LARGE");
+  await expectCode(
+    glbFromParts(
+      JSON.stringify(interleavedDocument(64, 2)),
+      new Uint8Array(64),
+    ),
+    "UNSUPPORTED_FORMAT",
+  );
+});
+
+test("a coerced view index is rejected before it is read", async () => {
+  for (const bufferView of ["0", [0]] as const) {
+    const document = interleavedDocument(0, 3);
+    for (const accessor of document.accessors) {
+      (accessor as { bufferView: unknown }).bufferView = bufferView;
+    }
+    const json = JSON.stringify(document);
+    await expectCode(utf8(json), "INVALID_SHAPE");
+    await expectCode(glbFromParts(json, new Uint8Array(64)), "INVALID_SHAPE");
+  }
+  const sparseFlag = interleavedDocument(0, 1);
+  const flagged = sparseFlag.accessors[0];
+  if (flagged === undefined) {
+    throw new Error("missing accessor");
+  }
+  (flagged as { sparse: unknown }).sparse = 1;
+  await expectCode(utf8(JSON.stringify(sparseFlag)), "INVALID_SHAPE");
+  const sparseValues = interleavedDocument(0, 1);
+  const accessor = sparseValues.accessors[0];
+  if (accessor === undefined) {
+    throw new Error("missing accessor");
+  }
+  accessor.sparse = {
+    count: 65536,
+    indices: { bufferView: 1, componentType: 5123 },
+    values: { bufferView: "0" } as unknown as {
+      readonly bufferView: number;
+    },
+  };
+  await expectCode(utf8(JSON.stringify(sparseValues)), "INVALID_SHAPE");
+});
+
+test("an optional extension name is not logged", async () => {
+  const warnings: string[] = [];
+  const warn = console.warn;
+  console.warn = (...args: unknown[]) => {
+    warnings.push(args.map((part) => String(part)).join(" "));
+  };
+  try {
+    await assert.rejects(
+      importDocument(
+        "gltf",
+        utf8(
+          JSON.stringify({
+            asset: { version: "2.0" },
+            extensionsUsed: ["OPTIONAL_EXTENSION"],
+          }),
+        ),
+      ),
+    );
+  } finally {
+    console.warn = warn;
+  }
+  assert.equal(
+    warnings.some((line) => line.includes("OPTIONAL_EXTENSION")),
+    false,
+  );
 });
 
 test("a triangle fan is not a rectangle or a box", async () => {
@@ -179,7 +284,7 @@ async function externalCube(): Promise<Uint8Array> {
     .setMesh(mesh)
     .setRotation([0, Math.sin(Math.PI / 4), 0, Math.cos(Math.PI / 4)]);
   document.createScene().addChild(node);
-  return new NodeIO().writeBinary(document);
+  return new WebIO().writeBinary(document);
 }
 
 async function groundQuad(): Promise<Uint8Array> {
@@ -209,7 +314,7 @@ async function groundQuad(): Promise<Uint8Array> {
         .createNode("floor")
         .setMesh(document.createMesh().addPrimitive(primitive)),
     );
-  return new NodeIO().writeBinary(document);
+  return new WebIO().writeBinary(document);
 }
 
 async function triangle(): Promise<Uint8Array> {
@@ -232,11 +337,74 @@ async function triangle(): Promise<Uint8Array> {
         .createNode("wedge")
         .setMesh(document.createMesh().addPrimitive(primitive)),
     );
-  return new NodeIO().writeBinary(document);
+  return new WebIO().writeBinary(document);
 }
 
 function utf8(value: string): Uint8Array {
   return new TextEncoder().encode(value);
+}
+
+function interleavedDocument(byteStride: number, count: number) {
+  return {
+    asset: { version: "2.0" },
+    buffers: [{ byteLength: 64 }],
+    bufferViews: [
+      { buffer: 0, byteLength: 64, byteStride },
+      { buffer: 0, byteLength: 64 },
+    ],
+    accessors: Array.from({ length: count }, () => ({
+      bufferView: 0,
+      componentType: 5126,
+      count: 65536,
+      type: "MAT4",
+      sparse: undefined as
+        | {
+            readonly count: number;
+            readonly indices: {
+              readonly bufferView: number;
+              readonly componentType: number;
+            };
+            readonly values: { readonly bufferView: number };
+          }
+        | undefined,
+    })),
+  };
+}
+
+function glbFromParts(json: string, bin: Uint8Array): Uint8Array {
+  const text = utf8(json);
+  const jsonLength = text.length + ((4 - (text.length % 4)) % 4);
+  const binLength = bin.length + ((4 - (bin.length % 4)) % 4);
+  const total = 12 + 8 + jsonLength + 8 + binLength;
+  const bytes = new Uint8Array(total);
+  const view = new DataView(bytes.buffer);
+  view.setUint32(0, 0x46546c67, true);
+  view.setUint32(4, 2, true);
+  view.setUint32(8, total, true);
+  view.setUint32(12, jsonLength, true);
+  view.setUint32(16, 0x4e4f534a, true);
+  bytes.set(text, 20);
+  bytes.fill(0x20, 20 + text.length, 20 + jsonLength);
+  const binHeader = 20 + jsonLength;
+  view.setUint32(binHeader, binLength, true);
+  view.setUint32(binHeader + 4, 0x004e4942, true);
+  bytes.set(bin, binHeader + 8);
+  return bytes;
+}
+
+function glbFromText(json: string): Uint8Array {
+  const text = utf8(json);
+  const padded = text.length + ((4 - (text.length % 4)) % 4);
+  const bytes = new Uint8Array(20 + padded);
+  const view = new DataView(bytes.buffer);
+  view.setUint32(0, 0x46546c67, true);
+  view.setUint32(4, 2, true);
+  view.setUint32(8, bytes.length, true);
+  view.setUint32(12, padded, true);
+  view.setUint32(16, 0x4e4f534a, true);
+  bytes.set(text, 20);
+  bytes.fill(0x20, 20 + text.length);
+  return bytes;
 }
 
 async function expectCode(

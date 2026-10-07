@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { createScene, insertNode } from "@uvcp/core";
 import { readScene } from "@uvcp/persistence";
 import {
   addShape,
@@ -19,6 +20,7 @@ import {
   selectShape,
   shapeAt,
   shapesOf,
+  sheetShapes,
   undo,
 } from "./document.ts";
 
@@ -123,4 +125,58 @@ test("drag position is the pointer delta and an oversized file is not read", () 
   );
   assert.equal(rejected.message, "Scene document format is not supported.");
   assert.equal(rejected.history.present.scene.rootIds.length, 0);
+});
+
+test("a root on the sheet matches the model shape", () => {
+  const history = addShape(createHistory(), "box");
+  assert.deepEqual(sheetShapes(history.present), shapesOf(history.present));
+});
+
+test("the sheet places a child on its parent and a drag stays in parent space", () => {
+  let scene = createScene();
+  scene = insertNode(scene, {
+    id: "parent",
+    kind: "rectangle",
+    parentId: null,
+    index: 0,
+    width: 10,
+    height: 10,
+    transform: {
+      position: [0, 0, 0],
+      rotation: [0, 0, 0],
+      scale: [2, 2, 2],
+    },
+  });
+  scene = insertNode(scene, {
+    id: "child",
+    kind: "rectangle",
+    parentId: "parent",
+    index: 0,
+    width: 4,
+    height: 3,
+    transform: {
+      position: [1, 0, 0],
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1],
+    },
+  });
+  const history = commitPresent(createHistory(), {
+    scene,
+    selectedId: "child",
+  });
+  const sheet = sheetShapes(history.present);
+  assert.equal(sheet.find((shape) => shape.id === "parent")?.width, 20);
+  assert.equal(sheet.find((shape) => shape.id === "child")?.x, 2);
+  assert.equal(
+    shapesOf(history.present).find((shape) => shape.id === "child")?.x,
+    1,
+  );
+  const moved = moveShape(history.present, "child", 6, 0);
+  assert.equal(moved.scene.nodes.child?.transform.position[0], 3);
+  assert.equal(
+    sheetShapes({ scene: moved.scene, selectedId: null }).find(
+      (shape) => shape.id === "child",
+    )?.x,
+    6,
+  );
 });

@@ -161,16 +161,16 @@ Allowed imports:
 | `platform` | nothing in the workspace |
 | `rendering` | `core` |
 | `ai` | nothing in the workspace |
-| `editor` | `ai`, `core`, `persistence` |
+| `editor` | `ai`, `core`, `persistence`, `interchange` |
 | `interchange` | `core` |
 | `ui` | nothing in the workspace |
 | `shell` | `ai`, `ui`, `editor`, `platform` |
 
-No cycles. A type-only import counts. A test import counts. `editor` must not import `ui`, React, `rendering`, or `platform`. `rendering` must not import `ui`, `editor`, `platform`, or a GPU library. `shell` must not import `core`, `persistence`, or `rendering` directly; startup goes through `editor`.
+No cycles. A type-only import counts. A test import counts. `editor` must not import `ui`, React, `rendering`, or `platform`. `rendering` must not import `ui`, `editor`, `platform`, or a GPU library. `shell` must not import `core`, `persistence`, `rendering`, or `interchange` directly; startup and file interchange go through `editor`.
 
 These edges are enforced by package manifests, TypeScript project references, and `scripts/check-boundaries.mjs`. A forbidden import fails `pnpm verify`. See ADR-0005.
 
-`@uvcp/ai` is the working-line amendment in ADR-0010. `editor` may import it for the action parser. `shell` may import it so the loopback server can call a model. The shell still must not import `core`, `persistence`, or `rendering`. `editor` still must not call the renderer.
+`@uvcp/ai` is the working-line amendment in ADR-0010. `editor` may import it for the action parser. `shell` may import it so the loopback server can call a model. The shell still must not import `core`, `persistence`, `rendering`, or `interchange`. `editor` still must not call the renderer.
 
 A later viewport module must amend this table in a new ADR before `editor` may call the renderer.
 

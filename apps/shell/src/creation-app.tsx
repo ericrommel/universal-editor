@@ -11,6 +11,11 @@ import {
   type EditorShape,
   editorErrorMessage,
   exportDocument,
+  exportGltfFile,
+  exportSelectedGltf,
+  GLTF_BYTE_LIMIT,
+  GLTF_TOO_LARGE,
+  importGltfFile,
   moveShape,
   openDocument,
   redo,
@@ -19,17 +24,17 @@ import {
   rotateShape,
   SCENE_BYTE_LIMIT,
   SCENE_TOO_LARGE,
+  SHEET_HEIGHT,
+  SHEET_WIDTH,
   selectShape,
   shapesOf,
+  sheetShapes,
   undo,
 } from "@uvcp/editor";
 import { strings } from "@uvcp/ui";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { AssistantSetup, loadAssistantStatus } from "./assistant-setup.tsx";
-
-const VIEW_WIDTH = 960;
-const VIEW_HEIGHT = 600;
 
 type AssistantGate =
   | { readonly kind: "checking" }
@@ -60,6 +65,7 @@ export function CreationApp() {
   const pendingRef = useRef(false);
   historyRef.current = history;
   const shapes = shapesOf(history.present);
+  const sheet = sheetShapes(history.present);
   const assistantReady = gate.kind === "ready" && !setupOpen;
   const showSetup = gate.kind === "needed" || setupOpen;
   const selected =
@@ -267,6 +273,41 @@ export function CreationApp() {
             }}
           />
         </label>
+        <label className="uvcp-editor-open">
+          Import glTF
+          <input
+            type="file"
+            accept=".glb,.gltf,model/gltf-binary,model/gltf+json"
+            disabled={pending}
+            onChange={(event) => {
+              const file = event.currentTarget.files?.[0];
+              event.currentTarget.value = "";
+              if (file) {
+                void readGltf(history, file).then((opened) => {
+                  show(opened.history, opened.message);
+                });
+              }
+            }}
+          />
+        </label>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => {
+            void deliverGltf(history, false, setNotice);
+          }}
+        >
+          Export glTF
+        </button>
+        <button
+          type="button"
+          disabled={pending || history.present.selectedId === null}
+          onClick={() => {
+            void deliverGltf(history, true, setNotice);
+          }}
+        >
+          Export selection
+        </button>
       </header>
       {showSetup ? (
         <AssistantSetup
@@ -283,7 +324,7 @@ export function CreationApp() {
         <svg
           ref={surface}
           className="uvcp-editor-surface"
-          viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
+          viewBox={`0 0 ${SHEET_WIDTH} ${SHEET_HEIGHT}`}
           role="application"
           aria-label="Scene"
           onPointerDown={(event) => {
@@ -296,7 +337,7 @@ export function CreationApp() {
             }
           }}
         >
-          {shapes.map((shape) => (
+          {sheet.map((shape) => (
             <ShapeView
               key={shape.id}
               shape={shape}
@@ -355,11 +396,15 @@ export function CreationApp() {
                 ) {
                   return;
                 }
-                const current = historyRef.current;
                 show(
                   commitPresent(
-                    current,
-                    moveShape(current.present, active.id, active.x, active.y),
+                    active.base,
+                    moveShape(
+                      active.base.present,
+                      active.id,
+                      active.x,
+                      active.y,
+                    ),
                   ),
                 );
               }}
@@ -558,6 +603,45 @@ async function readFile(history: EditorHistory, file: File) {
   }
   const bytes = new Uint8Array(await file.arrayBuffer());
   return openDocument(history, bytes.byteLength, () => bytes);
+}
+
+async function readGltf(history: EditorHistory, file: File) {
+  if (file.size > GLTF_BYTE_LIMIT) {
+    return { history, message: GLTF_TOO_LARGE };
+  }
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  return importGltfFile(history, bytes);
+}
+
+async function deliverGltf(
+  history: EditorHistory,
+  selection: boolean,
+  setNotice: (message: string | null) => void,
+) {
+  const result = selection
+    ? await exportSelectedGltf(history.present)
+    : await exportGltfFile(history.present);
+  if (result.bytes === null) {
+    setNotice(result.message);
+    return;
+  }
+  download(
+    result.bytes,
+    selection ? "selection.glb" : "scene.glb",
+    "model/gltf-binary",
+  );
+  setNotice(null);
+}
+
+function download(bytes: Uint8Array, name: string, type: string) {
+  const body = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(body).set(bytes);
+  const url = URL.createObjectURL(new Blob([body], { type }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 function isAssistantResult(value: unknown): value is {

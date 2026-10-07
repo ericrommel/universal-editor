@@ -11,7 +11,12 @@ export const ALLOWED = {
   "@uvcp/platform": new Set(),
   "@uvcp/rendering": new Set(["@uvcp/core"]),
   "@uvcp/ai": new Set(),
-  "@uvcp/editor": new Set(["@uvcp/ai", "@uvcp/core", "@uvcp/persistence"]),
+  "@uvcp/editor": new Set([
+    "@uvcp/ai",
+    "@uvcp/core",
+    "@uvcp/persistence",
+    "@uvcp/interchange",
+  ]),
   "@uvcp/interchange": new Set(["@uvcp/core"]),
   "@uvcp/ui": new Set(),
   "@uvcp/shell": new Set([

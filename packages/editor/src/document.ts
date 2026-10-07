@@ -17,6 +17,9 @@ const HISTORY_LIMIT = 50;
 const BOX_DX = 0.45;
 const BOX_DY = -0.35;
 
+export const SHEET_WIDTH = 960;
+export const SHEET_HEIGHT = 600;
+
 export type ShapeKind = "rectangle" | "box";
 
 export type EditorDocument = {
@@ -93,8 +96,12 @@ export function moveShape(
   if (!node) {
     return document;
   }
+  const local = localPoint(document.scene, id, x, y);
+  if (local === null) {
+    return document;
+  }
   const scene = replaceTransform(document.scene, id, {
-    position: [x, y, node.transform.position[2]],
+    position: [local.x, local.y, node.transform.position[2]],
     rotation: [
       node.transform.rotation[0],
       node.transform.rotation[1],
@@ -207,6 +214,64 @@ export function redo(history: EditorHistory): EditorHistory {
   };
 }
 
+export type SheetFrame = {
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
+  readonly sx: number;
+  readonly sy: number;
+  readonly sz: number;
+};
+
+export function sheetFramesOf(scene: Scene): ReadonlyMap<string, SheetFrame> {
+  const parents = parentIds(scene);
+  const frames = new Map<string, SheetFrame>();
+  const pending = [...scene.rootIds].reverse();
+  const seen = new Set<string>();
+  while (pending.length > 0) {
+    const id = pending.pop();
+    if (id === undefined || seen.has(id)) {
+      continue;
+    }
+    seen.add(id);
+    const node = scene.nodes[id];
+    if (!node) {
+      continue;
+    }
+    const parentId = parents.get(id) ?? null;
+    const parent = parentId === null ? undefined : frames.get(parentId);
+    frames.set(id, frameFor(node, parent));
+    for (let index = node.childIds.length - 1; index >= 0; index -= 1) {
+      const child = node.childIds[index];
+      if (child !== undefined) {
+        pending.push(child);
+      }
+    }
+  }
+  return frames;
+}
+
+export function sheetShapes(document: EditorDocument): readonly EditorShape[] {
+  const shapes: EditorShape[] = [];
+  for (const [id, frame] of sheetFramesOf(document.scene)) {
+    const node = document.scene.nodes[id];
+    if (!node) {
+      continue;
+    }
+    shapes.push({
+      id: node.id,
+      kind: node.kind,
+      x: frame.x,
+      y: frame.y,
+      width: node.width * Math.abs(frame.sx),
+      height: node.height * Math.abs(frame.sy),
+      depth: node.kind === "box" ? node.depth * Math.abs(frame.sz) : null,
+      rotation: node.transform.rotation[2],
+    });
+  }
+  return shapes;
+}
+
 export function shapesOf(document: EditorDocument): readonly EditorShape[] {
   const shapes: EditorShape[] = [];
   const pending = [...document.scene.rootIds].reverse();
@@ -305,6 +370,80 @@ function commit(
     past: [...history.past, history.present].slice(-HISTORY_LIMIT),
     present,
     future: [],
+  };
+}
+
+function localPoint(
+  scene: Scene,
+  id: string,
+  x: number,
+  y: number,
+): { readonly x: number; readonly y: number } | null {
+  const parentId = parentIdOf(scene, id);
+  if (parentId === null) {
+    return { x, y };
+  }
+  const parent = sheetFramesOf(scene).get(parentId);
+  if (parent === undefined || parent.sx === 0 || parent.sy === 0) {
+    return null;
+  }
+  return {
+    x: (x - parent.x) / parent.sx,
+    y: (y - parent.y) / parent.sy,
+  };
+}
+
+function parentIdOf(scene: Scene, id: string): string | null {
+  if (scene.rootIds.includes(id)) {
+    return null;
+  }
+  for (const key of Object.keys(scene.nodes)) {
+    const node = scene.nodes[key];
+    if (node?.childIds.includes(id)) {
+      return node.id;
+    }
+  }
+  return null;
+}
+
+function parentIds(scene: Scene): Map<string, string | null> {
+  const parents = new Map<string, string | null>();
+  for (const id of scene.rootIds) {
+    parents.set(id, null);
+  }
+  for (const key of Object.keys(scene.nodes)) {
+    const node = scene.nodes[key];
+    if (!node) {
+      continue;
+    }
+    for (const child of node.childIds) {
+      parents.set(child, node.id);
+    }
+  }
+  return parents;
+}
+
+function frameFor(node: SceneNode, parent: SheetFrame | undefined): SheetFrame {
+  const scaleX = node.transform.scale[0];
+  const scaleY = node.transform.scale[1];
+  const scaleZ = node.transform.scale[2];
+  if (parent === undefined) {
+    return {
+      x: node.transform.position[0],
+      y: node.transform.position[1],
+      z: node.transform.position[2],
+      sx: scaleX,
+      sy: scaleY,
+      sz: scaleZ,
+    };
+  }
+  return {
+    x: parent.x + node.transform.position[0] * parent.sx,
+    y: parent.y + node.transform.position[1] * parent.sy,
+    z: parent.z + node.transform.position[2] * parent.sz,
+    sx: parent.sx * scaleX,
+    sy: parent.sy * scaleY,
+    sz: parent.sz * scaleZ,
   };
 }
 
