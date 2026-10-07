@@ -151,8 +151,12 @@ export function CreationApp() {
               selected={shape.id === history.present.selectedId}
               onPointerDown={(event) => {
                 const point = svgPoint(surface.current, event);
+                const base = replacePresent(
+                  history,
+                  selectShape(history.present, shape.id),
+                );
                 gesture.current = {
-                  base: history,
+                  base,
                   id: shape.id,
                   originX: shape.x,
                   originY: shape.y,
@@ -162,12 +166,7 @@ export function CreationApp() {
                   y: shape.y,
                 };
                 event.currentTarget.setPointerCapture(event.pointerId);
-                show(
-                  replacePresent(
-                    history,
-                    selectShape(history.present, shape.id),
-                  ),
-                );
+                show(base);
               }}
               onPointerMove={(event) => {
                 const active = gesture.current;
