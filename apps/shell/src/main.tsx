@@ -1,9 +1,9 @@
 import { startSession } from "@uvcp/editor";
 import { FoundationScreen } from "@uvcp/ui";
 import { createRoot } from "react-dom/client";
+import { CreationApp } from "./creation-app.tsx";
 import { applyDevFailure } from "./dev-failure.ts";
 import { foundationProps } from "./foundation-props.ts";
-import { Studio } from "./studio.tsx";
 import "./shell.css";
 
 const rootElement = document.getElementById("root");
@@ -26,10 +26,10 @@ const session = startSession({
 });
 
 const screen =
-  session.status === "ready" ? (
-    <Studio />
-  ) : (
+  session.status === "failed" ? (
     <FoundationScreen {...foundationProps(session)} />
+  ) : (
+    <CreationApp />
   );
 
 createRoot(rootElement).render(screen);

@@ -4,3 +4,127 @@ body,
   height: 100%;
   margin: 0;
 }
+
+.uvcp-editor {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #f4f5f7;
+  color: #1c1f26;
+  font-family: system-ui, "Segoe UI", sans-serif;
+}
+
+.uvcp-editor-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 16px;
+  background: #ffffff;
+  border-bottom: 1px solid #7a8496;
+}
+
+.uvcp-editor-bar h1 {
+  margin: 0 12px 0 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.uvcp-editor-ask {
+  display: flex;
+  flex: 1 1 280px;
+  gap: 8px;
+  align-items: center;
+}
+
+.uvcp-editor-ask textarea {
+  display: block;
+  width: 100%;
+  min-width: 12rem;
+  font: inherit;
+}
+
+.uvcp-editor button:focus-visible,
+.uvcp-editor textarea:focus-visible,
+.uvcp-editor input:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 2px;
+}
+
+.uvcp-editor-bar button,
+.uvcp-editor-properties button {
+  font: inherit;
+  padding: 6px 10px;
+  border: 1px solid #7a8496;
+  border-radius: 6px;
+  background: #ffffff;
+  color: inherit;
+}
+
+.uvcp-editor-open input {
+  display: block;
+  max-width: 180px;
+}
+
+.uvcp-editor-body {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  min-height: 0;
+  flex: 1;
+}
+
+.uvcp-editor-surface {
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+  touch-action: none;
+}
+
+.uvcp-shape {
+  fill: #dbe7ff;
+  stroke: #1d4ed8;
+  stroke-width: 2;
+}
+
+.uvcp-shape-selected {
+  fill: #bfdbfe;
+  stroke-width: 3;
+}
+
+.uvcp-shape-depth {
+  fill: #93c5fd;
+  stroke: #1d4ed8;
+  stroke-width: 1;
+}
+
+.uvcp-editor-properties {
+  padding: 16px;
+  border-left: 1px solid #7a8496;
+  background: #ffffff;
+}
+
+.uvcp-editor-properties label {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0;
+}
+
+.uvcp-editor-properties input {
+  font: inherit;
+  padding: 6px;
+  border: 1px solid #7a8496;
+  border-radius: 6px;
+}
+
+@media (max-width: 720px) {
+  .uvcp-editor-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+
+  .uvcp-editor-properties {
+    border-left: 0;
+    border-top: 1px solid #7a8496;
+  }
+}

@@ -1,54 +1,42 @@
 import type { EntitlementPort } from "./entitlement.ts";
 import { assistantMessages, LIMITS } from "./messages.ts";
 
-export type Triple = readonly [number, number, number];
-
-type FactBase = {
+export type SceneFact = {
   readonly id: string;
-  readonly position: Triple;
-  readonly rotation: Triple;
-  readonly scale: Triple;
+  readonly kind: "rectangle" | "box";
+  readonly x: number;
+  readonly y: number;
   readonly width: number;
   readonly height: number;
+  readonly depth: number | null;
+  readonly rotation: number;
 };
-
-export type SceneFact =
-  | (FactBase & {
-      readonly kind: "rectangle";
-      readonly depth: null;
-    })
-  | (FactBase & {
-      readonly kind: "box";
-      readonly depth: number;
-    });
 
 export type SceneAction =
   | {
       readonly type: "createRectangle";
       readonly id: string;
+      readonly x: number;
+      readonly y: number;
       readonly width: number;
       readonly height: number;
-      readonly position: Triple;
-      readonly rotation: Triple;
+      readonly rotation: number;
     }
   | {
       readonly type: "createBox";
       readonly id: string;
+      readonly x: number;
+      readonly y: number;
       readonly width: number;
       readonly height: number;
       readonly depth: number;
-      readonly position: Triple;
-      readonly rotation: Triple;
+      readonly rotation: number;
     }
   | {
       readonly type: "move";
       readonly id: string;
-      readonly position: Triple;
-    }
-  | {
-      readonly type: "rotate";
-      readonly id: string;
-      readonly rotation: Triple;
+      readonly x: number;
+      readonly y: number;
     }
   | {
       readonly type: "resize";
@@ -56,6 +44,11 @@ export type SceneAction =
       readonly width: number;
       readonly height: number;
       readonly depth?: number;
+    }
+  | {
+      readonly type: "rotate";
+      readonly id: string;
+      readonly degrees: number;
     };
 
 export type ActionPlan =
@@ -76,26 +69,6 @@ export const basicToolNames = [
 ] as const;
 
 const AI_ID = /^[A-Za-z0-9][A-Za-z0-9-]{0,31}$/;
-const ZERO: Triple = [0, 0, 0];
-
-const CREATE_RECTANGLE_KEYS = [
-  "id",
-  "width",
-  "height",
-  "position",
-  "rotation",
-] as const;
-const CREATE_BOX_KEYS = [
-  "id",
-  "width",
-  "height",
-  "depth",
-  "position",
-  "rotation",
-] as const;
-const MOVE_KEYS = ["id", "position"] as const;
-const ROTATE_KEYS = ["id", "rotation"] as const;
-const RESIZE_KEYS = ["id", "width", "height", "depth"] as const;
 
 export function actionsFromCalls(
   calls: readonly ProposedCall[],
@@ -130,11 +103,12 @@ export function actionsFromCalls(
 }
 
 export function parseActions(value: unknown): ActionPlan {
-  if (!Array.isArray(value)) {
-    return fail(assistantMessages.badValue);
-  }
-  if (value.length === 0) {
-    return fail(assistantMessages.noChange);
+  if (!Array.isArray(value) || value.length === 0) {
+    return fail(
+      Array.isArray(value) && value.length === 0
+        ? assistantMessages.noChange
+        : assistantMessages.badValue,
+    );
   }
   if (value.length > LIMITS.actions) {
     return fail(assistantMessages.tooMany);
@@ -176,12 +150,10 @@ function readAction(value: unknown): SceneAction | string {
       return readCreate(value, "box");
     case "move":
       return readMove(value);
-    case "rotate":
-      return readRotate(value);
     case "resize":
       return readResize(value);
-    case "arrange":
-      return assistantMessages.paidArrange;
+    case "rotate":
+      return readRotate(value);
     default:
       return assistantMessages.unavailable;
   }
@@ -191,81 +163,56 @@ function readCreate(
   value: Record<string, unknown>,
   kind: "rectangle" | "box",
 ): SceneAction | string {
-  const keys = kind === "box" ? CREATE_BOX_KEYS : CREATE_RECTANGLE_KEYS;
+  const keys =
+    kind === "box"
+      ? ["id", "x", "y", "width", "height", "depth", "rotation"]
+      : ["id", "x", "y", "width", "height", "rotation"];
   if (!closed(value, ["type", ...keys])) {
     return assistantMessages.badValue;
   }
   const id = readAiId(value.id);
   const width = readFinite(value.width);
   const height = readFinite(value.height);
-  const position = readTriple(value.position, ZERO);
-  const rotation = readTriple(value.rotation, ZERO);
+  const x = readFinite(value.x ?? 0);
+  const y = readFinite(value.y ?? 0);
+  const rotation = readFinite(value.rotation ?? 0);
   if (id === null) {
     return assistantMessages.badId;
   }
   if (width === null || height === null) {
     return missingOrBad(value.width, value.height);
   }
-  if (position === null || rotation === null) {
+  if (x === null || y === null || rotation === null) {
     return assistantMessages.badValue;
   }
   if (kind === "rectangle") {
-    return {
-      type: "createRectangle",
-      id,
-      width,
-      height,
-      position,
-      rotation,
-    };
+    return { type: "createRectangle", id, x, y, width, height, rotation };
   }
   const depth = readFinite(value.depth);
   if (depth === null) {
     return missingOrBad(value.depth);
   }
-  return {
-    type: "createBox",
-    id,
-    width,
-    height,
-    depth,
-    position,
-    rotation,
-  };
+  return { type: "createBox", id, x, y, width, height, depth, rotation };
 }
 
 function readMove(value: Record<string, unknown>): SceneAction | string {
-  if (!closed(value, ["type", ...MOVE_KEYS])) {
+  if (!closed(value, ["type", "id", "x", "y"])) {
     return assistantMessages.badValue;
   }
   const id = readAiId(value.id);
-  const position = readTriple(value.position, null);
+  const x = readFinite(value.x);
+  const y = readFinite(value.y);
   if (id === null) {
     return assistantMessages.badId;
   }
-  if (position === null) {
+  if (x === null || y === null) {
     return assistantMessages.badValue;
   }
-  return { type: "move", id, position };
-}
-
-function readRotate(value: Record<string, unknown>): SceneAction | string {
-  if (!closed(value, ["type", ...ROTATE_KEYS])) {
-    return assistantMessages.badValue;
-  }
-  const id = readAiId(value.id);
-  const rotation = readTriple(value.rotation, null);
-  if (id === null) {
-    return assistantMessages.badId;
-  }
-  if (rotation === null) {
-    return assistantMessages.badValue;
-  }
-  return { type: "rotate", id, rotation };
+  return { type: "move", id, x, y };
 }
 
 function readResize(value: Record<string, unknown>): SceneAction | string {
-  if (!closed(value, ["type", ...RESIZE_KEYS])) {
+  if (!closed(value, ["type", "id", "width", "height", "depth"])) {
     return assistantMessages.badValue;
   }
   const id = readAiId(value.id);
@@ -287,6 +234,21 @@ function readResize(value: Record<string, unknown>): SceneAction | string {
   return { type: "resize", id, width, height, depth };
 }
 
+function readRotate(value: Record<string, unknown>): SceneAction | string {
+  if (!closed(value, ["type", "id", "degrees"])) {
+    return assistantMessages.badValue;
+  }
+  const id = readAiId(value.id);
+  const degrees = readFinite(value.degrees);
+  if (id === null) {
+    return assistantMessages.badId;
+  }
+  if (degrees === null) {
+    return assistantMessages.badValue;
+  }
+  return { type: "rotate", id, degrees };
+}
+
 function readFact(value: unknown): SceneFact | null {
   if (!isRecord(value)) {
     return null;
@@ -295,18 +257,18 @@ function readFact(value: unknown): SceneFact | null {
     return null;
   }
   const id = readFactId(value.id);
-  const position = readTriple(value.position, null);
-  const rotation = readTriple(value.rotation, null);
-  const scale = readTriple(value.scale, null);
+  const x = readFinite(value.x);
+  const y = readFinite(value.y);
   const width = readFinite(value.width);
   const height = readFinite(value.height);
+  const rotation = readFinite(value.rotation);
   if (
     id === null ||
-    position === null ||
-    rotation === null ||
-    scale === null ||
+    x === null ||
+    y === null ||
     width === null ||
-    height === null
+    height === null ||
+    rotation === null
   ) {
     return null;
   }
@@ -317,28 +279,19 @@ function readFact(value: unknown): SceneFact | null {
     return {
       id,
       kind: "rectangle",
-      position,
-      rotation,
-      scale,
+      x,
+      y,
       width,
       height,
       depth: null,
+      rotation,
     };
   }
   const depth = readFinite(value.depth);
   if (depth === null) {
     return null;
   }
-  return {
-    id,
-    kind: "box",
-    position,
-    rotation,
-    scale,
-    width,
-    height,
-    depth,
-  };
+  return { id, kind: "box", x, y, width, height, depth, rotation };
 }
 
 function missingOrBad(...values: unknown[]): string {
@@ -373,22 +326,6 @@ function readFinite(value: unknown): number | null {
     return null;
   }
   return value;
-}
-
-function readTriple(value: unknown, fallback: Triple | null): Triple | null {
-  if (value === undefined) {
-    return fallback;
-  }
-  if (!Array.isArray(value) || value.length !== 3) {
-    return null;
-  }
-  const x = readFinite(value[0]);
-  const y = readFinite(value[1]);
-  const z = readFinite(value[2]);
-  if (x === null || y === null || z === null) {
-    return null;
-  }
-  return [x, y, z];
 }
 
 function closed(

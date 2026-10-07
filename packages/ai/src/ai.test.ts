@@ -17,16 +17,17 @@ test("a create request becomes scene actions", () => {
     [
       {
         name: "createRectangle",
-        input: { id: "r1", width: 2, height: 1 },
+        input: { id: "r1", width: 160, height: 100 },
       },
       {
         name: "createBox",
         input: {
           id: "b1",
-          width: 1,
-          height: 1,
-          depth: 1,
-          position: [4, 0, 0],
+          width: 120,
+          height: 80,
+          depth: 48,
+          x: 200,
+          y: 40,
         },
       },
     ],
@@ -40,19 +41,21 @@ test("a create request becomes scene actions", () => {
     {
       type: "createRectangle",
       id: "r1",
-      width: 2,
-      height: 1,
-      position: [0, 0, 0],
-      rotation: [0, 0, 0],
+      x: 0,
+      y: 0,
+      width: 160,
+      height: 100,
+      rotation: 0,
     },
     {
       type: "createBox",
       id: "b1",
-      width: 1,
-      height: 1,
-      depth: 1,
-      position: [4, 0, 0],
-      rotation: [0, 0, 0],
+      x: 200,
+      y: 40,
+      width: 120,
+      height: 80,
+      depth: 48,
+      rotation: 0,
     },
   ]);
 });
@@ -67,7 +70,7 @@ test("an unknown or extra field rejects the whole plan", () => {
     message: assistantMessages.unavailable,
   });
   const extra = parseActions([
-    { type: "move", id: "r1", position: [1, 2, 3], scale: [2, 2, 2] },
+    { type: "move", id: "r1", x: 1, y: 2, scale: 2 },
   ]);
   assert.deepEqual(extra, { ok: false, message: assistantMessages.badValue });
 });
@@ -169,12 +172,12 @@ test("the assistant request refuses another origin and a bad summary", async () 
     {
       id: "r1",
       kind: "rectangle",
-      position: [0, 0, 0],
-      rotation: [0, 0, 0],
-      scale: [1, 1, 1],
-      width: 1,
-      height: 1,
+      x: 0,
+      y: 0,
+      width: 160,
+      height: 100,
       depth: null,
+      rotation: 0,
     },
   ]);
   assert.equal(facts?.length, 1);
@@ -190,7 +193,7 @@ test("the assistant request refuses another origin and a bad summary", async () 
     }),
     run: async () => ({
       ok: true,
-      actions: [{ type: "move", id: "r1", position: [1, 0, 0] }],
+      actions: [{ type: "move", id: "r1", x: 20, y: 30 }],
     }),
   });
   assert.equal(accepted?.status, 200);

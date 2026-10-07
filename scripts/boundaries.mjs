@@ -12,6 +12,7 @@ export const ALLOWED = {
   "@uvcp/rendering": new Set(["@uvcp/core"]),
   "@uvcp/ai": new Set(),
   "@uvcp/editor": new Set(["@uvcp/ai", "@uvcp/core", "@uvcp/persistence"]),
+  "@uvcp/interchange": new Set(["@uvcp/core"]),
   "@uvcp/ui": new Set(),
   "@uvcp/shell": new Set([
     "@uvcp/ai",
@@ -77,7 +78,26 @@ const BANNED = {
     "@babylonjs/",
     "wgpu",
   ],
-  "@uvcp/shell": ["@uvcp/core", "@uvcp/persistence", "@uvcp/rendering"],
+  "@uvcp/interchange": [
+    ...REACT,
+    ...DESKTOP,
+    ...FILESYSTEM,
+    ...NETWORK,
+    "@uvcp/ui",
+    "@uvcp/editor",
+    "@uvcp/rendering",
+    "@uvcp/platform",
+    "@uvcp/persistence",
+    "three",
+    "@babylonjs/",
+    "wgpu",
+  ],
+  "@uvcp/shell": [
+    "@uvcp/core",
+    "@uvcp/persistence",
+    "@uvcp/rendering",
+    "@uvcp/interchange",
+  ],
 };
 
 export const NO_DOM_LIB = new Set([
@@ -87,6 +107,7 @@ export const NO_DOM_LIB = new Set([
   "@uvcp/platform",
   "@uvcp/rendering",
   "@uvcp/editor",
+  "@uvcp/interchange",
 ]);
 
 const EXOTIC = /^(?:git\+|git:|github:|http:|https:|file:|link:|portal:)/;

@@ -3,7 +3,6 @@ export type {
   ProposedCall,
   SceneAction,
   SceneFact,
-  Triple,
 } from "./actions.ts";
 export {
   actionsFromCalls,

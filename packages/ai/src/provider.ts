@@ -10,27 +10,21 @@ import { assistantMessages } from "./messages.ts";
 import { scenePrompt } from "./prompt.ts";
 import { type ProviderSetup, providerSettings } from "./provider-settings.ts";
 
-const triple = {
-  type: "array",
-  items: { type: "number" },
-  minItems: 3,
-  maxItems: 3,
-};
-
 const toolDefinitions = [
   {
     name: "createRectangle",
     description:
-      "Create a rectangle. Position is its center. Rotation is degrees. Width and height are greater than zero.",
+      "Create a rectangle. x and y are its top-left. Width and height are greater than zero. rotation is degrees clockwise.",
     parameters: {
       type: "object",
       additionalProperties: false,
       properties: {
         id: { type: "string" },
+        x: { type: "number" },
+        y: { type: "number" },
         width: { type: "number" },
         height: { type: "number" },
-        position: triple,
-        rotation: triple,
+        rotation: { type: "number" },
       },
       required: ["id", "width", "height"],
     },
@@ -38,38 +32,40 @@ const toolDefinitions = [
   {
     name: "createBox",
     description:
-      "Create a box. Position is its center. Rotation is degrees. Width, height, and depth are greater than zero.",
+      "Create a box. x and y are its top-left. Width, height, and depth are greater than zero. rotation is degrees clockwise.",
     parameters: {
       type: "object",
       additionalProperties: false,
       properties: {
         id: { type: "string" },
+        x: { type: "number" },
+        y: { type: "number" },
         width: { type: "number" },
         height: { type: "number" },
         depth: { type: "number" },
-        position: triple,
-        rotation: triple,
+        rotation: { type: "number" },
       },
       required: ["id", "width", "height", "depth"],
     },
   },
   {
     name: "move",
-    description: "Move an existing object by replacing its center position.",
+    description: "Move an existing object by replacing its top-left x and y.",
     parameters: {
       type: "object",
       additionalProperties: false,
       properties: {
         id: { type: "string" },
-        position: triple,
+        x: { type: "number" },
+        y: { type: "number" },
       },
-      required: ["id", "position"],
+      required: ["id", "x", "y"],
     },
   },
   {
     name: "resize",
     description:
-      "Replace an object's width and height. Include depth only for a box. Use this for a change of size.",
+      "Replace an object's width and height. Include depth only for a box.",
     parameters: {
       type: "object",
       additionalProperties: false,
@@ -84,15 +80,16 @@ const toolDefinitions = [
   },
   {
     name: "rotate",
-    description: "Replace an object's rotation in degrees, intrinsic XYZ.",
+    description:
+      "Set an object's rotation in degrees clockwise around its center.",
     parameters: {
       type: "object",
       additionalProperties: false,
       properties: {
         id: { type: "string" },
-        rotation: triple,
+        degrees: { type: "number" },
       },
-      required: ["id", "rotation"],
+      required: ["id", "degrees"],
     },
   },
 ] as const;

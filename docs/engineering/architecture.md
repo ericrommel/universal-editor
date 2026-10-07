@@ -143,6 +143,7 @@ packages/core/         Domain helpers. No I/O.
 packages/persistence/  Manifest codec and entry-name rules.
 packages/ai/           Scene-assistant actions, entitlement port, and model adapter.
 packages/editor/       Startup session and the in-memory scene.
+packages/interchange/  Format adapters over the scene value. glTF is the first.
 packages/rendering/    Snapshot port and null renderer.
 packages/platform/     Host boundary. No capability in Module 0.
 packages/ui/           React foundation screen, tokens, and strings.
@@ -161,6 +162,7 @@ Allowed imports:
 | `rendering` | `core` |
 | `ai` | nothing in the workspace |
 | `editor` | `ai`, `core`, `persistence` |
+| `interchange` | `core` |
 | `ui` | nothing in the workspace |
 | `shell` | `ai`, `ui`, `editor`, `platform` |
 

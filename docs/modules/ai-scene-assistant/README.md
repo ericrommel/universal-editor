@@ -1,6 +1,6 @@
 # Scene assistant
 
-The ready screen is the scene. A failed startup still shows the foundation screen.
+The ready screen is the scene editor. A failed startup still shows the foundation screen. Rectangle, Box, drag, size, rotation, undo, and save keep working after the assistant changes the scene.
 
 Type a request and choose Apply. The assistant can:
 

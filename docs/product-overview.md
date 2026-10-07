@@ -4,8 +4,8 @@
 
 **Status:** Product vision baseline\
 **Working language:** English\
-**Product Owner:** Human\
-**Implementation model:** Progressive, module-gated delivery
+**Integration branch:** `master`\
+**Implementation model:** Modules describe the product. The team accepts work on `master`.
 
 > **Professional power without professional complexity.**
 

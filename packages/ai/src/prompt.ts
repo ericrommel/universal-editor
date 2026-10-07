@@ -2,10 +2,11 @@ import type { SceneFact } from "./actions.ts";
 
 const INSTRUCTIONS = [
   "You edit the open scene by calling tools.",
-  "The only objects are rectangles and boxes.",
-  "Position is the center. Rotation is degrees, intrinsic XYZ.",
-  "Size is width and height. A box also has depth. Sizes must be greater than zero.",
-  "Change size with resize. Do not invent a scale action.",
+  "Objects are rectangles and boxes.",
+  "x increases right and y increases down. x and y are the top-left of the shape.",
+  "Width, height, and box depth are greater than zero, in the same units as the current scene.",
+  "Existing shapes are often about 80 to 200 units across.",
+  "Rotation is degrees clockwise around the shape center.",
   "Use an existing id to change an object. Choose a new short id to create one.",
   "A simple composition is several create, move, resize, or rotate calls in this turn.",
   "If the request cannot be done with these tools, call none.",
