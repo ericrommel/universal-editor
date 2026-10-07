@@ -253,13 +253,17 @@ function ShapeView({
 }: {
   readonly shape: EditorShape;
   readonly selected: boolean;
-  readonly onPointerDown: (event: ReactPointerEvent<SVGRectElement>) => void;
-  readonly onPointerMove: (event: ReactPointerEvent<SVGRectElement>) => void;
+  readonly onPointerDown: (event: ReactPointerEvent<SVGGElement>) => void;
+  readonly onPointerMove: (event: ReactPointerEvent<SVGGElement>) => void;
   readonly onPointerUp: () => void;
 }) {
   const shift = shape.depth === null ? null : boxShift(shape.depth);
   return (
-    <g>
+    <g
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+    >
       {shift ? (
         <rect
           x={shape.x + shift.dx}
@@ -275,9 +279,6 @@ function ShapeView({
         width={shape.width}
         height={shape.height}
         className={selected ? "uvcp-shape uvcp-shape-selected" : "uvcp-shape"}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
       >
         <title>{shape.id}</title>
       </rect>
