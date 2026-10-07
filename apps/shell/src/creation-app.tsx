@@ -211,7 +211,9 @@ export function CreationApp() {
           <p className="uvcp-editor-ask">
             {gate.kind === "checking"
               ? "Checking the assistant."
-              : "Choose a provider below before describing a change."}
+              : gate.kind === "ready"
+                ? "The current choice stays in use until you save or cancel."
+                : "Choose a provider below before describing a change."}
           </p>
         )}
         {gate.kind === "ready" && !setupOpen ? (

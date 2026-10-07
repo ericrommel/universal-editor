@@ -119,8 +119,11 @@ export function AssistantSetup({
         (item): item is string => typeof item === "string",
       );
       setLocalModels(models);
-      const first = models[0];
-      setLocalModel(first ?? "");
+      setLocalModel(
+        localModel.length > 0 && models.includes(localModel)
+          ? localModel
+          : (models[0] ?? ""),
+      );
       if (models.length === 0) {
         setMessage(assistantMessages.localNoModels);
       }
