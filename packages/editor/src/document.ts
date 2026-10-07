@@ -38,6 +38,7 @@ export type EditorShape = {
   readonly width: number;
   readonly height: number;
   readonly depth: number | null;
+  readonly rotation: number;
 };
 
 export function createHistory(): EditorHistory {
@@ -124,6 +125,31 @@ export function resizeShape(
       ? { width, height, depth: depth ?? node.depth }
       : { width, height };
   const scene = replaceExtents(document.scene, id, extents);
+  return { scene, selectedId: document.selectedId };
+}
+
+export function rotateShape(
+  document: EditorDocument,
+  id: string,
+  degrees: number,
+): EditorDocument {
+  const node = document.scene.nodes[id];
+  if (!node) {
+    return document;
+  }
+  const scene = replaceTransform(document.scene, id, {
+    position: [
+      node.transform.position[0],
+      node.transform.position[1],
+      node.transform.position[2],
+    ],
+    rotation: [node.transform.rotation[0], node.transform.rotation[1], degrees],
+    scale: [
+      node.transform.scale[0],
+      node.transform.scale[1],
+      node.transform.scale[2],
+    ],
+  });
   return { scene, selectedId: document.selectedId };
 }
 
@@ -301,11 +327,19 @@ function toShape(node: SceneNode): EditorShape {
     width: node.width,
     height: node.height,
     depth: node.kind === "box" ? node.depth : null,
+    rotation: node.transform.rotation[2],
   };
 }
 
 function hits(shape: EditorShape, x: number, y: number): boolean {
-  if (contains(shape.x, shape.y, shape.width, shape.height, x, y)) {
+  const centerX = shape.x + shape.width / 2;
+  const centerY = shape.y + shape.height / 2;
+  const angle = (shape.rotation * Math.PI) / 180;
+  const dx = x - centerX;
+  const dy = y - centerY;
+  const localX = dx * Math.cos(angle) + dy * Math.sin(angle) + centerX;
+  const localY = -dx * Math.sin(angle) + dy * Math.cos(angle) + centerY;
+  if (contains(shape.x, shape.y, shape.width, shape.height, localX, localY)) {
     return true;
   }
   if (shape.depth === null) {
@@ -317,8 +351,8 @@ function hits(shape: EditorShape, x: number, y: number): boolean {
     shape.y + shift.dy,
     shape.width,
     shape.height,
-    x,
-    y,
+    localX,
+    localY,
   );
 }
 

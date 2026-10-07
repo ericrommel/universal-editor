@@ -8,6 +8,12 @@ import {
 
 test("shell may import the UI package and must not import core", () => {
   assert.equal(boundaryViolation("@uvcp/shell", "@uvcp/ui"), null);
+  assert.equal(boundaryViolation("@uvcp/shell", "@uvcp/ai"), null);
+  assert.equal(boundaryViolation("@uvcp/editor", "@uvcp/ai"), null);
+  assert.equal(
+    boundaryViolation("@uvcp/ai", "@uvcp/editor"),
+    "@uvcp/ai must not import @uvcp/editor",
+  );
   assert.match(
     boundaryViolation("@uvcp/shell", "@uvcp/core"),
     /must not import @uvcp\/core/,

@@ -1,6 +1,7 @@
 {
   "files": [],
   "references": [
+    { "path": "packages/ai" },
     { "path": "packages/core" },
     { "path": "packages/persistence" },
     { "path": "packages/platform" },

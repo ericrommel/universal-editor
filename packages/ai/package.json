@@ -1,16 +1,17 @@
 {
-  "name": "@uvcp/ui",
+  "name": "@uvcp/ai",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./foundation.css": "./src/foundation-screen.css"
+    "./provider": "./src/provider.ts",
+    "./request": "./src/request.ts"
   },
   "dependencies": {
-    "react": "19.3.0"
+    "openai": "6.8.0"
   },
   "devDependencies": {
-    "@types/react": "19.3.0"
+    "@types/node": "24.19.1"
   }
 }

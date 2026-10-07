@@ -1,3 +1,5 @@
+export type { AssistantApply } from "./assistant.ts";
+export { applyAssistantActions } from "./assistant.ts";
 export { initializeFoundation } from "./compose.ts";
 export type {
   EditorDocument,
@@ -19,6 +21,7 @@ export {
   redo,
   replacePresent,
   resizeShape,
+  rotateShape,
   SCENE_BYTE_LIMIT,
   SCENE_TOO_LARGE,
   selectShape,

@@ -13,7 +13,7 @@ export type FoundationScreenProps = {
   readonly diagnostic?: string;
 };
 
-type Appearance = "light" | "dark" | "forced";
+export type Appearance = "light" | "dark" | "forced";
 
 export function FoundationScreen({
   status,
@@ -118,7 +118,7 @@ function useDocumentTitle(title: string): void {
   }, [title]);
 }
 
-function useAppearance(): Appearance {
+export function useAppearance(): Appearance {
   const [appearance, setAppearance] = useState(readAppearance);
   useEffect(() => {
     if (

@@ -31,4 +31,5 @@ const screen =
   ) : (
     <CreationApp />
   );
+
 createRoot(rootElement).render(screen);
