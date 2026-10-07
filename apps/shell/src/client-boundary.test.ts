@@ -14,7 +14,9 @@ test("client sources do not import the model provider", () => {
       source.includes('from "ai"') ||
       source.includes('from "@ai-sdk/') ||
       source.includes('from "openai"') ||
-      source.includes('from "node:url"')
+      source.includes('from "node:url"') ||
+      source.includes("XAI_API_KEY") ||
+      source.includes("UVCP_AI_")
     ) {
       offenders.push(path.relative(root, file));
     }

@@ -10,6 +10,12 @@ import { assistantMessages } from "./messages.ts";
 import { scenePrompt } from "./prompt.ts";
 import { type ProviderSetup, providerSettings } from "./provider-settings.ts";
 
+export {
+  emptyProviderSession,
+  type ProviderSession,
+  resolveProvider,
+} from "./provider-settings.ts";
+
 const toolDefinitions = [
   {
     name: "createRectangle",
@@ -90,6 +96,19 @@ const toolDefinitions = [
         degrees: { type: "number" },
       },
       required: ["id", "degrees"],
+    },
+  },
+  {
+    name: "explainLimit",
+    description:
+      "Use alone when the request needs a shape or action other than creating, moving, resizing, or rotating a rectangle or box. reason is shape or command.",
+    parameters: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        reason: { type: "string", enum: ["shape", "command"] },
+      },
+      required: ["reason"],
     },
   },
 ] as const;
