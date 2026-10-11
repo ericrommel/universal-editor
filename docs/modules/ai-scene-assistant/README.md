@@ -16,7 +16,7 @@ The objects remain in the scene. Drag a shape to move it. Select it and edit Wid
 
 ## Providers
 
-When the assistant is not ready, the screen asks for a hosted provider or a local model. Rectangle, Box, and the rest of the editor stay available.
+AI setup is optional. Rectangle, Box, and the rest of the editor stay available when no provider is chosen. On a static host the assistant is unavailable, and the page explains that it does not ask for a provider key. `pnpm dev` and `pnpm preview` still offer the setup form.
 
 - Hosted: choose xAI, or another hosted provider. Enter the model and the API key that provider requires. An xAI address is fixed. Another hosted provider needs an https address.
 - Local: choose Local model, then look for Ollama. The application lists models from an Ollama app that is already running and lets you pick one. It does not install or configure Ollama.

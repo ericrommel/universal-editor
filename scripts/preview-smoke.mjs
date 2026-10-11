@@ -4,6 +4,7 @@ import http from "node:http";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { productionPolicy } from "../apps/shell/content-security-policy.mjs";
 import { strings } from "../packages/ui/src/strings.ts";
 import { tokens } from "../packages/ui/src/tokens.ts";
 
@@ -11,10 +12,9 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const previewUrl = "http://127.0.0.1:5173/";
 const readyTimeoutMs = 60_000;
 
-// The production preview header. Development adds connect-src, and this
-// check rejects that so a dev server cannot satisfy the smoke.
-export const productionPolicy =
-  "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'";
+// Development adds connect-src. Re-export the production policy so a dev
+// server cannot satisfy the smoke with that extra source.
+export { productionPolicy };
 
 export function previewAccepted(statusCode, contentSecurityPolicy) {
   return statusCode === 200 && contentSecurityPolicy === productionPolicy;

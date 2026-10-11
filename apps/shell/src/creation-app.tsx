@@ -32,14 +32,19 @@ import {
   undo,
 } from "@uvcp/editor";
 import { strings } from "@uvcp/ui";
-import type { PointerEvent as ReactPointerEvent } from "react";
-import { useEffect, useRef, useState } from "react";
+import type { ReactNode, PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { AssistantSetup, loadAssistantStatus } from "./assistant-setup.tsx";
+
+const GUIDE_KEY = "uvcp-guide-v1";
+const FILE_UNREADABLE =
+  "That file could not be read. The scene was not changed.";
 
 type AssistantGate =
   | { readonly kind: "checking" }
-  | { readonly kind: "ready"; readonly model: string }
-  | { readonly kind: "needed" };
+  | { readonly kind: "unavailable" }
+  | { readonly kind: "off" }
+  | { readonly kind: "ready"; readonly model: string };
 
 type Gesture = {
   readonly base: EditorHistory;
@@ -54,22 +59,45 @@ type Gesture = {
 
 export function CreationApp() {
   const [history, setHistory] = useState<EditorHistory>(createHistory);
+  const [savedText, setSavedText] = useState(() => sceneText(createHistory()));
+  const [anchored, setAnchored] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [instruction, setInstruction] = useState("");
   const [pending, setPending] = useState(false);
   const [gate, setGate] = useState<AssistantGate>({ kind: "checking" });
   const [setupOpen, setSetupOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(guideIsOpen);
   const surface = useRef<SVGSVGElement | null>(null);
   const gesture = useRef<Gesture | null>(null);
   const historyRef = useRef(history);
   const pendingRef = useRef(false);
+  const readGeneration = useRef(0);
+  const dirtyRef = useRef(false);
   historyRef.current = history;
   const shapes = shapesOf(history.present);
   const sheet = sheetShapes(history.present);
+  const dirty = sceneText(history) !== savedText;
+  dirtyRef.current = dirty;
   const assistantReady = gate.kind === "ready" && !setupOpen;
-  const showSetup = gate.kind === "needed" || setupOpen;
   const selected =
     shapes.find((shape) => shape.id === history.present.selectedId) ?? null;
+
+  useEffect(() => {
+    document.title = strings.productName;
+  }, []);
+
+  useEffect(() => {
+    function onLeave(event: BeforeUnloadEvent) {
+      if (!dirtyRef.current) {
+        return;
+      }
+      event.preventDefault();
+      // Current browsers prompt only when returnValue is set as well.
+      event.returnValue = "";
+    }
+    window.addEventListener("beforeunload", onLeave);
+    return () => window.removeEventListener("beforeunload", onLeave);
+  }, []);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -110,15 +138,14 @@ export function CreationApp() {
         setGate(
           status.configured
             ? { kind: "ready", model: status.model }
-            : { kind: "needed" },
+            : { kind: "off" },
         );
       })
       .catch(() => {
         if (!live) {
           return;
         }
-        setGate({ kind: "needed" });
-        setNotice(assistantMessages.reachServer);
+        setGate({ kind: "unavailable" });
       });
     return () => {
       live = false;
@@ -128,6 +155,15 @@ export function CreationApp() {
   function show(next: EditorHistory, message: string | null = null) {
     setHistory(next);
     setNotice(message);
+  }
+
+  function currentRead(): number {
+    readGeneration.current += 1;
+    return readGeneration.current;
+  }
+
+  function readIsCurrent(generation: number): boolean {
+    return generation === readGeneration.current;
   }
 
   async function ask(event: { preventDefault(): void }) {
@@ -166,7 +202,7 @@ export function CreationApp() {
       }
       if (!body.ok) {
         if (body.message === assistantMessages.needsSetup) {
-          setGate({ kind: "needed" });
+          setGate({ kind: "off" });
           setSetupOpen(true);
         }
         setNotice(body.message ?? assistantMessages.providerDown);
@@ -200,116 +236,145 @@ export function CreationApp() {
                 onChange={(event) => setInstruction(event.target.value)}
               />
             </label>
-            <button type="submit" disabled={pending}>
-              Apply
-            </button>
+            <Command
+              label="Apply"
+              tip="Ask the assistant to create, move, resize, or rotate."
+              disabled={pending}
+              onClick={() => undefined}
+              submit
+            />
           </form>
         ) : (
           <p className="uvcp-editor-ask">
             {gate.kind === "checking"
               ? "Checking the assistant."
-              : "Choose a provider below before describing a change."}
+              : "Add a shape with the buttons. AI is optional."}
           </p>
         )}
-        {gate.kind === "ready" && !setupOpen ? (
-          <button type="button" onClick={() => setSetupOpen(true)}>
-            AI setup
-          </button>
-        ) : null}
-        <button
-          type="button"
+        <Command
+          label="AI setup"
+          tip={assistantTip(gate)}
+          disabled={pending || gate.kind === "checking"}
+          onClick={() => setSetupOpen(true)}
+        />
+        <Command
+          label="Guide"
+          tip="Show the short introduction again."
+          disabled={pending}
+          onClick={() => setGuideOpen(true)}
+        />
+        <Command
+          label="Rectangle"
+          tip="Add a rectangle to the page."
           disabled={pending}
           onClick={() => show(addShape(history, "rectangle"))}
-        >
-          Rectangle
-        </button>
-        <button
-          type="button"
+        />
+        <Command
+          label="Box"
+          tip="Add a box to the page."
           disabled={pending}
           onClick={() => show(addShape(history, "box"))}
-        >
-          Box
-        </button>
-        <button
-          type="button"
+        />
+        <Command
+          label="Delete"
+          tip="Delete the selected shape."
           disabled={pending}
           onClick={() =>
             show(commitPresent(history, deleteSelected(history.present)))
           }
-        >
-          Delete
-        </button>
-        <button
-          type="button"
+        />
+        <Command
+          label="Undo"
+          tip="Undo the last change."
           disabled={pending}
           onClick={() => show(undo(history))}
-        >
-          Undo
-        </button>
-        <button
-          type="button"
+        />
+        <Command
+          label="Redo"
+          tip="Redo the change you undid."
           disabled={pending}
           onClick={() => show(redo(history))}
-        >
-          Redo
-        </button>
-        <button type="button" disabled={pending} onClick={() => save(history)}>
-          Save
-        </button>
-        <label className="uvcp-editor-open">
-          Open
-          <input
-            type="file"
-            accept="application/json,.json"
-            disabled={pending}
-            onChange={(event) => {
-              const file = event.currentTarget.files?.[0];
-              event.currentTarget.value = "";
-              if (file) {
-                void readFile(history, file).then((opened) => {
-                  show(opened.history, opened.message);
-                });
-              }
-            }}
-          />
-        </label>
-        <label className="uvcp-editor-open">
-          Import glTF
-          <input
-            type="file"
-            accept=".glb,.gltf,model/gltf-binary,model/gltf+json"
-            disabled={pending}
-            onChange={(event) => {
-              const file = event.currentTarget.files?.[0];
-              event.currentTarget.value = "";
-              if (file) {
-                void readGltf(history, file).then((opened) => {
-                  show(opened.history, opened.message);
-                });
-              }
-            }}
-          />
-        </label>
-        <button
-          type="button"
+        />
+        <Command
+          label="Save"
+          tip="Download the project as scene.json."
+          disabled={pending}
+          onClick={() =>
+            saveProject(history, setSavedText, setAnchored, setNotice)
+          }
+        />
+        <FileButton
+          label="Open"
+          tip="Open a scene.json file into this tab."
+          accept="application/json,.json"
+          inputLabel="Scene file"
+          disabled={pending}
+          onFile={(file) => {
+            const generation = currentRead();
+            void readSceneFile(
+              file,
+              generation,
+              readIsCurrent,
+              () => historyRef.current,
+              show,
+              setNotice,
+              setSavedText,
+              setAnchored,
+            );
+          }}
+        />
+        <FileButton
+          label="Import glTF"
+          tip="Add rectangles and boxes from a glTF file."
+          accept=".glb,.gltf,model/gltf-binary,model/gltf+json"
+          inputLabel="glTF file"
+          disabled={pending}
+          onFile={(file) => {
+            const generation = currentRead();
+            void readGltfFile(
+              file,
+              generation,
+              readIsCurrent,
+              () => historyRef.current,
+              show,
+              setNotice,
+            );
+          }}
+        />
+        <Command
+          label="Export glTF"
+          tip="Download the project as scene.glb."
           disabled={pending}
           onClick={() => {
             void deliverGltf(history, false, setNotice);
           }}
-        >
-          Export glTF
-        </button>
-        <button
-          type="button"
+        />
+        <Command
+          label="Export selection"
+          tip={
+            history.present.selectedId === null
+              ? "Select a shape to export it."
+              : "Download the selected shape as selection.glb."
+          }
           disabled={pending || history.present.selectedId === null}
           onClick={() => {
             void deliverGltf(history, true, setNotice);
           }}
-        >
-          Export selection
-        </button>
+        />
       </header>
-      {showSetup ? (
+      <p className="uvcp-keep">{keepMessage(dirty, anchored)}</p>
+      {guideOpen ? (
+        <FirstGuide
+          onDismiss={() => {
+            rememberGuideDismissed();
+            setGuideOpen(false);
+          }}
+        />
+      ) : null}
+      {setupOpen && gate.kind === "unavailable" ? (
+        <AssistantUnavailable onClose={() => setSetupOpen(false)} />
+      ) : null}
+      {setupOpen && (gate.kind === "off" || gate.kind === "ready") ? (
         <AssistantSetup
           currentModel={gate.kind === "ready" ? gate.model : null}
           onConfigured={(model) => {
@@ -317,7 +382,7 @@ export function CreationApp() {
             setSetupOpen(false);
             setNotice(assistantMessages.ready);
           }}
-          onClose={gate.kind === "ready" ? () => setSetupOpen(false) : null}
+          onClose={() => setSetupOpen(false)}
         />
       ) : null}
       <div className="uvcp-editor-body">
@@ -435,12 +500,195 @@ export function CreationApp() {
               }}
             />
           ) : (
-            <p>Select a shape.</p>
+            <p>
+              {shapes.length === 0
+                ? "Add a rectangle or a box."
+                : "Select a shape."}
+            </p>
           )}
           {notice ? <p role="status">{notice}</p> : null}
         </aside>
       </div>
     </div>
+  );
+}
+
+function Command({
+  label,
+  tip,
+  disabled,
+  onClick,
+  submit = false,
+}: {
+  readonly label: string;
+  readonly tip: string;
+  readonly disabled: boolean;
+  readonly onClick: () => void;
+  readonly submit?: boolean;
+}) {
+  return (
+    <Tip text={tip}>
+      {(id) => (
+        <button
+          type={submit ? "submit" : "button"}
+          aria-describedby={id}
+          disabled={disabled}
+          onClick={submit ? undefined : onClick}
+        >
+          {label}
+        </button>
+      )}
+    </Tip>
+  );
+}
+
+function FileButton({
+  label,
+  tip,
+  accept,
+  inputLabel,
+  disabled,
+  onFile,
+}: {
+  readonly label: string;
+  readonly tip: string;
+  readonly accept: string;
+  readonly inputLabel: string;
+  readonly disabled: boolean;
+  readonly onFile: (file: File) => void;
+}) {
+  const input = useRef<HTMLInputElement | null>(null);
+  return (
+    <Tip text={tip}>
+      {(id) => (
+        <>
+          <button
+            type="button"
+            aria-describedby={id}
+            disabled={disabled}
+            onClick={() => input.current?.click()}
+          >
+            {label}
+          </button>
+          {/* The button opens the dialog. The clipped input stays out of
+              the tab order so focus does not land on it. */}
+          <input
+            ref={input}
+            className="uvcp-file-input"
+            type="file"
+            accept={accept}
+            aria-label={inputLabel}
+            tabIndex={-1}
+            disabled={disabled}
+            onChange={(event) => {
+              const file = event.currentTarget.files?.[0];
+              event.currentTarget.value = "";
+              if (file) {
+                onFile(file);
+              }
+            }}
+          />
+        </>
+      )}
+    </Tip>
+  );
+}
+
+function Tip({
+  text,
+  children,
+}: {
+  readonly text: string;
+  readonly children: (describedBy: string) => ReactNode;
+}) {
+  const id = useId();
+  const host = useRef<HTMLSpanElement | null>(null);
+  const bubble = useRef<HTMLSpanElement | null>(null);
+
+  useEffect(() => {
+    const current = host.current;
+    if (current === null) {
+      return;
+    }
+    const anchor: HTMLSpanElement = current;
+    // A tip anchored to the left of a right-edge button runs off the
+    // window. One anchored to the right of a wrapped button does the
+    // same on the other side. Clamp it after it has a width.
+    function place() {
+      const tip = bubble.current;
+      if (tip === null) {
+        return;
+      }
+      const anchorBox = anchor.getBoundingClientRect();
+      const width = tip.getBoundingClientRect().width;
+      const margin = 8;
+      let left = anchorBox.left;
+      if (left + width > window.innerWidth - margin) {
+        left = anchorBox.right - width;
+      }
+      if (left < margin) {
+        left = margin;
+      }
+      tip.style.left = `${left}px`;
+      tip.style.top = `${anchorBox.bottom + 6}px`;
+    }
+    anchor.addEventListener("pointerenter", place);
+    anchor.addEventListener("focusin", place);
+    return () => {
+      anchor.removeEventListener("pointerenter", place);
+      anchor.removeEventListener("focusin", place);
+    };
+  }, []);
+
+  return (
+    <span className="uvcp-tip" ref={host}>
+      {children(id)}
+      <span ref={bubble} id={id} role="tooltip" className="uvcp-tip-bubble">
+        {text}
+      </span>
+    </span>
+  );
+}
+
+function FirstGuide({ onDismiss }: { readonly onDismiss: () => void }) {
+  return (
+    <section className="uvcp-guide" aria-labelledby="uvcp-guide-title">
+      <h2 id="uvcp-guide-title">Start with a shape</h2>
+      <ol>
+        <li>Choose Rectangle or Box, then drag the shape to move it.</li>
+        <li>Select a shape and edit its size. Rotation is in degrees.</li>
+        <li>
+          Save downloads scene.json. This tab keeps the project until you leave
+          or refresh. Open reads a scene file back.
+        </li>
+        <li>
+          Import glTF and Export glTF move rectangles and boxes to another tool.
+        </li>
+        <li>
+          AI setup is optional. On the hosted page it stays off. In the local
+          application you can choose a provider.
+        </li>
+      </ol>
+      <button type="button" onClick={onDismiss}>
+        Start creating
+      </button>
+    </section>
+  );
+}
+
+function AssistantUnavailable({ onClose }: { readonly onClose: () => void }) {
+  return (
+    <section className="uvcp-ai-setup" aria-labelledby="uvcp-ai-unavailable">
+      <h2 id="uvcp-ai-unavailable">Assistant</h2>
+      <p>
+        The assistant runs in the local application on this computer. This page
+        does not ask for a provider key. Rectangle, Box, Save, Open, and glTF
+        keep working.
+      </p>
+      <button type="button" onClick={onClose}>
+        Close
+      </button>
+    </section>
   );
 }
 
@@ -509,7 +757,7 @@ function ShapeFields({
   const [depth, setDepth] = useState(
     shape.depth === null ? "" : String(shape.depth),
   );
-  const [rotation, setRotation] = useState(String(shape.rotation));
+  const [rotation, setRotation] = useState(formatDegrees(shape.rotation));
   return (
     <form
       onSubmit={(event) => {
@@ -551,7 +799,7 @@ function ShapeFields({
         </label>
       )}
       <label>
-        Rotation
+        Rotation (degrees)
         <input
           value={rotation}
           disabled={disabled}
@@ -583,34 +831,101 @@ function svgPoint(
   return { x: local.x, y: local.y };
 }
 
-function save(history: EditorHistory) {
+function saveProject(
+  history: EditorHistory,
+  setSavedText: (text: string) => void,
+  setAnchored: (anchored: boolean) => void,
+  setNotice: (message: string | null) => void,
+) {
   const bytes = exportDocument(history.present);
-  const body = new ArrayBuffer(bytes.byteLength);
-  new Uint8Array(body).set(bytes);
-  const url = URL.createObjectURL(
-    new Blob([body], { type: "application/json" }),
+  download(bytes, "scene.json", "application/json");
+  setSavedText(new TextDecoder().decode(bytes));
+  setAnchored(true);
+  setNotice(
+    "Downloaded scene.json. Keep that file. This page does not store the project.",
   );
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "scene.json";
-  link.click();
-  URL.revokeObjectURL(url);
 }
 
-async function readFile(history: EditorHistory, file: File) {
-  if (file.size > SCENE_BYTE_LIMIT) {
-    return { history, message: SCENE_TOO_LARGE };
+async function readSceneFile(
+  file: File,
+  generation: number,
+  readIsCurrent: (generation: number) => boolean,
+  latest: () => EditorHistory,
+  show: (next: EditorHistory, message?: string | null) => void,
+  setNotice: (message: string | null) => void,
+  setSavedText: (text: string) => void,
+  setAnchored: (anchored: boolean) => void,
+) {
+  try {
+    if (file.size > SCENE_BYTE_LIMIT) {
+      if (readIsCurrent(generation)) {
+        setNotice(SCENE_TOO_LARGE);
+      }
+      return;
+    }
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    if (!readIsCurrent(generation)) {
+      return;
+    }
+    const opened = openDocument(latest(), bytes.byteLength, () => bytes);
+    if (!readIsCurrent(generation)) {
+      return;
+    }
+    if (opened.message !== null) {
+      setNotice(opened.message);
+      return;
+    }
+    setSavedText(sceneText(opened.history));
+    setAnchored(true);
+    show(opened.history, "Opened the scene.");
+  } catch {
+    if (readIsCurrent(generation)) {
+      setNotice(FILE_UNREADABLE);
+    }
   }
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  return openDocument(history, bytes.byteLength, () => bytes);
 }
 
-async function readGltf(history: EditorHistory, file: File) {
-  if (file.size > GLTF_BYTE_LIMIT) {
-    return { history, message: GLTF_TOO_LARGE };
+async function readGltfFile(
+  file: File,
+  generation: number,
+  readIsCurrent: (generation: number) => boolean,
+  latest: () => EditorHistory,
+  show: (next: EditorHistory, message?: string | null) => void,
+  setNotice: (message: string | null) => void,
+) {
+  try {
+    if (file.size > GLTF_BYTE_LIMIT) {
+      if (readIsCurrent(generation)) {
+        setNotice(GLTF_TOO_LARGE);
+      }
+      return;
+    }
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    if (!readIsCurrent(generation)) {
+      return;
+    }
+    // The parser yields. If the scene changed during that wait, commit
+    // the imported document onto the newer history.
+    const base = latest();
+    const imported = await importGltfFile(base, bytes);
+    if (!readIsCurrent(generation)) {
+      return;
+    }
+    if (imported.history === base) {
+      setNotice(imported.message);
+      return;
+    }
+    const current = latest();
+    const next =
+      current === base
+        ? imported.history
+        : commitPresent(current, imported.history.present);
+    show(next, imported.message);
+  } catch {
+    if (readIsCurrent(generation)) {
+      setNotice(FILE_UNREADABLE);
+    }
   }
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  return importGltfFile(history, bytes);
 }
 
 async function deliverGltf(
@@ -625,12 +940,58 @@ async function deliverGltf(
     setNotice(result.message);
     return;
   }
-  download(
-    result.bytes,
-    selection ? "selection.glb" : "scene.glb",
-    "model/gltf-binary",
-  );
-  setNotice(null);
+  const name = selection ? "selection.glb" : "scene.glb";
+  download(result.bytes, name, "model/gltf-binary");
+  setNotice(`Downloaded ${name}. Save still downloads the project.`);
+}
+
+function sceneText(history: EditorHistory): string {
+  return new TextDecoder().decode(exportDocument(history.present));
+}
+
+function keepMessage(dirty: boolean, anchored: boolean): string {
+  if (dirty) {
+    return "Unsaved changes stay in this tab until you download them.";
+  }
+  if (anchored) {
+    return "This tab matches the scene file you opened or downloaded. The page does not store the project.";
+  }
+  return "Save downloads scene.json. Until then, the project stays in this tab.";
+}
+
+function guideIsOpen(): boolean {
+  try {
+    return localStorage.getItem(GUIDE_KEY) !== "dismissed";
+  } catch {
+    // Private mode can throw. Show the guide for this visit.
+    return true;
+  }
+}
+
+function rememberGuideDismissed(): void {
+  try {
+    localStorage.setItem(GUIDE_KEY, "dismissed");
+  } catch {
+    // The guide can still close in this tab when storage is blocked.
+  }
+}
+
+function assistantTip(gate: AssistantGate): string {
+  switch (gate.kind) {
+    case "checking":
+      return "Checking whether the assistant is available.";
+    case "unavailable":
+      return "The assistant runs only in the local application.";
+    case "off":
+      return "Choose a provider. The editor still works without one.";
+    case "ready":
+      return "Change the assistant provider. The editor still works without one.";
+  }
+}
+
+function formatDegrees(degrees: number): string {
+  const rounded = Math.round(degrees * 1000) / 1000;
+  return String(rounded);
 }
 
 function download(bytes: Uint8Array, name: string, type: string) {

@@ -2,7 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createScene, insertNode, type Scene } from "@uvcp/core";
 import { exportDocument, importDocument } from "@uvcp/interchange";
-import { addShape, createHistory, sheetShapes, undo } from "./document.ts";
+import {
+  addShape,
+  createHistory,
+  rotateShape,
+  sheetShapes,
+  undo,
+} from "./document.ts";
 import {
   exportGltfFile,
   exportSelectedGltf,
@@ -164,6 +170,26 @@ test("a bad glTF does not replace the open project", async () => {
   assert.equal(flat.history, history);
   assert.equal(flat.message, "Interchange document is not valid glTF.");
   assert.equal(flat.message.includes("flat"), false);
+});
+
+test("a 90 degree turn exports and imports as a quarter turn", async () => {
+  const added = addShape(createHistory(), "rectangle");
+  const id = added.present.scene.rootIds[0];
+  if (id === undefined) {
+    throw new Error("missing shape");
+  }
+  const turned = rotateShape(added.present, id, 90);
+  const exported = await exportGltfFile(turned);
+  assert.equal(exported.message, null);
+  assert.ok(exported.bytes !== null);
+  const back = await importDocument("gltf", exported.bytes);
+  const stored = back.nodes[id]?.transform.rotation[2] ?? 0;
+  assert.ok(Math.abs(stored - Math.PI / 2) < 1e-3);
+  const drawn = sheetShapes({ scene: back, selectedId: null }).find(
+    (shape) => shape.id === id,
+  );
+  assert.ok(drawn !== undefined);
+  assert.ok(Math.abs(drawn.rotation - 90) < 0.05);
 });
 
 function crateAndCard(): Scene {

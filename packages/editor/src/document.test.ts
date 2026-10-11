@@ -15,6 +15,7 @@ import {
   redo,
   replacePresent,
   resizeShape,
+  rotateShape,
   SCENE_BYTE_LIMIT,
   SCENE_TOO_LARGE,
   selectShape,
@@ -179,4 +180,22 @@ test("the sheet places a child on its parent and a drag stays in parent space", 
     )?.x,
     6,
   );
+});
+
+test("a sheet angle of 90 degrees is stored as a quarter turn", () => {
+  const added = addShape(createHistory(), "rectangle");
+  const id = added.present.scene.rootIds[0];
+  if (id === undefined) {
+    throw new Error("missing shape");
+  }
+  const turned = rotateShape(added.present, id, 90);
+  const stored = turned.scene.nodes[id]?.transform.rotation[2];
+  assert.ok(stored !== undefined);
+  assert.ok(Math.abs(stored - Math.PI / 2) < 1e-9);
+  assert.ok(
+    Math.abs(
+      (shapesOf(turned).find((shape) => shape.id === id)?.rotation ?? 0) - 90,
+    ) < 1e-9,
+  );
+  assert.equal(added.present.scene.nodes[id]?.transform.rotation[2], 0);
 });

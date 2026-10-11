@@ -13,11 +13,13 @@
     "start": "pnpm --filter @uvcp/shell dev",
     "build": "pnpm --filter @uvcp/shell build",
     "test": "node scripts/run-tests.mjs",
-    "verify": "node scripts/verify.mjs"
+    "verify": "node scripts/verify.mjs",
+    "browser": "node scripts/browser-check.mjs"
   },
   "devDependencies": {
     "@babel/parser": "7.29.9",
     "@biomejs/biome": "2.5.15",
+    "playwright": "1.64.0",
     "typescript": "7.0.2"
   }
 }

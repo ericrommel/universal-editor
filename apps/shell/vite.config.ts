@@ -2,9 +2,7 @@ import { createReadStream } from "node:fs";
 import path from "node:path";
 import { defineConfig, type Plugin } from "vite";
 import { assistantApi } from "./assistant-middleware.ts";
-
-const productionPolicy =
-  "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'";
+import { productionPolicy } from "./content-security-policy.mjs";
 
 // Vite's dev client inserts CSS by creating a style element. The shell
 // policy has no unsafe-inline, so development serves the same files as
