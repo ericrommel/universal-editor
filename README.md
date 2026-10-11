@@ -1,13 +1,189 @@
 # Universal Visual Creation Platform
 
-This repository contains the Universal Visual Creation Platform.
+This is a scene editor that runs on your own computer and opens in a browser.
 
-Product intent is in [docs/product-overview.md](docs/product-overview.md). Engineering process and architecture are under [docs/engineering](docs/engineering). Module specifications and test plans are under [docs/modules](docs/modules).
+## Try the editor
+
+The steps below are the whole setup. Use Node.js 24.21.0. The editor opens without an AI provider.
+
+A terminal is the window where you type the commands. On Windows, use PowerShell. On Linux, use the Terminal application. Type one command, press Enter, and wait until it finishes before you type the next one.
+
+### 1. Download the project
+
+Follow the Windows steps or the Linux steps. The project folder is the one that contains `package.json`.
+
+On Windows, open this address in the browser and save the file:
+
+<https://github.com/ericrommel/universal-editor/archive/refs/heads/master.zip>
+
+The file is `universal-editor-master.zip`. In File Explorer, right-click it and choose Extract All, then choose Extract. Open the new folder. When `package.json` is not in that folder, open the inner folder named `universal-editor-master`.
+
+Click the address bar of the project folder, type `powershell`, and press Enter. Run:
+
+```text
+dir package.json
+```
+
+The result includes `package.json`. Continue at section 2.
+
+On Linux, open this address in the browser. When the browser asks what to do with the file, save it. It is normally saved in the Downloads folder as `universal-editor-master.tar.gz`.
+
+<https://github.com/ericrommel/universal-editor/archive/refs/heads/master.tar.gz>
+
+Open Terminal and run:
+
+```text
+cd "$HOME/Downloads"
+tar -xzf universal-editor-master.tar.gz
+cd universal-editor-master
+ls package.json
+```
+
+The last command prints `package.json`. When `tar` cannot find the file, open the browser's download list, see which folder holds `universal-editor-master.tar.gz`, and run `cd` to that folder before `tar`.
+
+When Git is already installed, this is another way to get the same project. The folder name is `universal-editor`.
+
+```text
+cd "$HOME"
+git clone https://github.com/ericrommel/universal-editor.git
+cd universal-editor
+```
+
+### 2. Install Node.js 24.21.0
+
+In the project folder, run:
+
+```text
+node -v
+```
+
+`v24.21.0` means Node.js is ready. Go to section 3. When the terminal cannot find `node`, or the number is different, install 24.21.0 below. The download button on <https://nodejs.org> can be a different version. These installers are for a 64-bit computer.
+
+#### Windows
+
+In PowerShell, run:
+
+```text
+$env:PROCESSOR_ARCHITECTURE
+```
+
+`AMD64` uses <https://nodejs.org/dist/v24.21.0/node-v24.21.0-x64.msi>.
+
+`ARM64` uses <https://nodejs.org/dist/v24.21.0/node-v24.21.0-arm64.msi>.
+
+Open the matching address, save the file, and run it. Keep the choices the installer offers. Those choices put `node` on the command path. Approve the Windows prompt when it asks to allow the installer. `x86` is a 32-bit Windows, and these installers do not support it.
+
+Close PowerShell. Open the project folder again, click its address bar, type `powershell`, and press Enter. Run `node -v`. It prints `v24.21.0`.
+
+Go to section 3. The Linux steps below are not Windows commands. PowerShell does not have `uname`.
+
+#### Linux
+
+The Node.js package offered by `apt` or `dnf` is a different version. Install the official 24.21.0 archive into your home folder. The browser downloads it, and the install does not ask for an administrator password.
+
+Run:
+
+```text
+uname -m
+```
+
+When the result is `x86_64`, open this address and save the file:
+
+<https://nodejs.org/dist/v24.21.0/node-v24.21.0-linux-x64.tar.gz>
+
+Then run:
+
+```text
+mkdir -p "$HOME/.local/node"
+tar -xzf "$HOME/Downloads/node-v24.21.0-linux-x64.tar.gz" -C "$HOME/.local/node" --strip-components=1
+```
+
+When the result is `aarch64`, open this address and save the file:
+
+<https://nodejs.org/dist/v24.21.0/node-v24.21.0-linux-arm64.tar.gz>
+
+Then run:
+
+```text
+mkdir -p "$HOME/.local/node"
+tar -xzf "$HOME/Downloads/node-v24.21.0-linux-arm64.tar.gz" -C "$HOME/.local/node" --strip-components=1
+```
+
+Any other result from `uname -m` is a machine these archives do not support. When `tar` cannot find the file, use the folder shown in the browser's download list.
+
+Add Node.js to the command path. Run the matching pair once.
+
+Bash, including the usual Ubuntu and Fedora terminal:
+
+```text
+printf '\nexport PATH="$HOME/.local/node/bin:$PATH"\n' >> "$HOME/.bashrc"
+source "$HOME/.bashrc"
+```
+
+When `echo "$SHELL"` ends in `zsh`, use this pair instead:
+
+```text
+printf '\nexport PATH="$HOME/.local/node/bin:$PATH"\n' >> "$HOME/.zshrc"
+source "$HOME/.zshrc"
+```
+
+Run `node -v`. It prints `v24.21.0`. Run `corepack --version`. It prints a version. Corepack is included with this Node.js build. Go to section 3.
+
+### 3. Start the editor
+
+Stay in the project folder. Corepack comes with Node.js and supplies pnpm 12.8.2, the package tool named by the project. This command downloads the project libraries. It needs an internet connection and can take a few minutes. When it finishes, the terminal shows a prompt and waits.
+
+```text
+corepack pnpm install --frozen-lockfile
+```
+
+Run this command next. It stays running and does not show a prompt again. That is the app running.
+
+```text
+corepack pnpm dev
+```
+
+The running command prints:
+
+```text
+http://127.0.0.1:5173/
+```
+
+Open that address in Microsoft Edge or Google Chrome on this same computer. A phone or another computer cannot open it.
+
+The page heading is Universal Visual Creation Platform, and a guide named Start with a shape is on the page. Add a rectangle or a box, then drag it.
+
+Save downloads `scene.json`. This tab keeps the project until you refresh or close the tab. Use Save when you want a file that remains after that.
+
+Leave the terminal open while you use the editor. Closing the terminal, or pressing Ctrl+C in it, stops the page.
+
+### When a command fails
+
+The terminal cannot find `node` or `corepack` after installation. Close the terminal and open the project folder again.
+
+On Windows, click the project folder's address bar, type `powershell`, and press Enter.
+
+On Linux, a new Terminal starts in the home folder. Return to the project folder:
+
+```text
+cd "$HOME/Downloads/universal-editor-master"
+ls package.json
+```
+
+When you used Git, run `cd "$HOME/universal-editor"` instead. Then run the `source` command from section 2 again, and run `node -v`.
+
+The install command stops because Node.js is not 24.21.0. Install the version in section 2, open a new terminal in the project folder, and run `corepack pnpm install --frozen-lockfile` again.
+
+The start command says port 5173 is already in use. Open <http://127.0.0.1:5173/> on this computer. When that page is the editor, use the page that is already running. When it is a different program, close the program using that port and run `corepack pnpm dev` again.
+
+The page says Not ready. The failure is written on that page.
+
+PowerShell says `uname` is not recognized. Those are the Linux install commands. Go to section 3.
+
+## For contributors
+
+Product intent is in [docs/product-overview.md](docs/product-overview.md). Engineering process and architecture are under [docs/engineering](docs/engineering). The contributor toolchain is [docs/engineering/developer-setup.md](docs/engineering/developer-setup.md). Module specifications and test plans are under [docs/modules](docs/modules).
 
 `main` is protected. Current product work integrates on `master`. See [docs/engineering/working-line.md](docs/engineering/working-line.md). The scene assistant is [docs/modules/ai-scene-assistant/README.md](docs/modules/ai-scene-assistant/README.md).
 
 Current work status is the GitHub issue and the project board. It is not recorded in this file.
-
-## Try the editor
-
-The page to open is the production build in `apps/shell/dist`, served with the production content security policy. GitHub Pages cannot send that header, so it is not the host. From a checkout: `corepack pnpm install --frozen-lockfile`, `corepack pnpm build`, then `node scripts/serve-static.mjs`. Open `http://127.0.0.1:4173/`. The editor works without an AI provider. Save downloads `scene.json`. The page keeps the project in the tab until you leave or refresh. A public host must send the policy in `apps/shell/public/_headers`.

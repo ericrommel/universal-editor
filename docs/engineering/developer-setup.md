@@ -2,6 +2,8 @@
 
 This guide is how to install dependencies and run the checks that exist in this repository today. It is not a work-status board. It does not accept a module.
 
+To open the editor in a browser, follow [Try the editor](../../README.md#try-the-editor). Those steps use `corepack pnpm` and do not need a separate `corepack enable`. The commands below are the contributor toolchain.
+
 ## Local environment
 
 The documented local environment is 64-bit Windows on x64.
