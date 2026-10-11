@@ -570,12 +570,15 @@ function FileButton({
           >
             {label}
           </button>
+          {/* The button opens the dialog. The clipped input stays out of
+              the tab order so focus does not land on it. */}
           <input
             ref={input}
             className="uvcp-file-input"
             type="file"
             accept={accept}
             aria-label={inputLabel}
+            tabIndex={-1}
             disabled={disabled}
             onChange={(event) => {
               const file = event.currentTarget.files?.[0];
@@ -599,10 +602,48 @@ function Tip({
   readonly children: (describedBy: string) => ReactNode;
 }) {
   const id = useId();
+  const host = useRef<HTMLSpanElement | null>(null);
+  const bubble = useRef<HTMLSpanElement | null>(null);
+
+  useEffect(() => {
+    const current = host.current;
+    if (current === null) {
+      return;
+    }
+    const anchor: HTMLSpanElement = current;
+    // A tip anchored to the left of a right-edge button runs off the
+    // window. One anchored to the right of a wrapped button does the
+    // same on the other side. Clamp it after it has a width.
+    function place() {
+      const tip = bubble.current;
+      if (tip === null) {
+        return;
+      }
+      const anchorBox = anchor.getBoundingClientRect();
+      const width = tip.getBoundingClientRect().width;
+      const margin = 8;
+      let left = anchorBox.left;
+      if (left + width > window.innerWidth - margin) {
+        left = anchorBox.right - width;
+      }
+      if (left < margin) {
+        left = margin;
+      }
+      tip.style.left = `${left}px`;
+      tip.style.top = `${anchorBox.bottom + 6}px`;
+    }
+    anchor.addEventListener("pointerenter", place);
+    anchor.addEventListener("focusin", place);
+    return () => {
+      anchor.removeEventListener("pointerenter", place);
+      anchor.removeEventListener("focusin", place);
+    };
+  }, []);
+
   return (
-    <span className="uvcp-tip">
+    <span className="uvcp-tip" ref={host}>
       {children(id)}
-      <span id={id} role="tooltip" className="uvcp-tip-bubble">
+      <span ref={bubble} id={id} role="tooltip" className="uvcp-tip-bubble">
         {text}
       </span>
     </span>

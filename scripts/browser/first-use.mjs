@@ -23,6 +23,8 @@ export async function runFirstUse(page, origin, productionPolicy, root) {
   await page.getByText("Add a rectangle or a box.").waitFor();
   assert.equal(await page.locator('input[type="password"]').count(), 0);
   assert.equal(await page.locator("canvas").count(), 0);
+  await assertToolbarTips(page);
+  await page.setViewportSize({ width: 1280, height: 800 });
   const exportSelection = page.locator(".uvcp-tip").filter({
     has: page.getByRole("button", { name: "Export selection" }),
   });
@@ -90,6 +92,8 @@ export async function runFirstUse(page, origin, productionPolicy, root) {
     const match = /rotate\(([-\d.]+)/.exec(transform);
     return match !== null && Math.abs(Number(match[1])) < 0.05;
   });
+  const movedX = Number(await shape.getAttribute("x"));
+  assert.ok(Math.abs(movedX - startX) > 1);
 
   const sceneDownload = page.waitForEvent("download");
   await page.getByRole("button", { name: "Save", exact: true }).click();
@@ -102,11 +106,17 @@ export async function runFirstUse(page, origin, productionPolicy, root) {
     .waitFor();
   const scenePath = await sceneFile.path();
   assert.ok(scenePath !== null);
+  const saved = fs.readFileSync(scenePath, "utf8");
+  assert.equal(saved.includes("universal-visual-creation-scene"), true);
 
-  const shapesBeforeOpen = await page.locator("svg g").count();
+  await page.getByRole("button", { name: "Delete", exact: true }).click();
+  await page.getByText("Add a rectangle or a box.").waitFor();
   await page.getByLabel("Scene file").setInputFiles(scenePath);
   await page.getByText("Opened the scene.").waitFor();
-  assert.equal(await page.locator("svg g").count(), shapesBeforeOpen);
+  const restored = page.locator("svg rect.uvcp-shape").first();
+  await restored.waitFor();
+  const restoredX = Number(await restored.getAttribute("x"));
+  assert.ok(Math.abs(restoredX - movedX) < 0.05);
 
   const beforeImport = await page.locator("svg g").count();
   await page
@@ -120,6 +130,11 @@ export async function runFirstUse(page, origin, productionPolicy, root) {
   await page.getByRole("button", { name: "Export glTF", exact: true }).click();
   const glbFile = await glbDownload;
   assert.equal(glbFile.suggestedFilename(), "scene.glb");
+  const glbPath = await glbFile.path();
+  assert.ok(glbPath !== null);
+  const glb = fs.readFileSync(glbPath);
+  assert.equal(glb.subarray(0, 4).toString("utf8"), "glTF");
+  assert.ok(glb.byteLength > 20);
   await page
     .getByText("Downloaded scene.glb. Save still downloads the project.")
     .waitFor();
@@ -147,4 +162,47 @@ export async function runFirstUse(page, origin, productionPolicy, root) {
   });
   await page.reload();
   assert.equal(dialogType, "beforeunload");
+}
+
+async function assertToolbarTips(page) {
+  const tips = [
+    ["Save", "Download the project as scene.json."],
+    ["Open", "Open a scene.json file into this tab."],
+    ["Import glTF", "Add rectangles and boxes from a glTF file."],
+  ];
+  for (const width of [800, 1280, 1366, 1920]) {
+    await page.setViewportSize({ width, height: 800 });
+    const extra = await page.evaluate(() => {
+      const editor = document.querySelector(".uvcp-editor");
+      return editor.scrollWidth - editor.clientWidth;
+    });
+    assert.ok(extra <= 1, `horizontal overflow ${extra} at ${width}`);
+    const title = await page.getByRole("heading", { level: 1 }).boundingBox();
+    assert.ok(title !== null && title.x >= -1, `title at ${width}`);
+    for (const [name, text] of tips) {
+      const button = page.getByRole("button", { name, exact: true });
+      await button.hover();
+      await tipInside(page, name, text, width);
+      await button.focus();
+      await tipInside(page, name, text, width);
+      await page.evaluate(() => {
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+      });
+      await page.mouse.move(0, 0);
+    }
+  }
+}
+
+async function tipInside(page, name, text, width) {
+  const tip = page.getByRole("tooltip", { name: text });
+  await tip.waitFor();
+  const box = await tip.boundingBox();
+  assert.ok(box !== null, name);
+  assert.ok(box.x >= -1, `${name} at ${width} starts at ${box.x}`);
+  assert.ok(
+    box.x + box.width <= width + 1,
+    `${name} at ${width} ends at ${box.x + box.width}`,
+  );
 }
