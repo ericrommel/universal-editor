@@ -10,6 +10,7 @@ import {
   commitPresent,
   type EditorDocument,
   type EditorHistory,
+  radiansFromDegrees,
 } from "./document.ts";
 
 export type AssistantApply =
@@ -94,7 +95,7 @@ function applyOne(
           rotation: [
             node.transform.rotation[0],
             node.transform.rotation[1],
-            action.degrees,
+            radiansFromDegrees(action.degrees),
           ],
           scale: node.transform.scale,
         }),
@@ -121,7 +122,7 @@ function created(
       : {}),
     transform: {
       position: [action.x, action.y, 0],
-      rotation: [0, 0, action.rotation],
+      rotation: [0, 0, radiansFromDegrees(action.rotation)],
       scale: [1, 1, 1],
     },
   });

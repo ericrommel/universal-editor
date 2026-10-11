@@ -401,7 +401,7 @@ The deliberate failing test for M0-AC-004 is a short-lived branch, never the app
 - External version and platform facts were checked by the specialist reviews on 2026-10-02. No shell had been built at that date. The shell on main is the loopback Vite application in sections 4, 5, and 10. Module 0 still does not launch a GPU process.
 - React, TypeScript, Vite, and Biome are pinned to the exact versions that pass the license and audit checks on implementation day. This proposal does not invent patch numbers for them.
 - Reference hardware and product performance workloads are not decided. They do not block Module 0. They block the first module that makes a product performance claim.
-- Up-axis, handedness, rotation order, and degrees versus radians are deferred. They are not guessed here.
+- Up-axis, handedness, rotation order, and degrees versus radians are deferred. They are not guessed here. The working line stores the scene rotation triple in radians, as interchange.md states. The editor and the assistant convert degrees at the sheet and the assistant boundary.
 
 ## Product Owner decisions
 

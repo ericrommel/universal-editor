@@ -50,6 +50,21 @@ const editedShapes = [
   },
 ] as const;
 
+function assertSheet(
+  actual: readonly { readonly rotation: number }[],
+  expected: readonly { readonly rotation: number }[],
+): void {
+  assert.deepEqual(
+    actual.map((shape) => ({ ...shape, rotation: 0 })),
+    expected.map((shape) => ({ ...shape, rotation: 0 })),
+  );
+  for (const [index, shape] of actual.entries()) {
+    const wanted = expected[index];
+    assert.ok(wanted !== undefined);
+    assert.ok(Math.abs(shape.rotation - wanted.rotation) < 1e-9);
+  }
+}
+
 test("assistant edits stay in the editor document until undo", () => {
   const created = applyAssistantActions(createHistory(), [
     {
@@ -76,7 +91,10 @@ test("assistant edits stay in the editor document until undo", () => {
   if (!created.ok) {
     return;
   }
-  assert.deepEqual(shapesOf(created.history.present), createdShapes);
+  assertSheet(shapesOf(created.history.present), createdShapes);
+  const stored = created.history.present.scene.nodes.b1?.transform.rotation[2];
+  assert.ok(stored !== undefined);
+  assert.ok(Math.abs(stored - (15 * Math.PI) / 180) < 1e-9);
 
   const edited = applyAssistantActions(created.history, [
     { type: "move", id: "r1", x: 10, y: 12 },
@@ -90,7 +108,7 @@ test("assistant edits stay in the editor document until undo", () => {
   if (!edited.ok) {
     return;
   }
-  assert.deepEqual(shapesOf(edited.history.present), editedShapes);
+  assertSheet(shapesOf(edited.history.present), editedShapes);
 
   const rejected = applyAssistantActions(edited.history, [
     { type: "move", id: "r1", x: 1, y: 1 },
@@ -113,8 +131,8 @@ test("assistant edits stay in the editor document until undo", () => {
       `Scene extent is not accepted. ${assistantMessages.unchanged}`,
     );
   }
-  assert.deepEqual(shapesOf(rejected.history.present), editedShapes);
-  assert.deepEqual(shapesOf(edited.history.present), editedShapes);
+  assertSheet(shapesOf(rejected.history.present), editedShapes);
+  assertSheet(shapesOf(edited.history.present), editedShapes);
   assert.deepEqual(
     shapesOf(undo(edited.history).present),
     shapesOf(created.history.present),

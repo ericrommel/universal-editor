@@ -16,6 +16,18 @@ export const SCENE_TOO_LARGE = "Scene document exceeds the size limit.";
 const HISTORY_LIMIT = 50;
 const BOX_DX = 0.45;
 const BOX_DY = -0.35;
+const DEGREES_PER_RADIAN = 180 / Math.PI;
+
+// The scene triple is radians, the same unit glTF reads and writes.
+// The sheet, the size form, and the assistant speak degrees. Convert
+// only through these two functions so a saved scene and an export match.
+export function radiansFromDegrees(degrees: number): number {
+  return degrees / DEGREES_PER_RADIAN;
+}
+
+export function degreesFromRadians(radians: number): number {
+  return radians * DEGREES_PER_RADIAN;
+}
 
 export const SHEET_WIDTH = 960;
 export const SHEET_HEIGHT = 600;
@@ -150,7 +162,11 @@ export function rotateShape(
       node.transform.position[1],
       node.transform.position[2],
     ],
-    rotation: [node.transform.rotation[0], node.transform.rotation[1], degrees],
+    rotation: [
+      node.transform.rotation[0],
+      node.transform.rotation[1],
+      radiansFromDegrees(degrees),
+    ],
     scale: [
       node.transform.scale[0],
       node.transform.scale[1],
@@ -266,7 +282,7 @@ export function sheetShapes(document: EditorDocument): readonly EditorShape[] {
       width: node.width * Math.abs(frame.sx),
       height: node.height * Math.abs(frame.sy),
       depth: node.kind === "box" ? node.depth * Math.abs(frame.sz) : null,
-      rotation: node.transform.rotation[2],
+      rotation: degreesFromRadians(node.transform.rotation[2]),
     });
   }
   return shapes;
@@ -466,7 +482,7 @@ function toShape(node: SceneNode): EditorShape {
     width: node.width,
     height: node.height,
     depth: node.kind === "box" ? node.depth : null,
-    rotation: node.transform.rotation[2],
+    rotation: degreesFromRadians(node.transform.rotation[2]),
   };
 }
 

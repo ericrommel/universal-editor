@@ -9,7 +9,7 @@ The glTF adapter uses `@gltf-transform/core` and `gl-matrix`. Reads and writes u
 ## glTF mapping
 
 - Node name is the scene id.
-- Translation, rotation, and scale are the node's local transform. Rotation in the scene is radians, intrinsic XYZ, the order implemented by `gl-matrix` `quat.fromEuler`. glTF stores that rotation as a float32 quaternion, so a right angle survives within 0.001 radians.
+- Translation, rotation, and scale are the node's local transform. Rotation in the scene is radians, intrinsic XYZ, the order implemented by `gl-matrix` `quat.fromEuler`. glTF stores that rotation as a float32 quaternion, so a right angle survives within 0.001 radians. The editor and the assistant ask for degrees, convert to radians before they store a rotation, and convert back when they draw or describe a shape.
 - Width, height, and depth are the mesh extents in local space. Node scale is not baked into those extents. The mesh is centered on the node origin. A mesh that is not centered moves the scene position by the rotated, scaled center.
 - A rectangle is a quad in the local XY plane (no Z extent), the local XZ plane, or the local YZ plane. Export writes the XY plane. A box is a rectangular prism whose vertices sit on all eight corners.
 - Any other mesh, a skin, a morph target, more than one primitive, or more than one glTF scene is rejected. The whole document fails. No partial scene is returned.

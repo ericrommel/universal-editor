@@ -26,11 +26,21 @@ corepack pnpm start
 corepack pnpm build
 ```
 
-`corepack pnpm start` is an alias of `corepack pnpm dev`. Both serve the shell on `127.0.0.1` port `5173`. Open `http://127.0.0.1:5173/` in current Microsoft Edge or current Google Chrome. The foundation screen shows Ready. Record which browser was used. Firefox, Safari, and other browsers are not this launch evidence, and this is not a browser-support matrix. `corepack pnpm build` writes the static shell to `apps/shell/dist` with a relative base. It does not create an installer. `tsc -b` writes the shell's declarations to `apps/shell/ts-out` and does not write them into `apps/shell/dist`.
+`corepack pnpm start` is an alias of `corepack pnpm dev`. Both serve the shell on `127.0.0.1` port `5173`. Open `http://127.0.0.1:5173/` in current Microsoft Edge or current Google Chrome. A successful start shows the scene editor. A failed start shows the foundation screen. Record which browser was used. Firefox, Safari, and other browsers are not this launch evidence, and this is not a browser-support matrix. `corepack pnpm build` writes the static shell to `apps/shell/dist` with a relative base. It does not create an installer. `tsc -b` writes the shell's declarations to `apps/shell/ts-out` and does not write them into `apps/shell/dist`.
 
 `UVCP_FORCE_INIT_FAILURE` is read only by `corepack pnpm dev`. Unset or `0` starts normally. `1` shows Not ready. Any other value also shows Not ready and is not treated as success. `corepack pnpm build` and `corepack pnpm --filter @uvcp/shell preview` do not read it. It is not a control on the screen.
 
-Preview the static build with `corepack pnpm --filter @uvcp/shell preview`. That server binds to `127.0.0.1` port `5173`.
+Preview the static build with `corepack pnpm --filter @uvcp/shell preview`. That server binds to `127.0.0.1` port `5173`. It still runs the assistant session, so it is a local server. Do not publish it.
+
+## Static page
+
+`node scripts/serve-static.mjs` serves `apps/shell/dist` on `127.0.0.1` port `4173`. Build first with `corepack pnpm build`. The server sends the production content security policy, `X-Content-Type-Options: nosniff`, and `Referrer-Policy: no-referrer`. It does not run the assistant. The default bind is loopback. `UVCP_STATIC_HOST` and `UVCP_STATIC_PORT` can change the address for this file server only.
+
+A public host must send that policy on the response. `apps/shell/public/_headers` records it for a host that reads a `_headers` file. GitHub Pages cannot send the header, so it is not a host for this page.
+
+## Browser check
+
+`node scripts/browser-check.mjs` opens that static page in Chromium and walks the first-use path. Install the browser with `corepack pnpm exec playwright install chromium` before the first local run. The check is a separate CI job. It is not part of `corepack pnpm verify`, so the verify gate does not download a browser.
 
 Continuous integration uses `corepack pnpm install --frozen-lockfile`. Do not use `pnpm ci`.
 
@@ -51,11 +61,11 @@ Continuous integration uses `corepack pnpm install --frozen-lockfile`. Do not us
 
 It stops on the first failure and returns that process status. A Node.js version other than the pinned version fails the gate before those steps.
 
-The preview smoke runs after the build. It starts the shell preview on `127.0.0.1` port `5173` and requests `/` with Node. HTTP 200 with the production content security policy passes only when the served document, script, and stylesheet are the built files. Those files must contain the foundation copy and palette, and must not contain a canvas element or the dev failure switch. Port `5173` must be free. The smoke does not open a window and is not the manual browser launch.
+The preview smoke runs after the build. It starts the shell preview on `127.0.0.1` port `5173` and requests `/` with Node. HTTP 200 with the production content security policy passes only when the served document, script, and stylesheet are the built files. Those files must contain the foundation copy and palette, and must not contain a canvas element or the dev failure switch. Port `5173` must be free. The smoke does not open a window. The browser check is the graphical pass of the static page.
 
 ## Continuous integration
 
-The workflow is `.github/workflows/verify.yml`. It runs on `pull_request`, on `push` to `main`, and on `workflow_dispatch`. It does not use `pull_request_target`.
+The workflow is `.github/workflows/verify.yml`. It runs on `pull_request`, on `push` to `master`, and on `workflow_dispatch`. It does not use `pull_request_target`. The verify job runs `node scripts/verify.mjs`. The browser job builds the shell, installs Chromium, and runs `node scripts/browser-check.mjs`.
 
 Both of these runners are required, with `fail-fast` off:
 
