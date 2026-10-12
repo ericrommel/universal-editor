@@ -33,10 +33,23 @@ import {
   sheetShapes,
   undo,
 } from "@uvcp/editor";
-import { strings } from "@uvcp/ui";
-import type { ReactNode } from "react";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { strings, useAppearance } from "@uvcp/ui";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AssistantSetup, loadAssistantStatus } from "./assistant-setup.tsx";
+import {
+  BoxMark,
+  DeleteMark,
+  EllipseMark,
+  FileButton,
+  FileMenu,
+  ProductMark,
+  RectangleMark,
+  RedoMark,
+  TextMark,
+  Tip,
+  ToolButton,
+  UndoMark,
+} from "./chrome.tsx";
 import { Inspector, ObjectList } from "./inspector.tsx";
 import { SceneStage } from "./scene-stage.tsx";
 import { shapeLabel } from "./shape-label.ts";
@@ -69,6 +82,7 @@ type Panel = "guide" | "setup";
 type MeasurePart = "width" | "height" | "depth" | "rotation";
 
 export function CreationApp() {
+  const appearance = useAppearance();
   const [history, setHistory] = useState<EditorHistory>(createHistory);
   const [savedText, setSavedText] = useState(() => sceneText(createHistory()));
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -139,6 +153,15 @@ export function CreationApp() {
         return;
       }
       if (event.key === "Escape") {
+        const target = event.target;
+        const menu = document.getElementById("uvcp-file-menu");
+        if (menu instanceof HTMLElement && menu.matches(":popover-open")) {
+          menu.hidePopover();
+          return;
+        }
+        if (target instanceof Element && openTip(target)) {
+          return;
+        }
         event.preventDefault();
         const settled =
           current.present.scene === current.anchor.scene
@@ -333,67 +356,78 @@ export function CreationApp() {
   }
 
   return (
-    <div className="uvcp-editor">
-      <header className="uvcp-command">
-        <h1 className="uvcp-product">{strings.productName}</h1>
-        <div className="uvcp-command-group" role="toolbar" aria-label="Create">
-          <span className="uvcp-group-label">Create</span>
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => show(addShape(historyRef.current, "rectangle"))}
-          >
-            Rectangle
-          </button>
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => show(addShape(historyRef.current, "ellipse"))}
-          >
-            Ellipse
-          </button>
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => show(addShape(historyRef.current, "text"))}
-          >
-            Text
-          </button>
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => show(addShape(historyRef.current, "box"))}
-          >
-            Box
-          </button>
+    <div className="uvcp-editor" data-appearance={appearance}>
+      <header className="uvcp-top">
+        <div className="uvcp-identity">
+          <ProductMark />
+          <h1 className="uvcp-product">{strings.productName}</h1>
         </div>
-        <div className="uvcp-command-group" role="toolbar" aria-label="Edit">
-          <span className="uvcp-group-label">Edit</span>
-          <button
-            type="button"
-            title="Undo (Ctrl+Z)"
+        <div className="uvcp-status">
+          {gate.kind === "ready" && panel !== "setup" ? (
+            <form className="uvcp-ask" onSubmit={(event) => void ask(event)}>
+              <p className="uvcp-ai-state" role="status">
+                AI is on. Using {gate.model}.
+              </p>
+              <label>
+                Describe a change
+                <textarea
+                  rows={1}
+                  value={instruction}
+                  disabled={pending}
+                  placeholder="Create, move, resize, or rotate"
+                  onChange={(event) => setInstruction(event.target.value)}
+                />
+              </label>
+              <button type="submit" disabled={pending}>
+                Apply
+              </button>
+            </form>
+          ) : (
+            <p className="uvcp-ai-state" role="status">
+              {aiStatus(gate, panel === "setup")}
+            </p>
+          )}
+          {notice ? (
+            <p
+              className={
+                notice.tone === "error" ? "uvcp-notice is-error" : "uvcp-notice"
+              }
+              role={notice.tone === "error" ? "alert" : "status"}
+            >
+              {notice.text}
+            </p>
+          ) : dirty ? (
+            <p className="uvcp-notice" role="status">
+              Unsaved changes stay in this tab until you download them.
+            </p>
+          ) : null}
+        </div>
+        <div className="uvcp-edit" role="toolbar" aria-label="Edit">
+          <ToolButton
+            label="Undo"
+            tip="Undo (Ctrl+Z)"
             disabled={pending || !undoable}
             onClick={() => {
               show(undo(historyRef.current));
               setNotice(null);
             }}
           >
-            Undo
-          </button>
-          <button
-            type="button"
-            title="Redo (Ctrl+Y)"
+            <UndoMark />
+          </ToolButton>
+          <ToolButton
+            label="Redo"
+            tip="Redo (Ctrl+Y)"
             disabled={pending || !redoable}
             onClick={() => {
               show(redo(historyRef.current));
               setNotice(null);
             }}
           >
-            Redo
-          </button>
-          <button
-            type="button"
-            title={
+            <RedoMark />
+          </ToolButton>
+          <ToolButton
+            label="Delete"
+            tip={
               selected
                 ? `Delete ${shapeLabel(selected)}`
                 : "Select an object to delete it."
@@ -409,15 +443,10 @@ export function CreationApp() {
               setNotice(null);
             }}
           >
-            Delete
-          </button>
+            <DeleteMark />
+          </ToolButton>
         </div>
-        <div
-          className="uvcp-command-group uvcp-file-group"
-          role="toolbar"
-          aria-label="File"
-        >
-          <span className="uvcp-group-label">File</span>
+        <div className="uvcp-top-actions">
           <Tip text="Download the project as scene.json.">
             {(id) => (
               <button
@@ -455,167 +484,126 @@ export function CreationApp() {
               );
             }}
           />
-          <details className="uvcp-disclosure">
-            <summary>3D file</summary>
-            <div className="uvcp-disclosure-panel">
-              <p>
-                Import or export rectangles and boxes. Drawing does not need
-                this.
-              </p>
-              <FileButton
-                label="Import glTF"
-                tip="Add rectangles and boxes from a glTF file."
-                accept=".glb,.gltf,model/gltf-binary,model/gltf+json"
-                inputLabel="glTF file"
-                disabled={pending}
-                onFile={(file) => {
-                  const generation = currentRead();
-                  void readGltfFile(
-                    file,
-                    generation,
-                    readIsCurrent,
-                    () => historyRef.current,
-                    show,
-                    report,
-                  );
-                }}
-              />
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => {
-                  void deliverGltf(historyRef.current, false, report);
-                }}
-              >
-                Export glTF
-              </button>
-              <button
-                type="button"
-                title={
-                  selected
-                    ? "Download the selected object as selection.glb."
-                    : "Select an object to export it."
-                }
-                disabled={pending || !removable}
-                onClick={() => {
-                  void deliverGltf(historyRef.current, true, report);
-                }}
-              >
-                Export selection
-              </button>
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => {
-                  const generation = currentRead();
-                  void loadSample(
-                    generation,
-                    readIsCurrent,
-                    () => historyRef.current,
-                    show,
-                    report,
-                  );
-                }}
-              >
-                Load sample
-              </button>
-            </div>
-          </details>
-        </div>
-        <button type="button" disabled={pending} onClick={openGuide}>
-          Guide
-        </button>
-      </header>
-      <div className="uvcp-ai-bar">
-        {gate.kind === "ready" && panel !== "setup" ? (
-          <form className="uvcp-ask" onSubmit={(event) => void ask(event)}>
-            <p className="uvcp-ai-state" role="status">
-              AI is on. Using {gate.model}.
-            </p>
-            <label>
-              Describe a change
-              <textarea
-                rows={1}
-                value={instruction}
-                disabled={pending}
-                placeholder="Create, move, resize, or rotate"
-                onChange={(event) => setInstruction(event.target.value)}
-              />
-            </label>
-            <button type="submit" disabled={pending}>
-              Apply
-            </button>
-          </form>
-        ) : (
-          <p className="uvcp-ai-state" role="status">
-            {aiStatus(gate, panel === "setup")}
-          </p>
-        )}
-        <button
-          type="button"
-          disabled={pending || gate.kind === "checking"}
-          onClick={openSetup}
-        >
-          AI setup
-        </button>
-      </div>
-      {notice ? (
-        <p
-          className={
-            notice.tone === "error" ? "uvcp-notice is-error" : "uvcp-notice"
-          }
-          role={notice.tone === "error" ? "alert" : "status"}
-        >
-          {notice.text}
-        </p>
-      ) : dirty ? (
-        <p className="uvcp-notice" role="status">
-          Unsaved changes stay in this tab until you download them.
-        </p>
-      ) : null}
-      <div className="uvcp-body">
-        {panel === "guide" ? <FirstGuide onDismiss={closeGuide} /> : null}
-        {panel === "setup" && gate.kind === "unavailable" ? (
-          <AssistantUnavailable onClose={() => setPanel(null)} />
-        ) : null}
-        {panel === "setup" && (gate.kind === "off" || gate.kind === "ready") ? (
-          <AssistantSetup
-            currentModel={gate.kind === "ready" ? gate.model : null}
-            onConfigured={(model) => {
-              setGate({ kind: "ready", model });
-              setPanel(null);
-              report("status", assistantMessages.ready);
-            }}
-            onClose={() => setPanel(null)}
-          />
-        ) : null}
-        {panel === "setup" && gate.kind === "checking" ? (
-          <section className="uvcp-guide" aria-labelledby="uvcp-ai-checking">
-            <h2 id="uvcp-ai-checking">Assistant</h2>
-            <p>{AI_CHECKING}</p>
-          </section>
-        ) : null}
-        <div className="uvcp-workspace">
-          <ObjectList
-            shapes={shapes}
-            selectedId={history.present.selectedId}
+          <FileMenu
             disabled={pending}
-            onSelect={(id) =>
-              show(
-                replacePresent(
-                  historyRef.current,
-                  selectShape(historyRef.current.present, id),
-                ),
-              )
-            }
+            canExportSelection={removable}
+            onImport={(file) => {
+              const generation = currentRead();
+              void readGltfFile(
+                file,
+                generation,
+                readIsCurrent,
+                () => historyRef.current,
+                show,
+                report,
+              );
+            }}
+            onExport={() => {
+              void deliverGltf(historyRef.current, false, report);
+            }}
+            onExportSelection={() => {
+              void deliverGltf(historyRef.current, true, report);
+            }}
+            onSample={() => {
+              const generation = currentRead();
+              void loadSample(
+                generation,
+                readIsCurrent,
+                () => historyRef.current,
+                show,
+                report,
+              );
+            }}
           />
-          <SceneStage
-            shapes={shapes}
-            selectedId={history.present.selectedId}
-            isBlocked={() => pendingRef.current}
-            getHistory={() => historyRef.current}
-            onShow={show}
-          />
+          <button type="button" disabled={pending} onClick={openGuide}>
+            Guide
+          </button>
+          <button
+            type="button"
+            disabled={pending || gate.kind === "checking"}
+            onClick={openSetup}
+          >
+            AI setup
+          </button>
+        </div>
+      </header>
+      <div className="uvcp-workspace">
+        <div className="uvcp-rail" role="toolbar" aria-label="Create">
+          <ToolButton
+            label="Rectangle"
+            disabled={pending}
+            onClick={() => show(addShape(historyRef.current, "rectangle"))}
+          >
+            <RectangleMark />
+          </ToolButton>
+          <ToolButton
+            label="Ellipse"
+            disabled={pending}
+            onClick={() => show(addShape(historyRef.current, "ellipse"))}
+          >
+            <EllipseMark />
+          </ToolButton>
+          <ToolButton
+            label="Text"
+            disabled={pending}
+            onClick={() => show(addShape(historyRef.current, "text"))}
+          >
+            <TextMark />
+          </ToolButton>
+          <ToolButton
+            label="Box"
+            disabled={pending}
+            onClick={() => show(addShape(historyRef.current, "box"))}
+          >
+            <BoxMark />
+          </ToolButton>
+        </div>
+        <ObjectList
+          shapes={shapes}
+          selectedId={history.present.selectedId}
+          disabled={pending}
+          onSelect={(id) =>
+            show(
+              replacePresent(
+                historyRef.current,
+                selectShape(historyRef.current.present, id),
+              ),
+            )
+          }
+        />
+        <SceneStage
+          shapes={shapes}
+          selectedId={history.present.selectedId}
+          isBlocked={() => pendingRef.current}
+          getHistory={() => historyRef.current}
+          onShow={show}
+        />
+        <div className="uvcp-side">
+          {panel === "guide" ? <FirstGuide onDismiss={closeGuide} /> : null}
+          {panel === "setup" && gate.kind === "unavailable" ? (
+            <AssistantUnavailable onClose={() => setPanel(null)} />
+          ) : null}
+          {panel === "setup" &&
+          (gate.kind === "off" || gate.kind === "ready") ? (
+            <AssistantSetup
+              currentModel={gate.kind === "ready" ? gate.model : null}
+              onConfigured={(model) => {
+                setGate({ kind: "ready", model });
+                setPanel(null);
+                report("status", assistantMessages.ready);
+              }}
+              onClose={() => setPanel(null)}
+            />
+          ) : null}
+          {panel === "setup" && gate.kind === "checking" ? (
+            <section
+              className="uvcp-ai-setup"
+              aria-labelledby="uvcp-ai-checking"
+            >
+              <h2 id="uvcp-ai-checking">Assistant</h2>
+              <p>{AI_CHECKING}</p>
+            </section>
+          ) : null}
           <Inspector
             hasShapes={shapes.length > 0}
             selected={selected}
@@ -712,11 +700,9 @@ function FirstGuide({ onDismiss }: { readonly onDismiss: () => void }) {
           Save downloads a readable scene.json. This tab keeps the project until
           you leave or refresh.
         </li>
-        <li>
-          The bar under the tools says whether AI is available in this session.
-        </li>
+        <li>The top bar says whether AI is available in this session.</li>
       </ol>
-      <button type="button" onClick={onDismiss}>
+      <button type="button" className="uvcp-commit" onClick={onDismiss}>
         Start creating
       </button>
     </section>
@@ -736,111 +722,6 @@ function AssistantUnavailable({ onClose }: { readonly onClose: () => void }) {
         Close
       </button>
     </section>
-  );
-}
-
-function FileButton({
-  label,
-  tip,
-  accept,
-  inputLabel,
-  disabled,
-  onFile,
-}: {
-  readonly label: string;
-  readonly tip: string;
-  readonly accept: string;
-  readonly inputLabel: string;
-  readonly disabled: boolean;
-  readonly onFile: (file: File) => void;
-}) {
-  const input = useRef<HTMLInputElement | null>(null);
-  return (
-    <Tip text={tip}>
-      {(id) => (
-        <>
-          <button
-            type="button"
-            aria-describedby={id}
-            disabled={disabled}
-            onClick={() => input.current?.click()}
-          >
-            {label}
-          </button>
-          {/* The button opens the dialog. The clipped input stays out of
-              the tab order so focus does not land on it. */}
-          <input
-            ref={input}
-            className="uvcp-file-input"
-            type="file"
-            accept={accept}
-            aria-label={inputLabel}
-            tabIndex={-1}
-            disabled={disabled}
-            onChange={(event) => {
-              const file = event.currentTarget.files?.[0];
-              event.currentTarget.value = "";
-              if (file) {
-                onFile(file);
-              }
-            }}
-          />
-        </>
-      )}
-    </Tip>
-  );
-}
-
-function Tip({
-  text,
-  children,
-}: {
-  readonly text: string;
-  readonly children: (describedBy: string) => ReactNode;
-}) {
-  const id = useId();
-  const host = useRef<HTMLSpanElement | null>(null);
-  const bubble = useRef<HTMLSpanElement | null>(null);
-
-  useEffect(() => {
-    const current = host.current;
-    if (current === null) {
-      return;
-    }
-    const anchor: HTMLSpanElement = current;
-    function place() {
-      const tip = bubble.current;
-      if (tip === null) {
-        return;
-      }
-      const anchorBox = anchor.getBoundingClientRect();
-      const width = tip.getBoundingClientRect().width;
-      const margin = 8;
-      let left = anchorBox.left;
-      if (left + width > window.innerWidth - margin) {
-        left = anchorBox.right - width;
-      }
-      if (left < margin) {
-        left = margin;
-      }
-      tip.style.left = `${left}px`;
-      tip.style.top = `${anchorBox.bottom + 6}px`;
-    }
-    anchor.addEventListener("pointerenter", place);
-    anchor.addEventListener("focusin", place);
-    return () => {
-      anchor.removeEventListener("pointerenter", place);
-      anchor.removeEventListener("focusin", place);
-    };
-  }, []);
-
-  return (
-    <span className="uvcp-tip" ref={host}>
-      {children(id)}
-      <span ref={bubble} id={id} role="tooltip" className="uvcp-tip-bubble">
-        {text}
-      </span>
-    </span>
   );
 }
 
@@ -1085,5 +966,20 @@ function isTyping(target: EventTarget | null): boolean {
     target instanceof HTMLInputElement ||
     target instanceof HTMLTextAreaElement ||
     target instanceof HTMLSelectElement
+  );
+}
+
+// A pointer click hides the bubble and leaves focus in the tip. Escape
+// dismisses only a bubble the user can see. Keep this aligned with tipIsOpen.
+function openTip(target: Element): boolean {
+  const tip = target.closest(".uvcp-tip");
+  if (!(tip instanceof HTMLElement) || tip.hasAttribute("data-dismissed")) {
+    return false;
+  }
+  if (tip.matches(":hover")) {
+    return true;
+  }
+  return (
+    tip.matches(":focus-within") && !tip.hasAttribute("data-pointer-focus")
   );
 }

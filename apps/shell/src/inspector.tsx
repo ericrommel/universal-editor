@@ -1,5 +1,6 @@
 import type { EditorShape } from "@uvcp/editor";
 import { useEffect, useRef, useState } from "react";
+import { KindMark } from "./chrome.tsx";
 import { shapeLabel } from "./shape-label.ts";
 
 export function ObjectList({
@@ -33,7 +34,8 @@ export function ObjectList({
                 disabled={disabled}
                 onClick={() => onSelect(shape.id)}
               >
-                {shapeLabel(shape)}
+                <KindMark kind={shape.kind} />
+                <span>{shapeLabel(shape)}</span>
               </button>
             );
           })}
@@ -87,71 +89,83 @@ export function Inspector({
     <aside className="uvcp-inspector">
       <h2>{shapeLabel(selected)}</h2>
       <p className="uvcp-units">Scene units. Rotation is degrees.</p>
-      <label className="uvcp-field">
-        <span>Fill</span>
-        <input
-          type="color"
-          value={selected.fill}
-          disabled={disabled}
-          onChange={(event) => onFill(event.target.value)}
-        />
-      </label>
-      {selected.kind === "text" && selected.fontSize !== null ? (
-        <TextFields
-          text={selected.text ?? ""}
-          fontSize={selected.fontSize}
-          disabled={disabled}
-          onText={onText}
-        />
-      ) : null}
-      <div className="uvcp-order">
-        <button
-          type="button"
-          disabled={disabled || !canSendBackward}
-          onClick={() => onOrder("backward")}
-        >
-          Send backward
-        </button>
-        <button
-          type="button"
-          disabled={disabled || !canBringForward}
-          onClick={() => onOrder("forward")}
-        >
-          Bring forward
-        </button>
-      </div>
-      <div className="uvcp-fields">
-        <MeasureField
-          label="Width"
-          value={selected.width}
-          disabled={disabled}
-          onCommit={(value) => onCommit("width", value)}
-          onClearError={onClearError}
-        />
-        <MeasureField
-          label="Height"
-          value={selected.height}
-          disabled={disabled}
-          onCommit={(value) => onCommit("height", value)}
-          onClearError={onClearError}
-        />
-        {selected.depth === null ? null : (
-          <MeasureField
-            label="Depth"
-            value={selected.depth}
+      <section className="uvcp-section">
+        <h3>Appearance</h3>
+        <label className="uvcp-field">
+          <span>Fill</span>
+          <input
+            type="color"
+            value={selected.fill}
             disabled={disabled}
-            onCommit={(value) => onCommit("depth", value)}
+            onChange={(event) => onFill(event.target.value)}
+          />
+        </label>
+      </section>
+      {selected.kind === "text" && selected.fontSize !== null ? (
+        <section className="uvcp-section">
+          <h3>Text</h3>
+          <TextFields
+            text={selected.text ?? ""}
+            fontSize={selected.fontSize}
+            disabled={disabled}
+            onText={onText}
+          />
+        </section>
+      ) : null}
+      <section className="uvcp-section">
+        <h3>Arrange</h3>
+        <div className="uvcp-order">
+          <button
+            type="button"
+            disabled={disabled || !canSendBackward}
+            onClick={() => onOrder("backward")}
+          >
+            Send backward
+          </button>
+          <button
+            type="button"
+            disabled={disabled || !canBringForward}
+            onClick={() => onOrder("forward")}
+          >
+            Bring forward
+          </button>
+        </div>
+      </section>
+      <section className="uvcp-section">
+        <h3>Geometry</h3>
+        <div className="uvcp-fields">
+          <MeasureField
+            label="Width"
+            value={selected.width}
+            disabled={disabled}
+            onCommit={(value) => onCommit("width", value)}
             onClearError={onClearError}
           />
-        )}
-      </div>
-      <MeasureField
-        label="Rotation"
-        value={selected.rotation}
-        disabled={disabled}
-        onCommit={(value) => onCommit("rotation", value)}
-        onClearError={onClearError}
-      />
+          <MeasureField
+            label="Height"
+            value={selected.height}
+            disabled={disabled}
+            onCommit={(value) => onCommit("height", value)}
+            onClearError={onClearError}
+          />
+          {selected.depth === null ? null : (
+            <MeasureField
+              label="Depth"
+              value={selected.depth}
+              disabled={disabled}
+              onCommit={(value) => onCommit("depth", value)}
+              onClearError={onClearError}
+            />
+          )}
+        </div>
+        <MeasureField
+          label="Rotation"
+          value={selected.rotation}
+          disabled={disabled}
+          onCommit={(value) => onCommit("rotation", value)}
+          onClearError={onClearError}
+        />
+      </section>
       {sizeError ? (
         <p className="uvcp-size-error" role="alert">
           {sizeError}

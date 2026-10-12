@@ -5,7 +5,8 @@ The column is top-weighted. Vertically centering it would make a splash.
 720px is the content-area width for the larger inline inset.
 The scrollport is not the container: inline-size containment must not block vertical scrolling.
 
-These are the foundation token values. The production content security policy
+These are the foundation token values. The editor uses the same custom
+properties on .uvcp-editor (ADR-0012). The production content security policy
 has no unsafe-inline, so this stylesheet is a file instead of an injected style element.
 */
 
@@ -33,7 +34,8 @@ has no unsafe-inline, so this stylesheet is a file instead of an injected style 
   container-type: inline-size;
 }
 
-.uvcp-foundation[data-appearance="light"] {
+.uvcp-foundation[data-appearance="light"],
+.uvcp-editor[data-appearance="light"] {
   color-scheme: light;
   --uvcp-canvas: #f4f5f7;
   --uvcp-surface: #ffffff;
@@ -45,7 +47,8 @@ has no unsafe-inline, so this stylesheet is a file instead of an injected style 
   --uvcp-status-failed: #b42318;
 }
 
-.uvcp-foundation[data-appearance="dark"] {
+.uvcp-foundation[data-appearance="dark"],
+.uvcp-editor[data-appearance="dark"] {
   color-scheme: dark;
   --uvcp-canvas: #14161c;
   --uvcp-surface: #1e2128;
@@ -57,7 +60,8 @@ has no unsafe-inline, so this stylesheet is a file instead of an injected style 
   --uvcp-status-failed: #f0b4ae;
 }
 
-.uvcp-foundation[data-appearance="forced"] {
+.uvcp-foundation[data-appearance="forced"],
+.uvcp-editor[data-appearance="forced"] {
   --uvcp-canvas: Canvas;
   --uvcp-surface: Canvas;
   --uvcp-text: CanvasText;
