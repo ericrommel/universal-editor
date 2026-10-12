@@ -17,7 +17,7 @@
     "browser": "node scripts/browser-check.mjs"
   },
   "devDependencies": {
-    "@babel/parser": "7.29.9",
+    "@babel/parser": "8.0.7",
     "@biomejs/biome": "2.5.15",
     "playwright": "1.64.0",
     "typescript": "7.0.2"
