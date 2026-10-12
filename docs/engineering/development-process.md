@@ -63,7 +63,7 @@ The secure-development rules in `AGENTS.md` still apply.
 
 The module issues are the roadmap. Each one is one product outcome. The archived specification holds the original objective wording. It does not add a gate, and it does not replace the issue.
 
-An outcome is complete when that behavior is on `master` and the change that put it there was accepted under this process. Close the module issue then. If only part of the outcome is on `master`, leave the issue open and say what is present and what is still missing. Do not open a second issue to record the part that already landed.
+An outcome is complete when that behavior is on `master` and the change that put it there was accepted under this process. Close the module issue then. If only part of the outcome is on `master`, leave the issue open and say what is present and what is still missing. Do not open a second issue to record the part that already landed. Closing every child does not close the module.
 
 A child issue is a product or engineering deliverable that can be built and reviewed on its own. Link it to the module with a GitHub sub-issue. A title prefix is not that link.
 
