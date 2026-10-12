@@ -5,98 +5,172 @@ body,
   margin: 0;
 }
 
+/* Studio chrome. Token values live on .uvcp-editor[data-appearance]
+   in the foundation stylesheet. The sheet stays paper in light and dark;
+   forced colors are the exception. ADR-0012. */
+
 .uvcp-editor {
+  --uvcp-sheet: #ffffff;
+  --uvcp-sheet-ink: #1c1f26;
+  --uvcp-selection: #1d4ed8;
+  --uvcp-on-accent: #ffffff;
+  --uvcp-hairline: color-mix(in srgb, var(--uvcp-text) 14%, transparent);
+  --uvcp-stroke: color-mix(in srgb, var(--uvcp-sheet-ink) 45%, transparent);
+  --uvcp-sheet-shadow:
+    0 1px 2px rgba(28, 31, 38, 0.06), 0 18px 40px rgba(28, 31, 38, 0.12);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background: #e6e9ef;
-  color: #1c1f26;
-  font-family: system-ui, "Segoe UI", sans-serif;
+  background: var(--uvcp-canvas);
+  color: var(--uvcp-text);
+  font-family:
+    system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
   font-size: 13px;
   line-height: 1.4;
+  text-align: start;
   user-select: none;
 }
 
-.uvcp-command {
+.uvcp-editor[data-appearance="dark"] {
+  --uvcp-on-accent: #14161c;
+  --uvcp-sheet-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.45), 0 18px 48px rgba(0, 0, 0, 0.5);
+}
+
+.uvcp-editor[data-appearance="forced"] {
+  --uvcp-sheet: Canvas;
+  --uvcp-sheet-ink: CanvasText;
+  --uvcp-selection: Highlight;
+  --uvcp-on-accent: HighlightText;
+  --uvcp-hairline: CanvasText;
+  --uvcp-stroke: CanvasText;
+  --uvcp-sheet-shadow: none;
+}
+
+.uvcp-editor *,
+.uvcp-editor *::before,
+.uvcp-editor *::after {
+  box-sizing: border-box;
+}
+
+.uvcp-top {
   display: flex;
   flex: none;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 16px;
-  padding: 8px 12px;
-  background: #ffffff;
-  border-bottom: 1px solid #d5d9e2;
+  gap: 4px 8px;
+  min-height: 44px;
+  padding: 4px 8px 4px 12px;
+  background: var(--uvcp-surface);
+  border-bottom: 1px solid var(--uvcp-hairline);
+}
+
+.uvcp-identity {
+  display: flex;
+  flex: 0 1 16rem;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.uvcp-product-mark {
+  flex: none;
+  display: block;
+}
+
+.uvcp-product-mark rect {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.25;
+}
+
+.uvcp-product-mark rect:last-child {
+  fill: var(--uvcp-surface);
 }
 
 .uvcp-product {
-  flex: 1 1 180px;
   min-width: 0;
   margin: 0;
   overflow: hidden;
-  color: #586070;
   font-size: 13px;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.uvcp-command-group {
+.uvcp-status {
   display: flex;
-  flex: none;
+  flex: 1 1 12rem;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 4px 12px;
+  min-width: 8rem;
 }
 
-.uvcp-file-group {
-  margin-left: auto;
+.uvcp-ai-state,
+.uvcp-notice,
+.uvcp-guide,
+.uvcp-ai-setup,
+.uvcp-menu-note {
+  user-select: text;
 }
 
-.uvcp-group-label {
-  color: #5a6474;
-  font-size: 11px;
-  font-weight: 650;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+.uvcp-ai-state {
+  flex: 1 1 12rem;
+  min-width: 0;
+  margin: 0;
+  color: var(--uvcp-text-secondary);
 }
 
-.uvcp-command button,
-.uvcp-ai-bar button,
-.uvcp-disclosure summary,
-.uvcp-disclosure-panel button,
-.uvcp-guide button,
-.uvcp-ai-setup button {
+.uvcp-notice {
+  flex: 1 1 100%;
+  min-width: 0;
+  margin: 0;
+  color: var(--uvcp-text-secondary);
+}
+
+.uvcp-notice.is-error,
+.uvcp-size-error {
+  color: var(--uvcp-status-failed);
+}
+
+.uvcp-edit,
+.uvcp-top-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+}
+
+.uvcp-edit {
+  margin-inline-end: 2px;
+  padding-inline-end: 6px;
+  border-inline-end: 1px solid var(--uvcp-hairline);
+}
+
+.uvcp-editor button,
+.uvcp-menu [role="menuitem"] {
   height: 28px;
   padding: 0 10px;
-  border: 1px solid #c5cad3;
+  border: 0;
   border-radius: 6px;
-  background: #ffffff;
+  background: transparent;
   color: inherit;
   font: inherit;
   white-space: nowrap;
   cursor: pointer;
 }
 
-.uvcp-command button:hover:not(:disabled),
-.uvcp-ai-bar button:hover:not(:disabled),
-.uvcp-disclosure summary:hover,
-.uvcp-disclosure-panel button:hover:not(:disabled),
-.uvcp-guide button:hover,
-.uvcp-ai-setup button:hover:not(:disabled),
-.uvcp-order button:hover:not(:disabled),
-.uvcp-text-fields button:hover:not(:disabled) {
-  background: #f4f5f7;
+.uvcp-editor button:hover:not(:disabled),
+.uvcp-menu [role="menuitem"]:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--uvcp-text) 8%, transparent);
 }
 
-.uvcp-command button:disabled,
-.uvcp-ai-bar button:disabled,
-.uvcp-disclosure-panel button:disabled,
-.uvcp-ai-setup button:disabled,
-.uvcp-order button:disabled,
-.uvcp-text-fields button:disabled {
-  opacity: 0.45;
+.uvcp-editor button:disabled,
+.uvcp-menu [role="menuitem"]:disabled {
+  opacity: 0.4;
   cursor: default;
 }
 
@@ -104,33 +178,51 @@ body,
 .uvcp-editor textarea:focus-visible,
 .uvcp-editor input:focus-visible,
 .uvcp-editor select:focus-visible,
-.uvcp-editor summary:focus-visible {
-  outline: 2px solid #1d4ed8;
+.uvcp-menu [role="menuitem"]:focus-visible {
+  outline: 2px solid var(--uvcp-focus);
   outline-offset: 2px;
 }
 
-.uvcp-ai-bar {
-  display: flex;
-  flex: none;
-  flex-wrap: wrap;
+.uvcp-editor .uvcp-tool {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-height: 40px;
-  padding: 6px 12px;
-  background: #ffffff;
-  border-bottom: 1px solid #d5d9e2;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
 }
 
-.uvcp-ai-state {
-  flex: 1 1 240px;
-  min-width: 0;
-  margin: 0;
-  color: #3a4150;
+.uvcp-tool svg,
+.uvcp-object svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.uvcp-editor .uvcp-commit {
+  padding-inline: 12px;
+  background: var(--uvcp-focus);
+  color: var(--uvcp-on-accent);
+}
+
+.uvcp-editor .uvcp-commit:hover:not(:disabled) {
+  background: var(--uvcp-focus);
+}
+
+.uvcp-editor[data-appearance="forced"] .uvcp-commit {
+  background: Highlight;
+  color: HighlightText;
+  border: 1px solid ButtonText;
 }
 
 .uvcp-ask {
   display: flex;
-  flex: 1 1 320px;
+  flex: 1 1 18rem;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
@@ -140,11 +232,11 @@ body,
 
 .uvcp-ask label {
   display: flex;
-  flex: 1 1 220px;
+  flex: 1 1 12rem;
   align-items: center;
   gap: 8px;
   min-width: 0;
-  color: #3a4150;
+  color: var(--uvcp-text-secondary);
   font-size: 12px;
 }
 
@@ -155,54 +247,45 @@ body,
   margin: 0;
   padding: 4px 8px;
   resize: none;
-  border: 1px solid #7a8496;
+  border: 1px solid var(--uvcp-border);
   border-radius: 6px;
-  background: #ffffff;
-  color: #1c1f26;
+  background: var(--uvcp-surface);
+  color: var(--uvcp-text);
   font: inherit;
   user-select: text;
-}
-
-.uvcp-notice {
-  flex: none;
-  margin: 0;
-  padding: 6px 12px;
-  background: #ffffff;
-  border-bottom: 1px solid #d5d9e2;
-  color: #3a4150;
-}
-
-.uvcp-notice.is-error {
-  color: #991b1b;
-}
-
-.uvcp-body {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-height: 0;
 }
 
 .uvcp-workspace {
   display: grid;
   flex: 1;
-  grid-template-columns: 200px minmax(0, 1fr) 240px;
+  grid-template-columns: 48px 200px minmax(0, 1fr) 252px;
   min-width: 0;
   min-height: 0;
 }
 
+.uvcp-rail,
 .uvcp-objects,
-.uvcp-inspector,
-.uvcp-stage {
+.uvcp-stage,
+.uvcp-side {
   min-width: 0;
   min-height: 0;
+}
+
+.uvcp-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding-block: 8px;
+  background: var(--uvcp-surface);
+  border-inline-end: 1px solid var(--uvcp-hairline);
 }
 
 .uvcp-objects {
   display: flex;
   flex-direction: column;
-  background: #ffffff;
-  border-right: 1px solid #d5d9e2;
+  background: var(--uvcp-surface);
+  border-inline-end: 1px solid var(--uvcp-hairline);
 }
 
 .uvcp-objects h2,
@@ -211,10 +294,11 @@ body,
 .uvcp-ai-setup h2 {
   margin: 0;
   font-size: 13px;
-  font-weight: 650;
+  font-weight: 600;
 }
 
-.uvcp-inspector h2 {
+.uvcp-inspector h2,
+.uvcp-objects h2 {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -225,9 +309,13 @@ body,
 }
 
 .uvcp-muted,
-.uvcp-inspector-empty {
+.uvcp-inspector-empty,
+.uvcp-units,
+.uvcp-menu-note,
+.uvcp-guide li,
+.uvcp-ai-setup p {
   margin: 0;
-  color: #3a4150;
+  color: var(--uvcp-text-secondary);
 }
 
 .uvcp-muted {
@@ -245,38 +333,35 @@ body,
   overflow: auto;
 }
 
-.uvcp-object {
+.uvcp-editor .uvcp-object {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   width: 100%;
   height: 32px;
-  padding: 0 8px;
+  padding-inline: 8px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: inherit;
-  font: inherit;
   text-align: start;
-  cursor: pointer;
 }
 
-.uvcp-object:hover:not(:disabled) {
-  background: #f4f5f7;
+.uvcp-object span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .uvcp-object[aria-selected="true"],
 .uvcp-object[aria-selected="true"]:hover {
-  background: #dbe7ff;
+  background: color-mix(in srgb, var(--uvcp-focus) 18%, var(--uvcp-surface));
 }
 
 .uvcp-stage {
   container-type: size;
   display: grid;
   place-items: center;
-  padding: 24px;
+  padding: 32px;
   overflow: hidden;
-  background: #e6e9ef;
+  background: var(--uvcp-canvas);
 }
 
 .uvcp-page {
@@ -288,11 +373,11 @@ body,
   aspect-ratio: 8 / 5;
   height: auto;
   overflow: hidden;
-  background: #ffffff;
-  border: 1px solid #c5cad3;
-  box-shadow:
-    0 1px 2px rgba(28, 31, 38, 0.06),
-    0 12px 32px rgba(28, 31, 38, 0.08);
+  background: var(--uvcp-sheet);
+  border: 1px solid var(--uvcp-hairline);
+  box-shadow: var(--uvcp-sheet-shadow);
+  /* The fill is the content. Forced colors restyle the chrome, not the paint. */
+  forced-color-adjust: none;
   touch-action: none;
 }
 
@@ -306,12 +391,10 @@ body,
 }
 
 .uvcp-face {
-  stroke: #1d4ed8;
-  stroke-width: 1.5;
+  stroke: var(--uvcp-stroke);
+  stroke-width: 1;
 }
 
-/* The front uses the object fill. The other faces use that same fill,
-   lighter toward the back, so a box reads as one object. */
 .uvcp-face-back {
   fill-opacity: 0.45;
 }
@@ -324,21 +407,32 @@ body,
   fill-opacity: 0.82;
 }
 
+.uvcp-empty,
+.uvcp-depth-label {
+  fill: var(--uvcp-sheet-ink);
+}
+
 .uvcp-empty {
-  fill: #3a4150;
   font-size: 18px;
 }
 
 .uvcp-selection {
   fill: none;
-  stroke: #1c1f26;
+  stroke: var(--uvcp-selection);
   stroke-width: 1.5;
 }
 
 .uvcp-handle {
-  fill: #ffffff;
-  stroke: #1c1f26;
+  fill: var(--uvcp-sheet);
+  stroke: var(--uvcp-selection);
   stroke-width: 1.5;
+}
+
+/* A square rotated 45 degrees reads as depth, not as another resize handle. */
+.uvcp-handle-depth {
+  transform: rotate(45deg);
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
 .uvcp-handle-hit {
@@ -346,20 +440,25 @@ body,
   stroke: none;
 }
 
-.uvcp-depth-label {
-  fill: #1c1f26;
-}
-
 .uvcp-text {
-  font-family: system-ui, "Segoe UI", sans-serif;
+  font-family:
+    system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
   pointer-events: none;
 }
 
-.uvcp-inspector {
-  padding: 16px;
+.uvcp-side {
+  display: flex;
+  flex-direction: column;
   overflow: auto;
-  background: #ffffff;
-  border-left: 1px solid #d5d9e2;
+  background: var(--uvcp-surface);
+  border-inline-start: 1px solid var(--uvcp-hairline);
+}
+
+.uvcp-inspector {
+  flex: 1;
+  min-height: 0;
+  padding: 12px;
+  overflow: auto;
 }
 
 .uvcp-inspector-empty {
@@ -367,9 +466,21 @@ body,
 }
 
 .uvcp-units {
-  margin: 4px 0 12px;
-  color: #3a4150;
+  margin: 4px 0 0;
   font-size: 12px;
+}
+
+.uvcp-section + .uvcp-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--uvcp-hairline);
+}
+
+.uvcp-section h3 {
+  margin: 0 0 8px;
+  color: var(--uvcp-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .uvcp-fields {
@@ -383,30 +494,22 @@ body,
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 8px 0;
 }
 
 .uvcp-text-fields {
   display: grid;
 }
 
-.uvcp-order button,
-.uvcp-text-fields button {
-  height: 28px;
-  padding: 0 10px;
-  border: 1px solid #c5cad3;
-  border-radius: 6px;
-  background: #ffffff;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-
 .uvcp-field {
   display: grid;
   gap: 4px;
-  color: #3a4150;
+  color: var(--uvcp-text-secondary);
   font-size: 12px;
+}
+
+.uvcp-section .uvcp-field:first-of-type,
+.uvcp-fields {
+  margin-top: 0;
 }
 
 .uvcp-field-depth {
@@ -423,44 +526,50 @@ body,
   width: 100%;
   height: 28px;
   padding: 0 8px;
-  border: 1px solid #7a8496;
+  border: 1px solid var(--uvcp-border);
   border-radius: 6px;
-  background: #ffffff;
-  color: #1c1f26;
+  background: var(--uvcp-surface);
+  color: var(--uvcp-text);
   font: inherit;
   user-select: text;
-  box-sizing: border-box;
+}
+
+.uvcp-field input[type="color"] {
+  padding: 2px 4px;
 }
 
 .uvcp-size-error {
   margin: 8px 0 0;
-  color: #991b1b;
 }
 
 .uvcp-guide,
 .uvcp-ai-setup {
   flex: none;
-  box-sizing: border-box;
-  width: auto;
-  max-height: min(280px, 40vh);
-  margin: 12px 12px 0;
+  margin: 8px 8px 0;
   overflow: auto;
-  padding: 12px 16px 16px;
-  background: #ffffff;
-  border: 1px solid #7a8496;
+  padding: 12px;
+  border: 1px solid var(--uvcp-hairline);
   border-radius: 8px;
+  background: color-mix(in srgb, var(--uvcp-focus) 7%, var(--uvcp-surface));
+}
+
+.uvcp-editor[data-appearance="forced"] .uvcp-guide,
+.uvcp-editor[data-appearance="forced"] .uvcp-ai-setup,
+.uvcp-editor[data-appearance="forced"] .uvcp-menu {
+  background: Canvas;
+  color: CanvasText;
+  border-color: CanvasText;
 }
 
 .uvcp-guide ol {
   margin: 8px 0 12px;
-  padding-left: 1.25rem;
+  padding-inline-start: 1.25rem;
 }
 
 .uvcp-guide li,
 .uvcp-ai-setup p,
-.uvcp-disclosure-panel p {
-  margin: 6px 0;
-  color: #3a4150;
+.uvcp-menu-note {
+  margin-block: 6px;
 }
 
 .uvcp-ai-setup form,
@@ -487,55 +596,61 @@ body,
   flex-direction: row;
   gap: 6px;
   align-items: center;
-  color: #1c1f26;
+  color: var(--uvcp-text);
   font-size: 13px;
 }
 
 .uvcp-ai-setup a {
-  color: #1d4ed8;
+  color: var(--uvcp-focus);
 }
 
-.uvcp-disclosure {
-  position: relative;
+.uvcp-editor {
+  accent-color: var(--uvcp-focus);
 }
 
-.uvcp-disclosure summary {
-  display: inline-flex;
-  align-items: center;
-  list-style: none;
-}
-
-.uvcp-disclosure summary::-webkit-details-marker {
-  display: none;
-}
-
-.uvcp-disclosure-panel {
-  position: absolute;
-  z-index: 4;
-  top: calc(100% + 6px);
-  right: 0;
-  gap: 8px;
-  width: min(240px, calc(100vw - 16px));
-  padding: 12px;
-  background: #ffffff;
-  border: 1px solid #7a8496;
+.uvcp-menu[popover] {
+  position: fixed;
+  inset: unset;
+  top: 0;
+  left: 0;
+  width: min(16rem, calc(100vw - 16px));
+  height: fit-content;
+  margin: 0;
+  padding: 6px;
+  border: 1px solid var(--uvcp-border);
   border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(28, 31, 38, 0.12);
+  background: var(--uvcp-surface);
+  color: var(--uvcp-text);
+  box-shadow: var(--uvcp-sheet-shadow);
 }
 
-/* display:grid on a closed details child overrides the hidden state. */
-.uvcp-disclosure[open] > .uvcp-disclosure-panel {
+/* display:grid on a closed popover overrides the hidden state. */
+.uvcp-menu[popover]:popover-open {
   display: grid;
+  gap: 2px;
 }
 
-.uvcp-disclosure-panel button {
-  justify-self: start;
+.uvcp-menu-note {
+  margin: 0;
+  padding: 4px 8px 6px;
+  font-size: 12px;
+}
+
+.uvcp-menu [role="menuitem"] {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  text-align: start;
 }
 
 .uvcp-tip {
   position: relative;
   display: inline-flex;
   align-items: center;
+}
+
+.uvcp-menu .uvcp-tip {
+  display: block;
 }
 
 .uvcp-tip button:disabled {
@@ -551,18 +666,28 @@ body,
   max-width: min(16rem, calc(100vw - 16px));
   padding: 6px 8px;
   border-radius: 6px;
-  background: #1c1f26;
-  color: #f4f5f7;
-  font-size: 13px;
+  background: var(--uvcp-text);
+  color: var(--uvcp-canvas);
+  font-size: 12px;
   line-height: 1.3;
-  pointer-events: none;
   overflow-wrap: anywhere;
   visibility: hidden;
 }
 
 .uvcp-tip:hover .uvcp-tip-bubble,
-.uvcp-tip:focus-within .uvcp-tip-bubble {
+.uvcp-tip:focus-within:not([data-pointer-focus]) .uvcp-tip-bubble {
   visibility: visible;
+}
+
+.uvcp-tip[data-dismissed]:hover .uvcp-tip-bubble,
+.uvcp-tip[data-dismissed]:focus-within .uvcp-tip-bubble {
+  visibility: hidden;
+}
+
+.uvcp-editor[data-appearance="forced"] .uvcp-tip .uvcp-tip-bubble {
+  background: Canvas;
+  color: CanvasText;
+  border: 1px solid CanvasText;
 }
 
 .uvcp-file-input {
@@ -580,27 +705,32 @@ body,
 
 @media (max-width: 960px) {
   .uvcp-workspace {
-    grid-template-columns: minmax(0, 1fr) 220px;
+    grid-template-columns: 48px minmax(0, 1fr) 200px;
     grid-template-rows: minmax(160px, 1fr) minmax(140px, 38%);
   }
 
-  .uvcp-stage {
+  .uvcp-rail {
     grid-column: 1;
     grid-row: 1 / span 2;
-    padding: 12px;
+  }
+
+  .uvcp-stage {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    padding: 16px;
   }
 
   .uvcp-objects {
-    grid-column: 2;
+    grid-column: 3;
     grid-row: 1;
-    border-right: 0;
-    border-left: 1px solid #d5d9e2;
+    border-inline-end: 0;
+    border-inline-start: 1px solid var(--uvcp-hairline);
   }
 
-  .uvcp-inspector {
-    grid-column: 2;
+  .uvcp-side {
+    grid-column: 3;
     grid-row: 2;
-    border-left: 0;
-    border-top: 1px solid #d5d9e2;
+    border-inline-start: 0;
+    border-top: 1px solid var(--uvcp-hairline);
   }
 }

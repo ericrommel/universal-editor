@@ -270,8 +270,10 @@ export async function runFirstUse(page, origin, productionPolicy, root) {
   const restoredX = Number(await restored.getAttribute("x"));
   assert.ok(Math.abs(restoredX - savedX) < 0.05);
 
-  await page.locator("summary", { hasText: "3D file" }).click();
-  await page.getByRole("button", { name: "Load sample", exact: true }).click();
+  await openThreeD(page);
+  await page
+    .getByRole("menuitem", { name: "Load sample", exact: true })
+    .click();
   await page.getByText("Imported into the project.").waitFor();
   await page.getByRole("option", { name: "Box crate" }).waitFor();
   await page.getByRole("option", { name: "Rectangle card" }).waitFor();
@@ -285,7 +287,10 @@ export async function runFirstUse(page, origin, productionPolicy, root) {
   assert.ok(afterImport > beforeImport);
 
   const glbDownload = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Export glTF", exact: true }).click();
+  await openThreeD(page);
+  await page
+    .getByRole("menuitem", { name: "Export glTF", exact: true })
+    .click();
   const glbFile = await glbDownload;
   assert.equal(glbFile.suggestedFilename(), "scene.glb");
   const glbPath = await glbFile.path();
@@ -350,7 +355,7 @@ export async function runFirstUse(page, origin, productionPolicy, root) {
 }
 
 async function assertNoHorizontalOverflow(page, widths) {
-  assert.equal(await page.locator(".uvcp-disclosure-panel").isHidden(), true);
+  assert.equal(await page.locator(".uvcp-menu").isHidden(), true);
   for (const width of widths) {
     await page.setViewportSize({ width, height: 800 });
     const extra = await page.evaluate(() => {
@@ -385,8 +390,8 @@ async function assertToolbarTips(page) {
     }
   }
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.locator("summary", { hasText: "3D file" }).click();
-  const importButton = page.getByRole("button", {
+  await openThreeD(page);
+  const importButton = page.getByRole("menuitem", {
     name: "Import glTF",
     exact: true,
   });
@@ -397,7 +402,18 @@ async function assertToolbarTips(page) {
     "Add rectangles and boxes from a glTF file.",
     1280,
   );
-  await page.locator("summary", { hasText: "3D file" }).click();
+  await page.keyboard.press("Escape");
+  await page
+    .getByRole("menu", { name: "3D file" })
+    .waitFor({ state: "hidden" });
+}
+
+async function openThreeD(page) {
+  const menu = page.getByRole("menu", { name: "3D file" });
+  if (!(await menu.isVisible())) {
+    await page.getByRole("button", { name: "3D file", exact: true }).click();
+  }
+  await menu.waitFor();
 }
 
 async function tipInside(page, name, text, width) {
