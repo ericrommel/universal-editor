@@ -2,7 +2,6 @@ import { assistantMessages, parseActions, type SceneAction } from "@uvcp/ai";
 import {
   DomainError,
   insertNode,
-  replaceExtents,
   replaceFill,
   replaceTransform,
   type SceneNode,
@@ -11,7 +10,10 @@ import {
   commitPresent,
   type EditorDocument,
   type EditorHistory,
+  moveShape,
+  placeShape,
   radiansFromDegrees,
+  sheetShapes,
 } from "./document.ts";
 
 export type AssistantApply =
@@ -85,15 +87,9 @@ function applyOne(
         selectedId: action.id,
       };
     case "move": {
-      const node = requiredNode(document, action.id);
-      return {
-        scene: replaceTransform(document.scene, action.id, {
-          position: [action.x, action.y, node.transform.position[2]],
-          rotation: node.transform.rotation,
-          scale: node.transform.scale,
-        }),
-        selectedId: action.id,
-      };
+      requiredNode(document, action.id);
+      const moved = moveShape(document, action.id, action.x, action.y);
+      return { scene: moved.scene, selectedId: action.id };
     }
     case "resize":
       return resized(document, action);
@@ -154,25 +150,33 @@ function resized(
     if (action.depth !== undefined) {
       throw new ActionError(assistantMessages.noDepth);
     }
-    return {
-      scene: replaceExtents(document.scene, action.id, {
-        width: action.width,
-        height: action.height,
-      }),
-      selectedId: action.id,
-    };
+    return placed(document, action.id, action.width, action.height, null);
   }
   if (action.depth === undefined) {
     throw new ActionError(assistantMessages.boxDepth);
   }
-  return {
-    scene: replaceExtents(document.scene, action.id, {
-      width: action.width,
-      height: action.height,
-      depth: action.depth,
-    }),
-    selectedId: action.id,
-  };
+  return placed(document, action.id, action.width, action.height, action.depth);
+}
+
+function placed(
+  document: EditorDocument,
+  id: string,
+  width: number,
+  height: number,
+  depth: number | null,
+): EditorDocument {
+  requiredNode(document, id);
+  const sheet = sheetShapes(document).find((shape) => shape.id === id);
+  if (!sheet) {
+    throw new DomainError("UNKNOWN_NODE", "Scene node was not found.");
+  }
+  const next = placeShape(
+    document,
+    id,
+    { x: sheet.x, y: sheet.y, width, height },
+    depth,
+  );
+  return { scene: next.scene, selectedId: id };
 }
 
 function requiredNode(document: EditorDocument, id: string): SceneNode {

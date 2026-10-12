@@ -151,9 +151,9 @@ http://127.0.0.1:5173/
 
 Open that address in Microsoft Edge or Google Chrome on this same computer. A phone or another computer cannot open it.
 
-The page heading is Universal Visual Creation Platform, and a guide named Start with a shape is on the page. Add a rectangle or a box, then drag it.
+The page heading is Universal Visual Creation Platform, and a guide named Start with a shape is on the page. The bar under the tools says whether AI is available in this session. The editor works without an AI provider. Add a rectangle, an ellipse, text, or a box, then drag it.
 
-Save downloads `scene.json`. This tab keeps the project until you refresh or close the tab. Use Save when you want a file that remains after that.
+Save downloads a readable `scene.json`. This tab keeps the project until you refresh or close the tab. Use Save when you want a file that remains after that. glTF import, export, and a sample file are under 3D file. Drawing does not need them.
 
 Leave the terminal open while you use the editor. Closing the terminal, or pressing Ctrl+C in it, stops the page.
 

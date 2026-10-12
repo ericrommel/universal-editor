@@ -10,104 +10,526 @@ body,
   display: flex;
   flex-direction: column;
   height: 100%;
-  overflow-x: clip;
-  overflow-y: auto;
-  background: #f4f5f7;
+  overflow: hidden;
+  background: #e6e9ef;
   color: #1c1f26;
   font-family: system-ui, "Segoe UI", sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  user-select: none;
 }
 
-.uvcp-editor-bar {
+.uvcp-command {
   display: flex;
+  flex: none;
   flex-wrap: wrap;
-  gap: 8px;
   align-items: center;
-  padding: 12px 16px;
+  gap: 8px 16px;
+  padding: 8px 12px;
   background: #ffffff;
-  border-bottom: 1px solid #7a8496;
+  border-bottom: 1px solid #d5d9e2;
 }
 
-.uvcp-editor-bar h1 {
-  margin: 0 12px 0 0;
-  font-size: 16px;
+.uvcp-product {
+  flex: 1 1 180px;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: #586070;
+  font-size: 13px;
   font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.uvcp-editor-ask {
+.uvcp-command-group {
   display: flex;
-  flex: 1 1 280px;
-  gap: 8px;
+  flex: none;
+  flex-wrap: wrap;
   align-items: center;
+  gap: 8px;
 }
 
-.uvcp-editor-ask label {
-  flex: 1;
+.uvcp-file-group {
+  margin-left: auto;
 }
 
-.uvcp-editor-ask textarea {
-  display: block;
-  width: 100%;
-  min-width: 12rem;
+.uvcp-group-label {
+  color: #5a6474;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.uvcp-command button,
+.uvcp-ai-bar button,
+.uvcp-disclosure summary,
+.uvcp-disclosure-panel button,
+.uvcp-guide button,
+.uvcp-ai-setup button {
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid #c5cad3;
+  border-radius: 6px;
+  background: #ffffff;
+  color: inherit;
   font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.uvcp-command button:hover:not(:disabled),
+.uvcp-ai-bar button:hover:not(:disabled),
+.uvcp-disclosure summary:hover,
+.uvcp-disclosure-panel button:hover:not(:disabled),
+.uvcp-guide button:hover,
+.uvcp-ai-setup button:hover:not(:disabled),
+.uvcp-order button:hover:not(:disabled),
+.uvcp-text-fields button:hover:not(:disabled) {
+  background: #f4f5f7;
+}
+
+.uvcp-command button:disabled,
+.uvcp-ai-bar button:disabled,
+.uvcp-disclosure-panel button:disabled,
+.uvcp-ai-setup button:disabled,
+.uvcp-order button:disabled,
+.uvcp-text-fields button:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 .uvcp-editor button:focus-visible,
 .uvcp-editor textarea:focus-visible,
 .uvcp-editor input:focus-visible,
-.uvcp-editor select:focus-visible {
+.uvcp-editor select:focus-visible,
+.uvcp-editor summary:focus-visible {
   outline: 2px solid #1d4ed8;
   outline-offset: 2px;
 }
 
-.uvcp-editor-bar button,
-.uvcp-editor-properties button {
-  font: inherit;
-  padding: 6px 10px;
+.uvcp-ai-bar {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 6px 12px;
+  background: #ffffff;
+  border-bottom: 1px solid #d5d9e2;
+}
+
+.uvcp-ai-state {
+  flex: 1 1 240px;
+  min-width: 0;
+  margin: 0;
+  color: #3a4150;
+}
+
+.uvcp-ask {
+  display: flex;
+  flex: 1 1 320px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+}
+
+.uvcp-ask label {
+  display: flex;
+  flex: 1 1 220px;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: #3a4150;
+  font-size: 12px;
+}
+
+.uvcp-ask textarea {
+  flex: 1 1 auto;
+  min-width: 8rem;
+  height: 28px;
+  margin: 0;
+  padding: 4px 8px;
+  resize: none;
   border: 1px solid #7a8496;
   border-radius: 6px;
   background: #ffffff;
-  color: inherit;
+  color: #1c1f26;
+  font: inherit;
+  user-select: text;
 }
 
-.uvcp-editor-bar button:disabled {
-  opacity: 0.45;
-}
-
-.uvcp-keep {
+.uvcp-notice {
+  flex: none;
   margin: 0;
-  padding: 8px 16px;
-  background: #fff4e5;
-  border-bottom: 1px solid #7a8496;
+  padding: 6px 12px;
+  background: #ffffff;
+  border-bottom: 1px solid #d5d9e2;
+  color: #3a4150;
 }
 
-.uvcp-guide {
+.uvcp-notice.is-error {
+  color: #991b1b;
+}
+
+.uvcp-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.uvcp-workspace {
+  display: grid;
+  flex: 1;
+  grid-template-columns: 200px minmax(0, 1fr) 240px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.uvcp-objects,
+.uvcp-inspector,
+.uvcp-stage {
+  min-width: 0;
+  min-height: 0;
+}
+
+.uvcp-objects {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-right: 1px solid #d5d9e2;
+}
+
+.uvcp-objects h2,
+.uvcp-inspector h2,
+.uvcp-guide h2,
+.uvcp-ai-setup h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.uvcp-inspector h2 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.uvcp-objects h2 {
+  padding: 12px 12px 8px;
+}
+
+.uvcp-muted,
+.uvcp-inspector-empty {
+  margin: 0;
+  color: #3a4150;
+}
+
+.uvcp-muted {
+  padding: 0 12px 12px;
+}
+
+.uvcp-object-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  margin: 0;
+  padding: 0 8px 12px;
+  overflow: auto;
+}
+
+.uvcp-object {
+  width: 100%;
+  height: 32px;
+  padding: 0 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.uvcp-object:hover:not(:disabled) {
+  background: #f4f5f7;
+}
+
+.uvcp-object[aria-selected="true"],
+.uvcp-object[aria-selected="true"]:hover {
+  background: #dbe7ff;
+}
+
+.uvcp-stage {
+  container-type: size;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  overflow: hidden;
+  background: #e6e9ef;
+}
+
+.uvcp-page {
+  box-sizing: border-box;
+  display: block;
+  width: min(100cqw, calc(100cqh * 8 / 5));
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 8 / 5;
+  height: auto;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #c5cad3;
+  box-shadow:
+    0 1px 2px rgba(28, 31, 38, 0.06),
+    0 12px 32px rgba(28, 31, 38, 0.08);
+  touch-action: none;
+}
+
+.uvcp-shape {
+  cursor: grab;
+}
+
+.uvcp-page.is-holding,
+.uvcp-page.is-holding .uvcp-shape {
+  cursor: grabbing;
+}
+
+.uvcp-face {
+  stroke: #1d4ed8;
+  stroke-width: 1.5;
+}
+
+/* The front uses the object fill. The other faces use that same fill,
+   lighter toward the back, so a box reads as one object. */
+.uvcp-face-back {
+  fill-opacity: 0.45;
+}
+
+.uvcp-face-top {
+  fill-opacity: 0.7;
+}
+
+.uvcp-face-side {
+  fill-opacity: 0.82;
+}
+
+.uvcp-empty {
+  fill: #3a4150;
+  font-size: 18px;
+}
+
+.uvcp-selection {
+  fill: none;
+  stroke: #1c1f26;
+  stroke-width: 1.5;
+}
+
+.uvcp-handle {
+  fill: #ffffff;
+  stroke: #1c1f26;
+  stroke-width: 1.5;
+}
+
+.uvcp-handle-hit {
+  fill: transparent;
+  stroke: none;
+}
+
+.uvcp-depth-label {
+  fill: #1c1f26;
+}
+
+.uvcp-text {
+  font-family: system-ui, "Segoe UI", sans-serif;
+  pointer-events: none;
+}
+
+.uvcp-inspector {
+  padding: 16px;
+  overflow: auto;
+  background: #ffffff;
+  border-left: 1px solid #d5d9e2;
+}
+
+.uvcp-inspector-empty {
+  margin-top: 8px;
+}
+
+.uvcp-units {
+  margin: 4px 0 12px;
+  color: #3a4150;
+  font-size: 12px;
+}
+
+.uvcp-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.uvcp-text-fields,
+.uvcp-order {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.uvcp-text-fields {
+  display: grid;
+}
+
+.uvcp-order button,
+.uvcp-text-fields button {
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid #c5cad3;
+  border-radius: 6px;
+  background: #ffffff;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.uvcp-field {
+  display: grid;
+  gap: 4px;
+  color: #3a4150;
+  font-size: 12px;
+}
+
+.uvcp-field-depth {
+  grid-column: 1 / -1;
+}
+
+.uvcp-field-rotation {
+  margin-top: 8px;
+}
+
+.uvcp-field input,
+.uvcp-ai-setup input:not([type="radio"]),
+.uvcp-ai-setup select {
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid #7a8496;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #1c1f26;
+  font: inherit;
+  user-select: text;
+  box-sizing: border-box;
+}
+
+.uvcp-size-error {
+  margin: 8px 0 0;
+  color: #991b1b;
+}
+
+.uvcp-guide,
+.uvcp-ai-setup {
+  flex: none;
+  box-sizing: border-box;
+  width: auto;
+  max-height: min(280px, 40vh);
+  margin: 12px 12px 0;
+  overflow: auto;
   padding: 12px 16px 16px;
   background: #ffffff;
-  border-bottom: 1px solid #7a8496;
-}
-
-.uvcp-guide h2 {
-  margin: 0 0 8px;
-  font-size: 16px;
+  border: 1px solid #7a8496;
+  border-radius: 8px;
 }
 
 .uvcp-guide ol {
-  margin: 0 0 12px;
-  max-width: 42rem;
+  margin: 8px 0 12px;
   padding-left: 1.25rem;
 }
 
-.uvcp-guide li {
-  margin: 4px 0;
+.uvcp-guide li,
+.uvcp-ai-setup p,
+.uvcp-disclosure-panel p {
+  margin: 6px 0;
+  color: #3a4150;
 }
 
-.uvcp-guide button {
-  font: inherit;
-  padding: 6px 10px;
-  border: 1px solid #7a8496;
-  border-radius: 6px;
+.uvcp-ai-setup form,
+.uvcp-ai-setup label {
+  display: grid;
+  gap: 4px;
+}
+
+.uvcp-ai-setup form {
+  max-width: 28rem;
+  margin-top: 8px;
+}
+
+.uvcp-ai-choices,
+.uvcp-ai-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.uvcp-ai-choices label {
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  align-items: center;
+  color: #1c1f26;
+  font-size: 13px;
+}
+
+.uvcp-ai-setup a {
+  color: #1d4ed8;
+}
+
+.uvcp-disclosure {
+  position: relative;
+}
+
+.uvcp-disclosure summary {
+  display: inline-flex;
+  align-items: center;
+  list-style: none;
+}
+
+.uvcp-disclosure summary::-webkit-details-marker {
+  display: none;
+}
+
+.uvcp-disclosure-panel {
+  position: absolute;
+  z-index: 4;
+  top: calc(100% + 6px);
+  right: 0;
+  gap: 8px;
+  width: min(240px, calc(100vw - 16px));
+  padding: 12px;
   background: #ffffff;
-  color: inherit;
+  border: 1px solid #7a8496;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(28, 31, 38, 0.12);
+}
+
+/* display:grid on a closed details child overrides the hidden state. */
+.uvcp-disclosure[open] > .uvcp-disclosure-panel {
+  display: grid;
+}
+
+.uvcp-disclosure-panel button {
+  justify-self: start;
 }
 
 .uvcp-tip {
@@ -122,7 +544,7 @@ body,
 
 .uvcp-tip-bubble {
   position: fixed;
-  z-index: 2;
+  z-index: 5;
   top: 0;
   left: 0;
   width: max-content;
@@ -156,136 +578,29 @@ body,
   border: 0;
 }
 
-.uvcp-editor-body {
-  display: grid;
-  grid-template-columns: 1fr 220px;
-  flex: 1 0 240px;
-  min-height: 240px;
-}
-
-.uvcp-editor-surface {
-  width: 100%;
-  height: 100%;
-  min-height: 180px;
-  background: #ffffff;
-  touch-action: none;
-}
-
-.uvcp-shape {
-  stroke: #1d4ed8;
-  stroke-width: 2;
-  pointer-events: all;
-}
-
-.uvcp-shape-selected {
-  stroke: #0f172a;
-  stroke-width: 3;
-}
-
-.uvcp-shape-depth {
-  stroke: #1d4ed8;
-  stroke-width: 1;
-  opacity: 0.55;
-  pointer-events: all;
-}
-
-.uvcp-text {
-  font-family: system-ui, "Segoe UI", sans-serif;
-  pointer-events: none;
-}
-
-.uvcp-editor-properties {
-  padding: 16px;
-  border-left: 1px solid #7a8496;
-  background: #ffffff;
-}
-
-.uvcp-inspector,
-.uvcp-inspector form {
-  display: grid;
-  gap: 8px;
-}
-
-.uvcp-editor-properties label {
-  display: grid;
-  gap: 4px;
-}
-
-.uvcp-editor-properties input {
-  font: inherit;
-  min-width: 0;
-}
-
-.uvcp-ai-setup {
-  padding: 12px 16px 16px;
-  background: #ffffff;
-  border-bottom: 1px solid #7a8496;
-}
-
-.uvcp-ai-setup h2 {
-  margin: 0 0 8px;
-  font-size: 16px;
-}
-
-.uvcp-ai-setup p {
-  margin: 8px 0;
-  max-width: 40rem;
-}
-
-.uvcp-ai-setup form,
-.uvcp-ai-setup label {
-  display: grid;
-  gap: 4px;
-}
-
-.uvcp-ai-setup form {
-  max-width: 28rem;
-  gap: 8px;
-}
-
-.uvcp-ai-choices,
-.uvcp-ai-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: center;
-}
-
-.uvcp-ai-choices label {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-
-.uvcp-ai-setup input,
-.uvcp-ai-setup select {
-  font: inherit;
-  padding: 6px;
-  border: 1px solid #7a8496;
-  border-radius: 6px;
-}
-
-.uvcp-editor-properties label {
-  display: grid;
-  gap: 4px;
-  margin: 8px 0;
-}
-
-.uvcp-editor-properties input {
-  font: inherit;
-  padding: 6px;
-  border: 1px solid #7a8496;
-  border-radius: 6px;
-}
-
-@media (max-width: 720px) {
-  .uvcp-editor-body {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto;
+@media (max-width: 960px) {
+  .uvcp-workspace {
+    grid-template-columns: minmax(0, 1fr) 220px;
+    grid-template-rows: minmax(160px, 1fr) minmax(140px, 38%);
   }
 
-  .uvcp-editor-properties {
+  .uvcp-stage {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    padding: 12px;
+  }
+
+  .uvcp-objects {
+    grid-column: 2;
+    grid-row: 1;
+    border-right: 0;
+    border-left: 1px solid #d5d9e2;
+  }
+
+  .uvcp-inspector {
+    grid-column: 2;
+    grid-row: 2;
     border-left: 0;
-    border-top: 1px solid #7a8496;
+    border-top: 1px solid #d5d9e2;
   }
 }

@@ -20,6 +20,9 @@ import {
 test("glTF import keeps the open project and shows the new shapes", async () => {
   const bytes = await exportDocument("gltf", crateAndCard());
   const history = addShape(createHistory(), "rectangle");
+  const before = sheetShapes(history.present).find(
+    (shape) => shape.id === "s1",
+  );
   const imported = await importGltfFile(history, bytes);
   assert.equal(imported.message, "Imported into the project.");
   assert.notEqual(imported.history, history);
@@ -32,7 +35,7 @@ test("glTF import keeps the open project and shows the new shapes", async () => 
   const rect = sheet.find((shape) => shape.id === "s1");
   const crate = sheet.find((shape) => shape.id === "crate");
   const card = sheet.find((shape) => shape.id === "card");
-  assert.equal(rect?.x, 64);
+  assert.equal(rect?.x, before?.x);
   assert.equal(rect?.width, 160);
   assert.ok(crate !== undefined && card !== undefined && rect !== undefined);
   assert.ok(crate.x >= rect.x + rect.width);

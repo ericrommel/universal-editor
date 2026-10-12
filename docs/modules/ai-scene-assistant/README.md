@@ -13,7 +13,7 @@ Type a request and choose Apply. The assistant can:
 
 Example: "Create a rectangle named r1 and a box named b1 beside it."
 
-The objects remain in the scene. Drag an object to move it. Select it and edit its fill, Width, Height, Depth, and Rotation, then choose Apply size. Text also has words and a font size. Rectangle, Ellipse, Text, Box, Undo, Redo, Save, and Open stay on the screen. Those controls wait while Apply is working.
+The objects remain in the scene. Drag an object to move it. Select it and edit its fill, width, height, depth, and rotation. Text also has words and a font size; choose Apply text to keep them. Rectangle, Ellipse, Text, Box, Undo, Redo, Save, and Open stay on the screen. Those controls wait while Apply is working.
 
 ## Providers
 

@@ -13,6 +13,9 @@ test("the committed cube imports into the open project and stays visible", async
     await readFile("examples/interchange/unit-cube.glb"),
   );
   const history = addShape(createHistory(), "rectangle");
+  const before = sheetShapes(history.present).find(
+    (shape) => shape.id === "s1",
+  );
   const imported = await importGltfFile(history, bytes);
   assert.equal(imported.message, "Imported into the project.");
   assert.deepEqual(imported.history.present.scene.rootIds, ["s1", "cube"]);
@@ -20,7 +23,7 @@ test("the committed cube imports into the open project and stays visible", async
   const rect = sheet.find((shape) => shape.id === "s1");
   const cube = sheet.find((shape) => shape.id === "cube");
   assert.equal(rect?.width, 160);
-  assert.equal(rect?.x, 64);
+  assert.equal(rect?.x, before?.x);
   assert.ok(cube !== undefined && rect !== undefined);
   assert.ok(cube.width >= 48);
   assert.ok(cube.x >= rect.x + rect.width);

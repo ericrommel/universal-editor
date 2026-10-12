@@ -15,6 +15,7 @@ const TYPES = new Map([
   [".txt", "text/plain; charset=utf-8"],
   [".ico", "image/x-icon"],
   [".woff2", "font/woff2"],
+  [".glb", "model/gltf-binary"],
 ]);
 
 export function securityHeaders(extension) {
@@ -22,8 +23,10 @@ export function securityHeaders(extension) {
     "Content-Security-Policy": productionPolicy,
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "no-referrer",
+    // HTML and the stable-named sample glb are not fingerprinted. A
+    // year-long immutable cache would keep a replaced sample.
     "Cache-Control":
-      extension === ".html"
+      extension === ".html" || extension === ".glb"
         ? "no-cache"
         : "public, max-age=31536000, immutable",
   };

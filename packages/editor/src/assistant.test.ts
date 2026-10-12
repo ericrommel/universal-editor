@@ -1,8 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { assistantMessages } from "@uvcp/ai";
+import { createScene, insertNode } from "@uvcp/core";
 import { applyAssistantActions } from "./assistant.ts";
-import { createHistory, shapesOf, undo } from "./document.ts";
+import {
+  commitPresent,
+  createHistory,
+  shapesOf,
+  sheetShapes,
+  undo,
+} from "./document.ts";
 
 const createdShapes = [
   {
@@ -149,4 +156,58 @@ test("assistant edits stay in the editor document until undo", () => {
     shapesOf(undo(edited.history).present),
     shapesOf(created.history.present),
   );
+});
+
+test("assistant edits use the size and position shown on the sheet", () => {
+  let scene = createScene();
+  scene = insertNode(scene, {
+    id: "parent",
+    kind: "rectangle",
+    parentId: null,
+    index: 0,
+    width: 10,
+    height: 10,
+    transform: {
+      position: [0, 0, 0],
+      rotation: [0, 0, 0],
+      scale: [2, 2, 2],
+    },
+  });
+  scene = insertNode(scene, {
+    id: "child",
+    kind: "rectangle",
+    parentId: "parent",
+    index: 0,
+    width: 4,
+    height: 3,
+    transform: {
+      position: [1, 0, 0],
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1],
+    },
+  });
+  const history = commitPresent(createHistory(), {
+    scene,
+    selectedId: "child",
+  });
+  const edited = applyAssistantActions(history, [
+    { type: "move", id: "child", x: 8, y: 4 },
+    { type: "resize", id: "child", width: 10, height: 6 },
+  ]);
+  assert.equal(edited.ok, true);
+  if (!edited.ok) {
+    return;
+  }
+  const child = edited.history.present.scene.nodes.child;
+  assert.equal(child?.transform.position[0], 4);
+  assert.equal(child?.transform.position[1], 2);
+  assert.equal(child?.width, 5);
+  assert.equal(child?.height, 3);
+  const shown = sheetShapes(edited.history.present).find(
+    (shape) => shape.id === "child",
+  );
+  assert.equal(shown?.x, 8);
+  assert.equal(shown?.y, 4);
+  assert.equal(shown?.width, 10);
+  assert.equal(shown?.height, 6);
 });
