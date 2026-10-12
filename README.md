@@ -186,4 +186,4 @@ Product intent is in [docs/product-overview.md](docs/product-overview.md). Engin
 
 `main` is protected. Current product work integrates on `master`. See [docs/engineering/working-line.md](docs/engineering/working-line.md). The scene assistant is [docs/modules/ai-scene-assistant/README.md](docs/modules/ai-scene-assistant/README.md).
 
-Current work status is the GitHub issue and the project board. It is not recorded in this file.
+Current work status is the GitHub issues. The project board mirrors them when it can be edited. Status is not recorded in this file.

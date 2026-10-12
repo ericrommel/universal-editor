@@ -1,6 +1,6 @@
 # Module 0 — Test Plan
 
-**Status:** DRAFT, with preparation clarifications dated 2026-10-02  
+**Status:** Historical verification record. The foundation is on `master`, and issue #1 is closed. This plan is not a gate.  
 **Owners:** Functional Quality Engineer and Non-Functional Quality Engineer  
 **Contributors:** Tech Lead, Developers, Product Designer, DevOps / Platform Engineer, Application Security Engineer
 
@@ -8,7 +8,7 @@ The 2026-10-02 clarifications add verification paths for identifiers the draft d
 
 ## 1. Purpose
 
-Define how Module 0 will be verified before implementation begins.
+This plan is how Module 0 was verified.
 
 This plan describes the required verification approach. Developers remain responsible for implementing the automated tests needed by their changes.
 

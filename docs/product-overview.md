@@ -348,40 +348,17 @@ editing, persistence, or export.
 
 ## 11. Product Scope Strategy
 
-The product is implemented progressively.
+The product is implemented progressively. Each module is one product
+outcome. It is a coherent increment, not the whole long-term vision,
+and not a gate in front of the next outcome.
 
-Each implementation module must produce a coherent, testable increment
-rather than attempting to build the complete long-term vision at once.
+A module is not complete merely because code exists. It is complete
+when that outcome is on `master` and has been accepted under the
+development process.
 
-A module is not considered complete merely because code exists.
-
-Each module follows the project quality flow:
-
-``` text
-Planning
-   ↓
-Implementation
-   ↓
-Code Review
-   ↓
-Functional Verification
-   ↓
-Non-Functional Verification
-   ↓
-Product Owner Review
-   ↓
-Corrections, if required
-   ↓
-GREEN + PO APPROVED
-   ↓
-Next Module
-```
-
-Only the Product Owner gives final approval for a module.
-
-Detailed implementation modules, requirements, non-functional
-requirements, acceptance criteria, and quality gates are maintained
-separately in the **Product & Engineering Specification**.
+The module issues are the roadmap. The archived specification holds
+the original objective wording. How issues, child work, and status
+are kept is [the development process](engineering/development-process.md).
 
 ------------------------------------------------------------------------
 

@@ -1,6 +1,6 @@
 # Module 0 architecture preparation
 
-This directory holds specialist inputs to the Module 0 proposal. It is not the decision.
+Historical inputs. Issue #1 is closed. This directory is not the decision, and it is not a gate.
 
 The decision is [docs/engineering/architecture.md](../../../engineering/architecture.md), with ADRs under [docs/engineering/adr](../../../engineering/adr). Where a review and the architecture document disagree, the architecture document wins. Disagreements and their resolutions are listed there.
 
@@ -35,10 +35,6 @@ No application code is created in this phase.
 
 ## Operational record
 
-GitHub issue [#1](https://github.com/ericrommel/universal-editor/issues/1) and the Universal Visual Creation Platform project board are the operational record. This directory is evidence. It does not record the current board column. Session output is not a substitute.
-
-Reviews dated 2026-10-02 cite `development-process.md` section numbers from before Operational Work Tracking was inserted as section 3. From the Team section onward, current numbers are one higher. Definition of Ready is section 8. The PO review package is section 19. Requirement changes are section 21.
-
-The Product Owner approved the binding Module 0 architecture on 2026-10-02 in pull request #2. Revisitable direction and deferred items stay open. This directory does not record the current board column.
+Issue [#1](https://github.com/ericrommel/universal-editor/issues/1) is closed. This directory is evidence. Reviews dated 2026-10-02 cite an older development process. Those section numbers are not the current process. The binding architecture was approved on 2026-10-02 in pull request #2. Revisitable direction and deferred items stay open.
 
 The security proposal review records the historical block on SEC-M0-B-008. ADR-0007 was amended so every disjunct of an `OR` must be on the permissive list. The security review concurs with that amended rule only. That concurrence is not a full architecture concurrence and does not close M0-AC-011.

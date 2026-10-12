@@ -1,6 +1,6 @@
 # Module 1 — Test Plan
 
-**Status:** Approved with the specification on 2026-10-06. This plan does not make Module 1 GREEN.
+**Status:** Historical plan for the rectangle and box contract. That outcome is on `master`. This plan is not a gate. Later scene behavior is ADR-0011.
 
 **Owners:** Functional Quality Engineer and Non-Functional Quality Engineer
 
@@ -311,6 +311,6 @@ No new test dependency. No Vitest, Jest, jsdom, happy-dom, Playwright, or Cypres
 
 Developers write the tests that demonstrate the behavior they deliver, using this plan, when implementation is authorized. Quality reviews the evidence after that. This preparation does not add a `*.test.ts` file, because there is no scene implementation to exercise.
 
-## 10. Definition of Ready
+## 10. Record
 
-The five dissent rows now have one expected result. Module 0 is GREEN. The Product Owner approved the specification on 2026-10-06. Implementation of that contract is authorized. Module 1 is not GREEN. Specialist concurrence is not a substitute for the later acceptance gate.
+The five dissent rows have one expected result. The contract was approved on 2026-10-06, and its outcome is on `master`. Roadmap status is the module issue, under `docs/engineering/development-process.md`.
