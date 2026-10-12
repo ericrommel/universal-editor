@@ -1,6 +1,6 @@
 # ADR-0009: Module 1 scene model and scene document
 
-**Status:** Accepted. This ADR authorizes the package decision for the approved Module 1 contract. It does not make Module 1 GREEN.  
+**Status:** Accepted for the package split. ADR-0011 extends the scene. This ADR does not track module status.  
 **Date:** 2026-10-06  
 **Decider:** Tech Lead  
 **Consulted:** Senior Core / Platform Engineer, Senior 2D / Editor Engineer, Senior 3D / Rendering Engineer, Senior Product Designer / UX Architect, Functional Quality Engineer, Senior Application Security Engineer

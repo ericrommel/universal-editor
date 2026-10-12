@@ -13,4 +13,4 @@ The normative contract is [`../specification.md`](../specification.md). The pack
 | [core-platform.md](core-platform.md) | Senior Core / Platform Engineer | Shipped Module 0 contracts the scene must keep. |
 | [reviews/](reviews/) | Specialist roles | Positions written before the reconciliation. |
 
-No application code is created in this phase. Module 0 is GREEN. Module 1 implementation waits for Product Owner approval of the specification.
+These notes are history. The scene contract's outcome is on `master`. They do not authorize work, and they do not block it.

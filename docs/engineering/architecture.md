@@ -5,7 +5,7 @@
 **Owner:** Tech Lead  
 **Module:** 0 — Engineering Foundation
 
-The Human Product Owner approved the binding Module 0 architecture on 2026-10-02, including ADR-0001 through ADR-0008 and the four confirmations in this document. The approval is https://github.com/ericrommel/universal-editor/pull/2#issuecomment-5956211119. Revisitable direction and deferred items stay open. That approval authorizes development of the binding scope once the work item enters Ready for Development. It is not module acceptance and it is not GREEN.
+The binding Module 0 architecture was approved on 2026-10-02, including ADR-0001 through ADR-0008 and the four confirmations in this document. The approval is https://github.com/ericrommel/universal-editor/pull/2#issuecomment-5956211119. Revisitable direction and deferred items stay open. Issue #1 is closed. This document does not track later modules.
 
 This document is the Module 0 architecture. Major decisions are recorded in `/docs/engineering/adr/`. Specialist inputs are in `/docs/modules/module-00-foundation/preparation/reviews/`. Those reviews are evidence and recommendations. This document is the decision.
 
@@ -13,7 +13,7 @@ No production application code is part of this document.
 
 ## Operational record
 
-Work status for Module 0 is GitHub issue [#1](https://github.com/ericrommel/universal-editor/issues/1) and the Universal Visual Creation Platform project board. This document does not record the current board column.
+Module 0's issue [#1](https://github.com/ericrommel/universal-editor/issues/1) is closed. Roadmap status is the development process, not this document.
 
 ## Authority
 
@@ -461,6 +461,8 @@ The binding decisions in this document are unchanged. This review branch contain
 `pnpm dev` is the documented launch. The headed browser record is `docs/modules/module-00-foundation/evidence/launch/`. The preview smoke is build evidence and is not that launch.
 
 ## Definition of Ready
+
+This table is the Module 0 record from 2026-10-02. Later work does not use it.
 
 | Ready condition | State |
 | --- | --- |

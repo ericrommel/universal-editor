@@ -1,8 +1,10 @@
 **Product & Engineering Specification — Version 1.0**
 
-**Status: Initial implementation baseline  
+> Archived context. The development process and the module issues are the operational record. This document holds the original objective wording. It does not gate work, and it does not define current status.
+
+**Status: Archived baseline  
 **Product Owner: Human  
-Delivery model: Progressive, gated module implementation  
+Delivery model: Historical. The gated model in this file is not the current process.  
 Working language: English
 
 ***Professional power without professional complexity.***

@@ -1,6 +1,6 @@
 # Module 0 — Engineering Foundation
 
-**Status:** Pending Product Owner acceptance. The requirements below are unchanged. This status is not GREEN.
+**Status:** The foundation outcome is on `master`. Issue #1 is closed. The requirements below are that contract. This file is not a gate for later modules.
 
 ## 1. Objective
 
@@ -300,19 +300,8 @@ At minimum:
 
 ---
 
-## 10. Exit Criteria
+## 10. Exit
 
-Module 0 is GREEN only when:
+Issue #1 is closed. The foundation is on `master`. This section does not gate later modules. Acceptance and roadmap status are in `docs/engineering/development-process.md`.
 
-- all blocking Module 0 FRs pass;
-- all blocking Module 0 NFRs pass;
-- all Module 0 ACs pass;
-- required tests and regressions are green;
-- required design/security/quality reviews are complete;
-- blocking defects are closed;
-- architecture documentation matches implementation;
-- developer setup documentation is verified;
-- required evidence exists;
-- the Human Product Owner explicitly approves Module 0.
-
-Only then may Module 1 enter implementation.
+The record that closed the module is the blocking requirements and acceptance criteria, regression, design, security, and quality review, closed blocking defects, architecture and setup docs that match the implementation, and the evidence under `evidence/`.
