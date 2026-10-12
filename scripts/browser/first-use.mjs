@@ -20,7 +20,9 @@ export async function runFirstUse(page, origin, productionPolicy, root) {
   await page
     .getByText("Add a shape with the buttons. AI is optional.")
     .waitFor();
-  await page.getByText("Add a rectangle or a box.").waitFor();
+  await page
+    .getByText("Add a rectangle, an ellipse, text, or a box.")
+    .waitFor();
   assert.equal(await page.locator('input[type="password"]').count(), 0);
   assert.equal(await page.locator("canvas").count(), 0);
   await assertToolbarTips(page);
@@ -60,7 +62,7 @@ export async function runFirstUse(page, origin, productionPolicy, root) {
 
   await rectangle.click();
   await page
-    .getByText("Add a rectangle or a box.")
+    .getByText("Add a rectangle, an ellipse, text, or a box.")
     .waitFor({ state: "hidden" });
   const shape = page.locator("svg rect.uvcp-shape").first();
   await shape.waitFor();
@@ -110,7 +112,9 @@ export async function runFirstUse(page, origin, productionPolicy, root) {
   assert.equal(saved.includes("universal-visual-creation-scene"), true);
 
   await page.getByRole("button", { name: "Delete", exact: true }).click();
-  await page.getByText("Add a rectangle or a box.").waitFor();
+  await page
+    .getByText("Add a rectangle, an ellipse, text, or a box.")
+    .waitFor();
   await page.getByLabel("Scene file").setInputFiles(scenePath);
   await page.getByText("Opened the scene.").waitFor();
   const restored = page.locator("svg rect.uvcp-shape").first();
@@ -148,6 +152,68 @@ export async function runFirstUse(page, origin, productionPolicy, root) {
   } finally {
     fs.rmSync(badPath, { force: true });
   }
+
+  await page.getByRole("button", { name: "Ellipse", exact: true }).click();
+  const ellipse = page.locator("svg ellipse.uvcp-shape");
+  await ellipse.waitFor();
+  await page.getByRole("button", { name: "Text", exact: true }).click();
+  const glyph = page.locator("svg text").filter({ hasText: "Text" });
+  await glyph.waitFor();
+  await page.getByLabel("Fill").fill("#ff0000");
+  await page.waitForFunction(() => {
+    const node = document.querySelector("svg text");
+    return node !== null && node.getAttribute("fill") === "#ff0000";
+  });
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await page.waitForFunction(() => {
+    const node = document.querySelector("svg text");
+    return node !== null && node.getAttribute("fill") === "#1e293b";
+  });
+  await page.getByRole("button", { name: "Redo", exact: true }).click();
+  await page.waitForFunction(() => {
+    const node = document.querySelector("svg text");
+    return node !== null && node.getAttribute("fill") === "#ff0000";
+  });
+  await page
+    .getByRole("textbox", { name: "Text", exact: true })
+    .fill("Hello <b>");
+  await page.getByRole("button", { name: "Apply text", exact: true }).click();
+  await page.locator("svg text").filter({ hasText: "Hello <b>" }).waitFor();
+  assert.equal(await page.locator("svg script").count(), 0);
+
+  const compositionDownload = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  const compositionFile = await compositionDownload;
+  const compositionPath = await compositionFile.path();
+  assert.ok(compositionPath !== null);
+  const composition = fs.readFileSync(compositionPath, "utf8");
+  assert.equal(composition.includes('"kind":"ellipse"'), true);
+  assert.equal(composition.includes('"kind":"text"'), true);
+  assert.equal(composition.includes("Hello <b>"), true);
+  assert.equal(composition.includes('schemaVersion":2'), true);
+
+  await page.getByLabel("Scene file").setInputFiles(compositionPath);
+  await page.getByText("Opened the scene.").waitFor();
+  await page.locator("svg ellipse.uvcp-shape").waitFor();
+  const reopened = page.locator("svg text").filter({ hasText: "Hello <b>" });
+  await reopened.waitFor();
+  assert.equal(await reopened.getAttribute("fill"), "#ff0000");
+  assert.equal(await page.locator("svg script").count(), 0);
+
+  await page.getByRole("button", { name: "Export glTF", exact: true }).click();
+  await page
+    .getByText("Interchange node is not a rectangle or a box.")
+    .waitFor();
+  await reopened.waitFor();
+
+  await page
+    .locator("svg g")
+    .filter({ hasText: "Hello <b>" })
+    .locator("rect.uvcp-shape")
+    .click();
+  await page
+    .getByRole("button", { name: "Send backward", exact: true })
+    .click();
 
   await page.getByRole("button", { name: "AI setup", exact: true }).click();
   await page.getByRole("heading", { name: "Assistant" }).waitFor();

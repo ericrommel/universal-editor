@@ -4,11 +4,11 @@ export const assistantMessages = {
     "Describe the change in 2000 characters or fewer. Nothing was changed.",
   noChange: "The assistant did not change the scene.",
   unavailable:
-    "That request is not available. The assistant can create a rectangle or a box, or move, resize, or rotate a shape. Nothing was changed.",
+    "That request is not available. The assistant can create a rectangle, an ellipse, text, or a box, set its fill, or move, resize, or rotate it. Nothing was changed.",
   unsupportedShape:
-    "That shape is not available. The assistant can create a rectangle or a box. Nothing was changed.",
+    "That shape is not available. The assistant can create a rectangle, an ellipse, text, or a box. Nothing was changed.",
   unsupportedCommand:
-    "That action is not available. The assistant can create a rectangle or a box, or move, resize, or rotate a shape. Nothing was changed.",
+    "That action is not available. The assistant can create a rectangle, an ellipse, text, or a box, set its fill, or move, resize, or rotate it. Nothing was changed.",
   badValue:
     "The assistant sent a value this scene cannot accept. Nothing was changed.",
   missingSize: "The assistant left out a size. Nothing was changed.",
@@ -20,7 +20,7 @@ export const assistantMessages = {
     "Automatic layout is not available in this build. Nothing was changed.",
   basicDenied:
     "Scene editing is not available for this account. Nothing was changed.",
-  rectangleDepth: "A rectangle has no depth. Nothing was changed.",
+  noDepth: "Only a box has depth. Nothing was changed.",
   boxDepth: "A box resize needs depth. Nothing was changed.",
   unchanged: "Nothing was changed.",
   providerDown: "The model provider could not complete the request.",

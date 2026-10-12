@@ -9,9 +9,12 @@ import {
   deleteSelected,
   dragPosition,
   editorErrorMessage,
+  editText,
   exportDocument,
   moveShape,
   openDocument,
+  orderShape,
+  paintShape,
   redo,
   replacePresent,
   resizeShape,
@@ -198,4 +201,49 @@ test("a sheet angle of 90 degrees is stored as a quarter turn", () => {
     ) < 1e-9,
   );
   assert.equal(added.present.scene.nodes[id]?.transform.rotation[2], 0);
+});
+
+test("ellipse, text, fill, and order survive undo and a saved document", () => {
+  let history = addShape(createHistory(), "ellipse");
+  history = addShape(history, "text");
+  history = addShape(history, "rectangle");
+  assert.deepEqual(
+    shapesOf(history.present).map((shape) => shape.kind),
+    ["ellipse", "text", "rectangle"],
+  );
+  const text = shapesOf(history.present).find((shape) => shape.kind === "text");
+  assert.equal(text?.text, "Text");
+  assert.equal(text?.fontSize, 32);
+  const painted = commitPresent(
+    history,
+    paintShape(history.present, "s2", "#ff00aa"),
+  );
+  const edited = commitPresent(
+    painted,
+    editText(painted.present, "s2", "Hello <b>", 28),
+  );
+  assert.equal(shapesOf(edited.present)[1]?.fill, "#ff00aa");
+  assert.equal(shapesOf(edited.present)[1]?.text, "Hello <b>");
+  const ordered = commitPresent(
+    edited,
+    orderShape(edited.present, "s1", "forward"),
+  );
+  assert.deepEqual(ordered.present.scene.rootIds, ["s2", "s1", "s3"]);
+  assert.equal(orderShape(ordered.present, "s3", "forward"), ordered.present);
+  const bytes = exportDocument(ordered.present);
+  const opened = openDocument(createHistory(), bytes.byteLength, () => bytes);
+  assert.equal(opened.message, null);
+  const restored = shapesOf(opened.history.present);
+  assert.equal(restored.find((shape) => shape.id === "s2")?.text, "Hello <b>");
+  assert.equal(restored.find((shape) => shape.id === "s2")?.fill, "#ff00aa");
+  assert.equal(restored.find((shape) => shape.id === "s1")?.kind, "ellipse");
+  const undone = undo(ordered);
+  assert.deepEqual(undone.present.scene.rootIds, ["s1", "s2", "s3"]);
+  const ellipse = shapesOf(history.present)[0];
+  assert.ok(ellipse !== undefined);
+  assert.equal(
+    shapeAt([ellipse], ellipse.x + ellipse.width / 2, ellipse.y + 1),
+    "s1",
+  );
+  assert.equal(shapeAt([ellipse], ellipse.x + 1, ellipse.y + 1), null);
 });

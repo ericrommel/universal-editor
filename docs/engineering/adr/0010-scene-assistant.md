@@ -1,6 +1,6 @@
 # ADR-0010 — Scene assistant
 
-**Status:** Accepted on the working line (`master`).
+**Status:** Accepted on the working line (`master`). [ADR-0011](0011-two-dimensional-composition.md) adds ellipse, text, and fill to the action list below.
 
 **Date:** 2026-10-06
 

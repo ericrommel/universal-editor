@@ -3,7 +3,10 @@ import {
   DomainError,
   deleteNode,
   insertNode,
+  reorderNode,
   replaceExtents,
+  replaceFill,
+  replaceText,
   replaceTransform,
   type Scene,
   type SceneNode,
@@ -32,7 +35,7 @@ export function degreesFromRadians(radians: number): number {
 export const SHEET_WIDTH = 960;
 export const SHEET_HEIGHT = 600;
 
-export type ShapeKind = "rectangle" | "box";
+export type ShapeKind = "rectangle" | "box" | "ellipse" | "text";
 
 export type EditorDocument = {
   readonly scene: Scene;
@@ -54,6 +57,9 @@ export type EditorShape = {
   readonly height: number;
   readonly depth: number | null;
   readonly rotation: number;
+  readonly fill: string;
+  readonly text: string | null;
+  readonly fontSize: number | null;
 };
 
 export function createHistory(): EditorHistory {
@@ -81,11 +87,58 @@ export function addShape(
       rotation: [0, 0, 0],
       scale: [1, 1, 1],
     },
-    width: kind === "box" ? 120 : 160,
-    height: kind === "box" ? 80 : 100,
-    ...(kind === "box" ? { depth: 48 } : {}),
+    ...newExtents(kind),
   });
   return commit(history, { scene: created, selectedId: id });
+}
+
+export function paintShape(
+  document: EditorDocument,
+  id: string,
+  fill: unknown,
+): EditorDocument {
+  if (!Object.hasOwn(document.scene.nodes, id)) {
+    return document;
+  }
+  return {
+    scene: replaceFill(document.scene, id, fill),
+    selectedId: document.selectedId,
+  };
+}
+
+export function editText(
+  document: EditorDocument,
+  id: string,
+  text: unknown,
+  fontSize: unknown,
+): EditorDocument {
+  const node = document.scene.nodes[id];
+  if (node?.kind !== "text") {
+    return document;
+  }
+  return {
+    scene: replaceText(document.scene, id, { text, fontSize }),
+    selectedId: document.selectedId,
+  };
+}
+
+export function orderShape(
+  document: EditorDocument,
+  id: string,
+  direction: "forward" | "backward",
+): EditorDocument {
+  const place = siblingPlace(document.scene, id);
+  if (place === null) {
+    return document;
+  }
+  const next = direction === "forward" ? place.index + 1 : place.index - 1;
+  if (next < 0 || next >= place.list.length) {
+    return document;
+  }
+  return {
+    scene: reorderNode(document.scene, id, next),
+    selectedId: document.selectedId,
+  };
 }
 
 export function selectShape(
@@ -283,6 +336,9 @@ export function sheetShapes(document: EditorDocument): readonly EditorShape[] {
       height: node.height * Math.abs(frame.sy),
       depth: node.kind === "box" ? node.depth * Math.abs(frame.sz) : null,
       rotation: degreesFromRadians(node.transform.rotation[2]),
+      fill: node.fill,
+      text: node.kind === "text" ? node.text : null,
+      fontSize: node.kind === "text" ? node.fontSize : null,
     });
   }
   return shapes;
@@ -483,7 +539,45 @@ function toShape(node: SceneNode): EditorShape {
     height: node.height,
     depth: node.kind === "box" ? node.depth : null,
     rotation: degreesFromRadians(node.transform.rotation[2]),
+    fill: node.fill,
+    text: node.kind === "text" ? node.text : null,
+    fontSize: node.kind === "text" ? node.fontSize : null,
   };
+}
+
+function newExtents(kind: ShapeKind): {
+  readonly width: number;
+  readonly height: number;
+  readonly depth?: number;
+  readonly text?: string;
+  readonly fontSize?: number;
+} {
+  if (kind === "box") {
+    return { width: 120, height: 80, depth: 48 };
+  }
+  if (kind === "ellipse") {
+    return { width: 140, height: 100 };
+  }
+  if (kind === "text") {
+    return { width: 240, height: 72, text: "Text", fontSize: 32 };
+  }
+  return { width: 160, height: 100 };
+}
+
+function siblingPlace(
+  scene: Scene,
+  id: string,
+): { readonly list: readonly string[]; readonly index: number } | null {
+  if (scene.rootIds.includes(id)) {
+    return { list: scene.rootIds, index: scene.rootIds.indexOf(id) };
+  }
+  for (const key of Object.keys(scene.nodes)) {
+    const node = scene.nodes[key];
+    if (node?.childIds.includes(id)) {
+      return { list: node.childIds, index: node.childIds.indexOf(id) };
+    }
+  }
+  return null;
 }
 
 function hits(shape: EditorShape, x: number, y: number): boolean {
@@ -494,6 +588,9 @@ function hits(shape: EditorShape, x: number, y: number): boolean {
   const dy = y - centerY;
   const localX = dx * Math.cos(angle) + dy * Math.sin(angle) + centerX;
   const localY = -dx * Math.sin(angle) + dy * Math.cos(angle) + centerY;
+  if (shape.kind === "ellipse") {
+    return hitsEllipse(shape, localX, localY);
+  }
   if (contains(shape.x, shape.y, shape.width, shape.height, localX, localY)) {
     return true;
   }
@@ -509,6 +606,17 @@ function hits(shape: EditorShape, x: number, y: number): boolean {
     localX,
     localY,
   );
+}
+
+function hitsEllipse(shape: EditorShape, x: number, y: number): boolean {
+  const rx = shape.width / 2;
+  const ry = shape.height / 2;
+  if (!(rx > 0) || !(ry > 0)) {
+    return false;
+  }
+  const nx = (x - (shape.x + rx)) / rx;
+  const ny = (y - (shape.y + ry)) / ry;
+  return nx * nx + ny * ny <= 1;
 }
 
 function contains(
