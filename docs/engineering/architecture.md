@@ -428,7 +428,7 @@ Not decided here. Notes under a bullet are analysis, not a selection:
 
 ## Implementation breakdown
 
-The order below is the breakdown for the approved binding scope. Work packages may proceed in parallel only where the dependencies allow it. The outcome of that breakdown is the implementation record after the table. The record is not module acceptance and not GREEN.
+The order below is the breakdown for the approved binding scope. Work packages may proceed in parallel only where the dependencies allow it. The outcome of that breakdown is the implementation record after the table. Issue #1 is closed. This breakdown is not a status gate.
 
 Each work package is implemented on its own branch and opened as a pull request linked to issue #1. That work is not committed directly to `main`.
 
@@ -446,7 +446,7 @@ WP-1 and WP-3 may proceed together after WP-0. WP-2 waits until the core and per
 
 ## Implementation record
 
-The binding decisions in this document are unchanged. This review branch contains the merged work plus the corrections below. It is not module acceptance and not GREEN.
+The binding decisions in this document are unchanged. The table below is the Module 0 implementation record. Issue #1 is closed.
 
 | ID | Outcome |
 | --- | --- |

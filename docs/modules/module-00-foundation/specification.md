@@ -1,6 +1,6 @@
 # Module 0 — Engineering Foundation
 
-**Status:** The foundation outcome is on `master`. Issue #1 is closed. The requirements below are that contract. This file is not a gate for later modules.
+**Status:** The foundation outcome is on `master`. Issue #1 is closed. Sections 1 through 7 are that contract. Sections 8 and 9 are the historical preparation record, not a current authorization rule. This file is not a gate for later modules.
 
 ## 1. Objective
 
@@ -266,6 +266,8 @@ The minimal shell has been reviewed against the approved Module 0 design intent 
 
 ## 8. Architecture Preparation
 
+This section is the Module 0 record. Later work does not use it.
+
 Before Module 0 becomes READY FOR DEVELOPMENT, the Tech Lead shall complete `/docs/engineering/architecture.md` and create ADRs under `/docs/engineering/adr/` for major decisions.
 
 The architecture proposal must cover the topics listed in `architecture.md`.
@@ -277,6 +279,8 @@ No production application implementation begins until blocking architecture deci
 ---
 
 ## 9. Required Evidence Before PO Review
+
+This section is the Module 0 record. Later work does not use it.
 
 At minimum:
 
