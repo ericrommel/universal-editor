@@ -383,3 +383,55 @@ test("placeShape edits the sheet size of a scaled child", () => {
   );
   assert.equal(unchanged.scene, placed.scene);
 });
+
+test("moving a finely scaled child keeps its extents", () => {
+  let scene = createScene();
+  scene = insertNode(scene, {
+    id: "parent",
+    kind: "rectangle",
+    parentId: null,
+    index: 0,
+    width: 10,
+    height: 10,
+    transform: {
+      position: [0, 0, 0],
+      rotation: [0, 0, 0],
+      scale: [3, 3, 3],
+    },
+  });
+  scene = insertNode(scene, {
+    id: "child",
+    kind: "box",
+    parentId: "parent",
+    index: 0,
+    width: 0.1,
+    height: 0.2,
+    depth: 0.2,
+    transform: {
+      position: [1, 0, 0],
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1],
+    },
+  });
+  const history = commitPresent(createHistory(), {
+    scene,
+    selectedId: "child",
+  });
+  const shown = sheetShapes(history.present).find(
+    (shape) => shape.id === "child",
+  );
+  if (shown === undefined || shown.depth === null) {
+    throw new Error("missing child");
+  }
+  const moved = placeShape(
+    history.present,
+    "child",
+    { x: shown.x + 3, y: shown.y, width: shown.width, height: shown.height },
+    null,
+  );
+  const child = moved.scene.nodes.child;
+  assert.equal(child?.width, 0.1);
+  assert.equal(child?.height, 0.2);
+  assert.equal(child?.kind === "box" && child.depth, 0.2);
+  assert.equal(child?.transform.position[0], 2);
+});

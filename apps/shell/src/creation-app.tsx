@@ -90,11 +90,13 @@ export function CreationApp() {
   const removable = canDelete(history.present);
 
   const show = useCallback((next: EditorHistory) => {
-    const sceneChanged =
-      next.present.scene !== historyRef.current.present.scene;
+    const previous = historyRef.current.present;
     historyRef.current = next;
     setHistory(next);
-    if (sceneChanged) {
+    if (
+      next.present.scene !== previous.scene ||
+      next.present.selectedId !== previous.selectedId
+    ) {
       setSizeNotice(null);
     }
   }, []);

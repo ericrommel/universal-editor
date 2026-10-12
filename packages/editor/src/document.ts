@@ -533,22 +533,28 @@ export function placeShape(
   if (sx === 0 || sy === 0 || sz === 0) {
     return document;
   }
+  const currentWidth = node.width * sx;
+  const currentHeight = node.height * sy;
+  const currentDepth = node.kind === "box" ? node.depth * sz : null;
   const localWidth = frame.width / sx;
   const localHeight = frame.height / sy;
+  // A null depth means "leave it". Dividing the current sheet depth back
+  // into local units is not exact for every finite scale.
   const localDepth =
-    node.kind === "box" ? (depth ?? node.depth * sz) / sz : null;
+    node.kind === "box" ? (depth === null ? node.depth : depth / sz) : null;
   let next = document;
-  const depthChanged = node.kind === "box" && localDepth !== node.depth;
+  const depthChanged =
+    node.kind === "box" && depth !== null && depth !== currentDepth;
   if (
-    node.width !== localWidth ||
-    node.height !== localHeight ||
+    frame.width !== currentWidth ||
+    frame.height !== currentHeight ||
     depthChanged
   ) {
     next = resizeShape(
       next,
       id,
-      localWidth,
-      localHeight,
+      frame.width === currentWidth ? node.width : localWidth,
+      frame.height === currentHeight ? node.height : localHeight,
       node.kind === "box" ? localDepth : null,
     );
   }
