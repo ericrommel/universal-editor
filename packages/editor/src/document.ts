@@ -17,6 +17,20 @@ const HISTORY_LIMIT = 50;
 const BOX_DX = 0.45;
 const BOX_DY = -0.35;
 const DEGREES_PER_RADIAN = 180 / Math.PI;
+const PLACEMENT_COLUMNS = 4;
+const PLACEMENT_ROWS = 3;
+const PLACEMENT_X = 48;
+const PLACEMENT_Y = 48;
+const PLACEMENT_COLUMN = 200;
+const PLACEMENT_ROW = 168;
+const MIN_ON_PAGE = 24;
+// A handle can pass through zero. The scene rejects that extent, so the
+// handle stops on a positive value instead of failing the gesture.
+const MIN_HANDLE_EXTENT = 0.001;
+const EAST = new Set<ResizeHandle>(["e", "ne", "se"]);
+const WEST = new Set<ResizeHandle>(["w", "nw", "sw"]);
+const SOUTH = new Set<ResizeHandle>(["s", "se", "sw"]);
+const NORTH = new Set<ResizeHandle>(["n", "ne", "nw"]);
 
 // The scene triple is radians, the same unit glTF reads and writes.
 // The sheet, the size form, and the assistant speak degrees. Convert
@@ -43,7 +57,20 @@ export type EditorHistory = {
   readonly past: readonly EditorDocument[];
   readonly present: EditorDocument;
   readonly future: readonly EditorDocument[];
+  // The last committed document. Selection and a drag preview update
+  // `present` only. Undo and redo copy this, so a later click cannot
+  // replace the selection that belonged to that step.
+  readonly anchor: EditorDocument;
 };
+
+export type Frame = {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+};
+
+export type ResizeHandle = "n" | "ne" | "e" | "se" | "s" | "sw" | "w" | "nw";
 
 export type EditorShape = {
   readonly id: string;
@@ -57,11 +84,8 @@ export type EditorShape = {
 };
 
 export function createHistory(): EditorHistory {
-  return {
-    past: [],
-    present: { scene: createScene(), selectedId: null },
-    future: [],
-  };
+  const present = { scene: createScene(), selectedId: null };
+  return { past: [], present, future: [], anchor: present };
 }
 
 export function addShape(
@@ -70,14 +94,14 @@ export function addShape(
 ): EditorHistory {
   const scene = history.present.scene;
   const id = nextId(scene);
-  const offset = scene.rootIds.length * 24;
+  const origin = shapeOrigin(scene.rootIds.length);
   const created = insertNode(scene, {
     id,
     kind,
     parentId: null,
     index: scene.rootIds.length,
     transform: {
-      position: [64 + offset, 64 + offset, 0],
+      position: [origin.x, origin.y, 0],
       rotation: [0, 0, 0],
       scale: [1, 1, 1],
     },
@@ -193,20 +217,59 @@ export function replacePresent(
   history: EditorHistory,
   present: EditorDocument,
 ): EditorHistory {
-  return { past: history.past, present, future: history.future };
+  return {
+    past: history.past,
+    present,
+    future: history.future,
+    anchor: history.anchor,
+  };
 }
 
 export function commitPresent(
   base: EditorHistory,
   present: EditorDocument,
 ): EditorHistory {
-  if (present.scene === base.present.scene) {
-    return { past: base.past, present, future: base.future };
+  if (present.scene === base.anchor.scene) {
+    return {
+      past: base.past,
+      present,
+      future: base.future,
+      anchor: base.anchor,
+    };
   }
   return commit(base, present);
 }
 
+export function canUndo(history: EditorHistory): boolean {
+  return (
+    history.past.length > 0 || history.present.scene !== history.anchor.scene
+  );
+}
+
+export function canRedo(history: EditorHistory): boolean {
+  return (
+    history.future.length > 0 && history.present.scene === history.anchor.scene
+  );
+}
+
+export function canDelete(document: EditorDocument): boolean {
+  return (
+    document.selectedId !== null &&
+    Object.hasOwn(document.scene.nodes, document.selectedId)
+  );
+}
+
 export function undo(history: EditorHistory): EditorHistory {
+  // A drag that has not been released is not a step. Drop that preview
+  // before consuming the committed history.
+  if (history.present.scene !== history.anchor.scene) {
+    return {
+      past: history.past,
+      present: history.anchor,
+      future: history.future,
+      anchor: history.anchor,
+    };
+  }
   const previous = history.past[history.past.length - 1];
   if (!previous) {
     return history;
@@ -214,19 +277,21 @@ export function undo(history: EditorHistory): EditorHistory {
   return {
     past: history.past.slice(0, -1),
     present: previous,
-    future: [history.present, ...history.future],
+    future: [history.anchor, ...history.future],
+    anchor: previous,
   };
 }
 
 export function redo(history: EditorHistory): EditorHistory {
   const next = history.future[0];
-  if (!next) {
+  if (!next || history.present.scene !== history.anchor.scene) {
     return history;
   }
   return {
-    past: [...history.past, history.present],
+    past: [...history.past, history.anchor],
     present: next,
     future: history.future.slice(1),
+    anchor: next,
   };
 }
 
@@ -342,6 +407,19 @@ export function exportDocument(document: EditorDocument): Uint8Array {
   return writeScene(document.scene);
 }
 
+// The canonical writer stays one line so the byte cap and the duplicate-key
+// walk stay stable. A saved file is indented so a person can read it, and
+// falls back to the canonical bytes when indentation would exceed the cap.
+export function exportReadableDocument(document: EditorDocument): Uint8Array {
+  const canonical = exportDocument(document);
+  const pretty = `${JSON.stringify(JSON.parse(decodeUtf8(canonical)), null, 2)}\n`;
+  const bytes = encodeUtf8(pretty);
+  if (bytes.byteLength > SCENE_BYTE_LIMIT) {
+    return canonical;
+  }
+  return bytes;
+}
+
 export function importDocument(bytes: Uint8Array): EditorDocument {
   return { scene: readScene(bytes), selectedId: null };
 }
@@ -378,15 +456,149 @@ export function boxShift(depth: number): {
   return { dx: depth * BOX_DX, dy: depth * BOX_DY };
 }
 
+export function containedPosition(
+  size: { readonly width: number; readonly height: number },
+  x: number,
+  y: number,
+): { readonly x: number; readonly y: number } {
+  return {
+    x: clampOnPage(x, size.width, SHEET_WIDTH),
+    y: clampOnPage(y, size.height, SHEET_HEIGHT),
+  };
+}
+
+export function resizedFrame(
+  origin: Frame,
+  handle: ResizeHandle,
+  dx: number,
+  dy: number,
+): Frame {
+  let x = origin.x;
+  let y = origin.y;
+  let width = origin.width;
+  let height = origin.height;
+  const right = origin.x + origin.width;
+  const bottom = origin.y + origin.height;
+  if (EAST.has(handle)) {
+    width = origin.width + dx;
+  }
+  if (WEST.has(handle)) {
+    width = origin.width - dx;
+    x = origin.x + dx;
+  }
+  if (SOUTH.has(handle)) {
+    height = origin.height + dy;
+  }
+  if (NORTH.has(handle)) {
+    height = origin.height - dy;
+    y = origin.y + dy;
+  }
+  if (!(width > 0)) {
+    width = MIN_HANDLE_EXTENT;
+    if (WEST.has(handle)) {
+      x = right - width;
+    }
+  }
+  if (!(height > 0)) {
+    height = MIN_HANDLE_EXTENT;
+    if (NORTH.has(handle)) {
+      y = bottom - height;
+    }
+  }
+  return { x, y, width, height };
+}
+
+export function resizedDepth(depth: number, dx: number, dy: number): number {
+  const lengthSquared = BOX_DX * BOX_DX + BOX_DY * BOX_DY;
+  const delta = (dx * BOX_DX + dy * BOX_DY) / lengthSquared;
+  const next = depth + delta;
+  return next > 0 ? next : MIN_HANDLE_EXTENT;
+}
+
+// `frame` and `depth` are sheet measurements, the same numbers the page draws.
+export function placeShape(
+  document: EditorDocument,
+  id: string,
+  frame: Frame,
+  depth: number | null,
+): EditorDocument {
+  const node = document.scene.nodes[id];
+  const sheet = sheetFramesOf(document.scene).get(id);
+  if (!node || sheet === undefined) {
+    return document;
+  }
+  const sx = Math.abs(sheet.sx);
+  const sy = Math.abs(sheet.sy);
+  const sz = Math.abs(sheet.sz);
+  if (sx === 0 || sy === 0 || sz === 0) {
+    return document;
+  }
+  const localWidth = frame.width / sx;
+  const localHeight = frame.height / sy;
+  const localDepth =
+    node.kind === "box" ? (depth ?? node.depth * sz) / sz : null;
+  let next = document;
+  const depthChanged = node.kind === "box" && localDepth !== node.depth;
+  if (
+    node.width !== localWidth ||
+    node.height !== localHeight ||
+    depthChanged
+  ) {
+    next = resizeShape(
+      next,
+      id,
+      localWidth,
+      localHeight,
+      node.kind === "box" ? localDepth : null,
+    );
+  }
+  const placed = sheetFramesOf(next.scene).get(id);
+  if (placed !== undefined && (placed.x !== frame.x || placed.y !== frame.y)) {
+    next = moveShape(next, id, frame.x, frame.y);
+  }
+  return next;
+}
+
 function commit(
   history: EditorHistory,
   present: EditorDocument,
 ): EditorHistory {
   return {
-    past: [...history.past, history.present].slice(-HISTORY_LIMIT),
+    past: [...history.past, history.anchor].slice(-HISTORY_LIMIT),
     present,
     future: [],
+    anchor: present,
   };
+}
+
+function shapeOrigin(index: number): {
+  readonly x: number;
+  readonly y: number;
+} {
+  const page = PLACEMENT_COLUMNS * PLACEMENT_ROWS;
+  const cycle = Math.floor(index / page);
+  const slot = index % page;
+  const nudge = (cycle % 4) * 20;
+  return {
+    x: PLACEMENT_X + (slot % PLACEMENT_COLUMNS) * PLACEMENT_COLUMN + nudge,
+    y:
+      PLACEMENT_Y +
+      Math.floor(slot / PLACEMENT_COLUMNS) * PLACEMENT_ROW +
+      nudge,
+  };
+}
+
+function clampOnPage(origin: number, length: number, page: number): number {
+  const keep = Math.min(MIN_ON_PAGE, length);
+  const min = keep - length;
+  const max = page - keep;
+  if (max < min || origin < min) {
+    return min;
+  }
+  if (origin > max) {
+    return max;
+  }
+  return origin;
 }
 
 function localPoint(
@@ -520,4 +732,23 @@ function contains(
   y: number,
 ): boolean {
   return x >= left && y >= top && x < left + width && y < top + height;
+}
+
+// The DOM lib is not enabled here. Node still provides these constructors.
+function encodeUtf8(text: string): Uint8Array {
+  const Encoder = (
+    globalThis as unknown as {
+      TextEncoder: new () => { encode(input: string): Uint8Array };
+    }
+  ).TextEncoder;
+  return new Encoder().encode(text);
+}
+
+function decodeUtf8(bytes: Uint8Array): string {
+  const Decoder = (
+    globalThis as unknown as {
+      TextDecoder: new () => { decode(input: Uint8Array): string };
+    }
+  ).TextDecoder;
+  return new Decoder().decode(bytes);
 }

@@ -14,6 +14,12 @@ test("the committed crate example imports", async () => {
   assert.equal(scene.nodes.card?.kind, "rectangle");
 });
 
+test("the shell sample matches the crate example", async () => {
+  const example = await readFile("examples/interchange/crate-and-card.glb");
+  const sample = await readFile("apps/shell/public/samples/crate-and-card.glb");
+  assert.deepEqual(Buffer.from(sample), Buffer.from(example));
+});
+
 test("the committed external cube imports", async () => {
   const bytes = new Uint8Array(
     await readFile("examples/interchange/unit-cube.glb"),

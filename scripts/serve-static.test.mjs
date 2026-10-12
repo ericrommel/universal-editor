@@ -35,6 +35,8 @@ test("the static server stays inside the build and sends the policy", async () =
   const outside = fs.mkdtempSync(path.join(os.tmpdir(), "uvcp-outside-"));
   fs.writeFileSync(path.join(directory, "index.html"), "<p>editor</p>");
   fs.writeFileSync(path.join(directory, "app.js"), "export {};");
+  fs.writeFileSync(path.join(directory, "cube.glb"), "glTF");
+  fs.writeFileSync(path.join(directory, "note.exe"), "nope");
   fs.writeFileSync(path.join(outside, "secret.txt"), "secret");
   fs.writeFileSync(path.join(directory, "_headers"), "ignored");
   try {
@@ -42,6 +44,12 @@ test("the static server stays inside the build and sends the policy", async () =
     assert.equal(resolveStaticFile(directory, "/%2e%2e/secret.txt"), null);
     assert.equal(resolveStaticFile(directory, "/_headers"), null);
     assert.equal(resolveStaticFile(directory, "/missing.js"), null);
+    assert.equal(resolveStaticFile(directory, "/note.exe"), null);
+    assert.equal(
+      resolveStaticFile(directory, "/cube.glb")?.type,
+      "model/gltf-binary",
+    );
+    assert.equal(securityHeaders(".glb")["Cache-Control"], "no-cache");
     assert.ok(resolveStaticFile(directory, "/")?.file.endsWith("index.html"));
 
     const server = createStaticServer(directory);
