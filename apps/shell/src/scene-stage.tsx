@@ -10,7 +10,7 @@ import {
   type ResizeHandle,
   replacePresent,
   resizedDepth,
-  resizedFrame,
+  resizedRotatedFrame,
   SHEET_HEIGHT,
   SHEET_WIDTH,
   selectShape,
@@ -18,6 +18,7 @@ import {
 } from "@uvcp/editor";
 import {
   type PointerEvent as ReactPointerEvent,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -303,15 +304,11 @@ export function SceneStage({
       if (isBlocked()) {
         return;
       }
-      const frame = roundResize(
+      const frame = resizedRotatedFrame(
         active.origin,
+        active.rotation,
         active.handle,
-        resizedFrame(
-          active.origin,
-          active.handle,
-          point.x - active.startX,
-          point.y - active.startY,
-        ),
+        pagePoint,
       );
       active.frame = frame;
       publish(
@@ -345,7 +342,16 @@ export function SceneStage({
     const active = gesture.current;
     gesture.current = null;
     setHolding(false);
-    if (!active || isBlocked() || !historyStillOwnsGesture(active.base)) {
+    if (!active) {
+      return;
+    }
+    const owns = historyStillOwnsGesture(active.base);
+    // A file read or assistant request can start while the button is down.
+    // That preview is not a step, so release puts the page back.
+    if (isBlocked() || !owns) {
+      if (isBlocked() && owns) {
+        publish(active.base);
+      }
       return;
     }
     if (active.kind === "move") {
@@ -448,7 +454,7 @@ export function SceneStage({
             dominantBaseline="middle"
             pointerEvents="none"
           >
-            Add a rectangle or a box.
+            Add a rectangle, an ellipse, text, or a box.
           </text>
         ) : null}
         {selected ? (
@@ -476,6 +482,58 @@ export function SceneStage({
 }
 
 function ShapeFigure({ shape }: { readonly shape: EditorShape }) {
+  const clipId = useId();
+  if (shape.kind === "ellipse") {
+    return (
+      <ellipse
+        className="uvcp-face uvcp-face-front"
+        cx={shape.x + shape.width / 2}
+        cy={shape.y + shape.height / 2}
+        rx={shape.width / 2}
+        ry={shape.height / 2}
+        fill={shape.fill}
+        vectorEffect="non-scaling-stroke"
+      />
+    );
+  }
+  if (shape.kind === "text") {
+    return (
+      <>
+        <rect
+          className="uvcp-face uvcp-face-front"
+          x={shape.x}
+          y={shape.y}
+          width={shape.width}
+          height={shape.height}
+          fill="none"
+          pointerEvents="all"
+          vectorEffect="non-scaling-stroke"
+        />
+        {shape.text !== null && shape.fontSize !== null ? (
+          <>
+            <clipPath id={clipId}>
+              <rect
+                x={shape.x}
+                y={shape.y}
+                width={shape.width}
+                height={shape.height}
+              />
+            </clipPath>
+            <text
+              className="uvcp-text"
+              x={shape.x + 8}
+              y={shape.y + shape.fontSize}
+              fill={shape.fill}
+              fontSize={shape.fontSize}
+              clipPath={`url(#${clipId})`}
+            >
+              {shape.text}
+            </text>
+          </>
+        ) : null}
+      </>
+    );
+  }
   if (shape.depth === null) {
     return (
       <rect
@@ -484,6 +542,7 @@ function ShapeFigure({ shape }: { readonly shape: EditorShape }) {
         y={shape.y}
         width={shape.width}
         height={shape.height}
+        fill={shape.fill}
         vectorEffect="non-scaling-stroke"
       />
     );
@@ -513,16 +572,19 @@ function ShapeFigure({ shape }: { readonly shape: EditorShape }) {
         y={backY}
         width={shape.width}
         height={shape.height}
+        fill={shape.fill}
         vectorEffect="non-scaling-stroke"
       />
       <polygon
         className="uvcp-face uvcp-face-top"
         points={top}
+        fill={shape.fill}
         vectorEffect="non-scaling-stroke"
       />
       <polygon
         className="uvcp-face uvcp-face-side"
         points={side}
+        fill={shape.fill}
         vectorEffect="non-scaling-stroke"
       />
       <rect
@@ -531,6 +593,7 @@ function ShapeFigure({ shape }: { readonly shape: EditorShape }) {
         y={shape.y}
         width={shape.width}
         height={shape.height}
+        fill={shape.fill}
         vectorEffect="non-scaling-stroke"
       />
     </>
@@ -745,19 +808,6 @@ function roundPoint(point: { readonly x: number; readonly y: number }): {
   readonly y: number;
 } {
   return { x: roundUnit(point.x), y: roundUnit(point.y) };
-}
-
-function roundResize(origin: Frame, handle: ResizeHandle, frame: Frame): Frame {
-  const width = roundExtent(frame.width);
-  const height = roundExtent(frame.height);
-  const movesLeft = handle === "w" || handle === "nw" || handle === "sw";
-  const movesTop = handle === "n" || handle === "ne" || handle === "nw";
-  return {
-    x: movesLeft ? roundUnit(origin.x + origin.width - width) : origin.x,
-    y: movesTop ? roundUnit(origin.y + origin.height - height) : origin.y,
-    width,
-    height,
-  };
 }
 
 function shapeTransform(shape: EditorShape): string | undefined {

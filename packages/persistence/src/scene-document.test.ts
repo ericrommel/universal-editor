@@ -75,7 +75,7 @@ test("an empty scene is not empty bytes", () => {
   const written = writeScene(scene);
   assert.equal(
     text(written),
-    `{"formatId":"${FORMAT_ID}","schemaVersion":1,"roots":[],"nodes":[]}`,
+    `{"formatId":"${FORMAT_ID}","schemaVersion":2,"roots":[],"nodes":[]}`,
   );
   assert.deepEqual(readScene(written).rootIds, []);
   const empty = expectError(() => readScene(new Uint8Array()));
@@ -94,7 +94,7 @@ test("the writer is canonical and the reader ignores order", () => {
   assert.equal(body.charCodeAt(0), 0x7b);
   assert.equal(
     body,
-    `{"formatId":"${FORMAT_ID}","schemaVersion":1,"roots":["a"],"nodes":[{"id":"a","kind":"rectangle","children":["b","c"],"transform":{"position":[0,0,0],"rotation":[0,0,0],"scale":[1,1,1]},"width":2,"height":3},{"id":"b","kind":"box","children":[],"transform":{"position":[0,1,2],"rotation":[0,0,0],"scale":[-1,1,1]},"width":4,"height":5,"depth":6},{"id":"c","kind":"rectangle","children":[],"transform":{"position":[0,0,0],"rotation":[0,0,0],"scale":[1,1,1]},"width":2,"height":3}]}`,
+    `{"formatId":"${FORMAT_ID}","schemaVersion":2,"roots":["a"],"nodes":[{"id":"a","kind":"rectangle","children":["b","c"],"transform":{"position":[0,0,0],"rotation":[0,0,0],"scale":[1,1,1]},"width":2,"height":3,"fill":"#dbe7ff"},{"id":"b","kind":"box","children":[],"transform":{"position":[0,1,2],"rotation":[0,0,0],"scale":[-1,1,1]},"width":4,"height":5,"depth":6,"fill":"#dbe7ff"},{"id":"c","kind":"rectangle","children":[],"transform":{"position":[0,0,0],"rotation":[0,0,0],"scale":[1,1,1]},"width":2,"height":3,"fill":"#dbe7ff"}]}`,
   );
   const read = readScene(first);
   assert.deepEqual(read.rootIds, ["a"]);
@@ -256,6 +256,35 @@ test("deep nesting does not escape as a host error", () => {
   assert.ok(nested.length < 1048576);
   const error = expectError(() => readScene(bytes(nested)));
   assert.ok(error.code === "INVALID_JSON" || error.code === "INVALID_SHAPE");
+});
+
+test("schema 2 keeps ellipse, text, and fill, and schema 1 does not grow", () => {
+  const source = `{"formatId":"${FORMAT_ID}","schemaVersion":2,"roots":["e","t"],"nodes":[{"id":"e","kind":"ellipse","children":[],"transform":{"position":[1,2,0],"rotation":[0,0,0],"scale":[1,1,1]},"width":10,"height":12,"fill":"#ABCDEF"},{"id":"t","kind":"text","children":[],"transform":{"position":[3,4,0],"rotation":[0,0,0],"scale":[1,1,1]},"width":40,"height":16,"fill":"#111111","text":"Hello <script>","fontSize":14}]}`;
+  const scene = readScene(bytes(source));
+  assert.equal(scene.nodes.e?.kind, "ellipse");
+  assert.equal(scene.nodes.e?.fill, "#abcdef");
+  assert.equal(
+    scene.nodes.t?.kind === "text" && scene.nodes.t.text,
+    "Hello <script>",
+  );
+  const written = text(writeScene(scene));
+  assert.equal(written.includes("<script>"), true);
+  assert.equal(written.includes('schemaVersion":2'), true);
+  assert.equal(text(writeScene(readScene(bytes(written)))), written);
+  const oldEllipse = `{"formatId":"${FORMAT_ID}","schemaVersion":1,"roots":["e"],"nodes":[{"id":"e","kind":"ellipse","children":[],"transform":{"position":[0,0,0],"rotation":[0,0,0],"scale":[1,1,1]},"width":1,"height":1}]}`;
+  assert.equal(
+    expectError(() => readScene(bytes(oldEllipse))).code,
+    "INVALID_SHAPE",
+  );
+  const badFill = `{"formatId":"${FORMAT_ID}","schemaVersion":2,"roots":["e"],"nodes":[{"id":"e","kind":"ellipse","children":[],"transform":{"position":[0,0,0],"rotation":[0,0,0],"scale":[1,1,1]},"width":1,"height":1,"fill":"${SENTINEL}"}]}`;
+  const rejected = expectError(() => readScene(bytes(badFill)));
+  assert.equal(rejected.code, "INVALID_FILL");
+  assert.equal(rejected.message, "Scene fill is not accepted.");
+  const version = `{"formatId":"${FORMAT_ID}","schemaVersion":2.0,"roots":[],"nodes":[]}`;
+  assert.equal(
+    expectError(() => readScene(bytes(version))).code,
+    "UNSUPPORTED_SCHEMA_VERSION",
+  );
 });
 
 test("a scene whose canonical bytes exceed the cap is not written", () => {

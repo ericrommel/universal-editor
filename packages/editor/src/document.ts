@@ -3,7 +3,10 @@ import {
   DomainError,
   deleteNode,
   insertNode,
+  reorderNode,
   replaceExtents,
+  replaceFill,
+  replaceText,
   replaceTransform,
   type Scene,
   type SceneNode,
@@ -17,11 +20,13 @@ const HISTORY_LIMIT = 50;
 const BOX_DX = 0.45;
 const BOX_DY = -0.35;
 const DEGREES_PER_RADIAN = 180 / Math.PI;
-const PLACEMENT_COLUMNS = 4;
+// Text is the widest new object, at 240. Three columns of 264 leave a gap
+// and keep that object on the 960-wide sheet. A later cycle only nudges.
+const PLACEMENT_COLUMNS = 3;
 const PLACEMENT_ROWS = 3;
 const PLACEMENT_X = 48;
 const PLACEMENT_Y = 48;
-const PLACEMENT_COLUMN = 200;
+const PLACEMENT_COLUMN = 264;
 const PLACEMENT_ROW = 168;
 const MIN_ON_PAGE = 24;
 // A handle can pass through zero. The scene rejects that extent, so the
@@ -46,7 +51,7 @@ export function degreesFromRadians(radians: number): number {
 export const SHEET_WIDTH = 960;
 export const SHEET_HEIGHT = 600;
 
-export type ShapeKind = "rectangle" | "box";
+export type ShapeKind = "rectangle" | "box" | "ellipse" | "text";
 
 export type EditorDocument = {
   readonly scene: Scene;
@@ -81,6 +86,9 @@ export type EditorShape = {
   readonly height: number;
   readonly depth: number | null;
   readonly rotation: number;
+  readonly fill: string;
+  readonly text: string | null;
+  readonly fontSize: number | null;
 };
 
 export function createHistory(): EditorHistory {
@@ -105,11 +113,73 @@ export function addShape(
       rotation: [0, 0, 0],
       scale: [1, 1, 1],
     },
-    width: kind === "box" ? 120 : 160,
-    height: kind === "box" ? 80 : 100,
-    ...(kind === "box" ? { depth: 48 } : {}),
+    ...newExtents(kind),
   });
   return commit(history, { scene: created, selectedId: id });
+}
+
+export function paintShape(
+  document: EditorDocument,
+  id: string,
+  fill: unknown,
+): EditorDocument {
+  if (!Object.hasOwn(document.scene.nodes, id)) {
+    return document;
+  }
+  return {
+    scene: replaceFill(document.scene, id, fill),
+    selectedId: document.selectedId,
+  };
+}
+
+export function editText(
+  document: EditorDocument,
+  id: string,
+  text: unknown,
+  fontSize: unknown,
+): EditorDocument {
+  const node = document.scene.nodes[id];
+  if (node?.kind !== "text") {
+    return document;
+  }
+  return {
+    scene: replaceText(document.scene, id, { text, fontSize }),
+    selectedId: document.selectedId,
+  };
+}
+
+export function orderShape(
+  document: EditorDocument,
+  id: string,
+  direction: "forward" | "backward",
+): EditorDocument {
+  const place = siblingPlace(document.scene, id);
+  if (place === null) {
+    return document;
+  }
+  const next = direction === "forward" ? place.index + 1 : place.index - 1;
+  if (next < 0 || next >= place.list.length) {
+    return document;
+  }
+  return {
+    scene: reorderNode(document.scene, id, next),
+    selectedId: document.selectedId,
+  };
+}
+
+export function canOrder(
+  document: EditorDocument,
+  direction: "forward" | "backward",
+): boolean {
+  if (document.selectedId === null) {
+    return false;
+  }
+  const place = siblingPlace(document.scene, document.selectedId);
+  if (place === null) {
+    return false;
+  }
+  const next = direction === "forward" ? place.index + 1 : place.index - 1;
+  return next >= 0 && next < place.list.length;
 }
 
 export function selectShape(
@@ -348,6 +418,9 @@ export function sheetShapes(document: EditorDocument): readonly EditorShape[] {
       height: node.height * Math.abs(frame.sy),
       depth: node.kind === "box" ? node.depth * Math.abs(frame.sz) : null,
       rotation: degreesFromRadians(node.transform.rotation[2]),
+      fill: node.fill,
+      text: node.kind === "text" ? node.text : null,
+      fontSize: node.kind === "text" ? node.fontSize : null,
     });
   }
   return shapes;
@@ -508,6 +581,79 @@ export function resizedFrame(
   return { x, y, width, height };
 }
 
+const OPPOSITE_HANDLE: Record<ResizeHandle, ResizeHandle> = {
+  n: "s",
+  s: "n",
+  e: "w",
+  w: "e",
+  ne: "sw",
+  sw: "ne",
+  nw: "se",
+  se: "nw",
+};
+
+// The page rotates a shape around its own center. A handle drag keeps the
+// opposite point fixed in that rotated page, so the handle stays on the pointer.
+export function resizedRotatedFrame(
+  origin: Frame,
+  rotationDegrees: number,
+  handle: ResizeHandle,
+  pointer: { readonly x: number; readonly y: number },
+): Frame {
+  const angle = (rotationDegrees * Math.PI) / 180;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  const centerX = origin.x + origin.width / 2;
+  const centerY = origin.y + origin.height / 2;
+  const fixed = OPPOSITE_HANDLE[handle];
+  const fixedLocal = handleOffset(fixed, origin.width, origin.height);
+  const fixedPage = {
+    x: centerX + fixedLocal.x * cos - fixedLocal.y * sin,
+    y: centerY + fixedLocal.x * sin + fixedLocal.y * cos,
+  };
+  const localX =
+    (pointer.x - fixedPage.x) * cos + (pointer.y - fixedPage.y) * sin;
+  const localY =
+    -(pointer.x - fixedPage.x) * sin + (pointer.y - fixedPage.y) * cos;
+  let width = origin.width;
+  let height = origin.height;
+  if (EAST.has(handle) || WEST.has(handle)) {
+    width = Math.abs(localX) > 0 ? Math.abs(localX) : MIN_HANDLE_EXTENT;
+  }
+  if (NORTH.has(handle) || SOUTH.has(handle)) {
+    height = Math.abs(localY) > 0 ? Math.abs(localY) : MIN_HANDLE_EXTENT;
+  }
+  width = Math.max(Math.round(width * 1000) / 1000, MIN_HANDLE_EXTENT);
+  height = Math.max(Math.round(height * 1000) / 1000, MIN_HANDLE_EXTENT);
+  const nextFixed = handleOffset(fixed, width, height);
+  const nextCenterX = fixedPage.x - (nextFixed.x * cos - nextFixed.y * sin);
+  const nextCenterY = fixedPage.y - (nextFixed.x * sin + nextFixed.y * cos);
+  return {
+    x: Math.round((nextCenterX - width / 2) * 1000) / 1000,
+    y: Math.round((nextCenterY - height / 2) * 1000) / 1000,
+    width,
+    height,
+  };
+}
+
+function handleOffset(
+  handle: ResizeHandle,
+  width: number,
+  height: number,
+): { readonly x: number; readonly y: number } {
+  const right = EAST.has(handle)
+    ? width / 2
+    : WEST.has(handle)
+      ? -width / 2
+      : 0;
+  const down = SOUTH.has(handle)
+    ? height / 2
+    : NORTH.has(handle)
+      ? -height / 2
+      : 0;
+  return { x: right, y: down };
+}
+
 export function resizedDepth(depth: number, dx: number, dy: number): number {
   const lengthSquared = BOX_DX * BOX_DX + BOX_DY * BOX_DY;
   const delta = (dx * BOX_DX + dy * BOX_DY) / lengthSquared;
@@ -541,7 +687,11 @@ export function placeShape(
   // A null depth means "leave it". Dividing the current sheet depth back
   // into local units is not exact for every finite scale.
   const localDepth =
-    node.kind === "box" ? (depth === null ? node.depth : depth / sz) : null;
+    node.kind === "box"
+      ? depth === null || depth === currentDepth
+        ? node.depth
+        : depth / sz
+      : null;
   let next = document;
   const depthChanged =
     node.kind === "box" && depth !== null && depth !== currentDepth;
@@ -701,7 +851,45 @@ function toShape(node: SceneNode): EditorShape {
     height: node.height,
     depth: node.kind === "box" ? node.depth : null,
     rotation: degreesFromRadians(node.transform.rotation[2]),
+    fill: node.fill,
+    text: node.kind === "text" ? node.text : null,
+    fontSize: node.kind === "text" ? node.fontSize : null,
   };
+}
+
+function newExtents(kind: ShapeKind): {
+  readonly width: number;
+  readonly height: number;
+  readonly depth?: number;
+  readonly text?: string;
+  readonly fontSize?: number;
+} {
+  if (kind === "box") {
+    return { width: 120, height: 80, depth: 48 };
+  }
+  if (kind === "ellipse") {
+    return { width: 140, height: 100 };
+  }
+  if (kind === "text") {
+    return { width: 240, height: 72, text: "Text", fontSize: 32 };
+  }
+  return { width: 160, height: 100 };
+}
+
+function siblingPlace(
+  scene: Scene,
+  id: string,
+): { readonly list: readonly string[]; readonly index: number } | null {
+  if (scene.rootIds.includes(id)) {
+    return { list: scene.rootIds, index: scene.rootIds.indexOf(id) };
+  }
+  for (const key of Object.keys(scene.nodes)) {
+    const node = scene.nodes[key];
+    if (node?.childIds.includes(id)) {
+      return { list: node.childIds, index: node.childIds.indexOf(id) };
+    }
+  }
+  return null;
 }
 
 function hits(shape: EditorShape, x: number, y: number): boolean {
@@ -712,6 +900,9 @@ function hits(shape: EditorShape, x: number, y: number): boolean {
   const dy = y - centerY;
   const localX = dx * Math.cos(angle) + dy * Math.sin(angle) + centerX;
   const localY = -dx * Math.sin(angle) + dy * Math.cos(angle) + centerY;
+  if (shape.kind === "ellipse") {
+    return hitsEllipse(shape, localX, localY);
+  }
   if (contains(shape.x, shape.y, shape.width, shape.height, localX, localY)) {
     return true;
   }
@@ -727,6 +918,17 @@ function hits(shape: EditorShape, x: number, y: number): boolean {
     localX,
     localY,
   );
+}
+
+function hitsEllipse(shape: EditorShape, x: number, y: number): boolean {
+  const rx = shape.width / 2;
+  const ry = shape.height / 2;
+  if (!(rx > 0) || !(ry > 0)) {
+    return false;
+  }
+  const nx = (x - (shape.x + rx)) / rx;
+  const ny = (y - (shape.y + ry)) / ry;
+  return nx * nx + ny * ny <= 1;
 }
 
 function contains(

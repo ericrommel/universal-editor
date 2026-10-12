@@ -377,7 +377,10 @@ function meshFor(
       node.depth,
     );
   }
-  return rectangleMesh(document, buffer, material, node.width, node.height);
+  if (node.kind === "rectangle") {
+    return rectangleMesh(document, buffer, material, node.width, node.height);
+  }
+  throw new DomainError("UNSUPPORTED_NODE", UNSUPPORTED_NODE);
 }
 
 function boxMesh(

@@ -84,14 +84,18 @@ body,
 .uvcp-disclosure summary:hover,
 .uvcp-disclosure-panel button:hover:not(:disabled),
 .uvcp-guide button:hover,
-.uvcp-ai-setup button:hover:not(:disabled) {
+.uvcp-ai-setup button:hover:not(:disabled),
+.uvcp-order button:hover:not(:disabled),
+.uvcp-text-fields button:hover:not(:disabled) {
   background: #f4f5f7;
 }
 
 .uvcp-command button:disabled,
 .uvcp-ai-bar button:disabled,
 .uvcp-disclosure-panel button:disabled,
-.uvcp-ai-setup button:disabled {
+.uvcp-ai-setup button:disabled,
+.uvcp-order button:disabled,
+.uvcp-text-fields button:disabled {
   opacity: 0.45;
   cursor: default;
 }
@@ -306,20 +310,18 @@ body,
   stroke-width: 1.5;
 }
 
-.uvcp-face-front {
-  fill: #dbe7ff;
-}
-
+/* The front uses the object fill. The other faces use that same fill,
+   lighter toward the back, so a box reads as one object. */
 .uvcp-face-back {
-  fill: #93c5fd;
+  fill-opacity: 0.45;
 }
 
 .uvcp-face-top {
-  fill: #d4e4fe;
+  fill-opacity: 0.7;
 }
 
 .uvcp-face-side {
-  fill: #b9d0f8;
+  fill-opacity: 0.82;
 }
 
 .uvcp-empty {
@@ -348,6 +350,11 @@ body,
   fill: #1c1f26;
 }
 
+.uvcp-text {
+  font-family: system-ui, "Segoe UI", sans-serif;
+  pointer-events: none;
+}
+
 .uvcp-inspector {
   padding: 16px;
   overflow: auto;
@@ -369,6 +376,30 @@ body,
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
+}
+
+.uvcp-text-fields,
+.uvcp-order {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.uvcp-text-fields {
+  display: grid;
+}
+
+.uvcp-order button,
+.uvcp-text-fields button {
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid #c5cad3;
+  border-radius: 6px;
+  background: #ffffff;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
 }
 
 .uvcp-field {

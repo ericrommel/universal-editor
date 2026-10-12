@@ -1,10 +1,11 @@
 # Scene assistant
 
-The ready screen is the scene editor. A failed startup still shows the foundation screen. Rectangle, Box, drag, size, rotation, undo, and save keep working after the assistant changes the scene.
+The ready screen is the scene editor. A failed startup still shows the foundation screen. Rectangle, Ellipse, Text, Box, drag, fill, size, rotation, undo, and save keep working after the assistant changes the scene.
 
 Type a request and choose Apply. The assistant can:
 
-- create a rectangle or a box
+- create a rectangle, an ellipse, text, or a box
+- set an object's fill
 - move an object
 - change its width, height, or depth
 - change its rotation
@@ -12,11 +13,11 @@ Type a request and choose Apply. The assistant can:
 
 Example: "Create a rectangle named r1 and a box named b1 beside it."
 
-The objects remain in the scene. Drag a shape to move it. Select it and edit Width, Height, Depth, and Rotation, then choose Apply size. Rectangle, Box, Undo, Redo, Save, and Open stay on the screen. Those controls wait while Apply is working.
+The objects remain in the scene. Drag an object to move it. Select it and edit its fill, width, height, depth, and rotation. Text also has words and a font size; choose Apply text to keep them. Rectangle, Ellipse, Text, Box, Undo, Redo, Save, and Open stay on the screen. Those controls wait while Apply is working.
 
 ## Providers
 
-AI setup is optional. Rectangle, Box, and the rest of the editor stay available when no provider is chosen. On a static host the assistant is unavailable, and the page explains that it does not ask for a provider key. `pnpm dev` and `pnpm preview` still offer the setup form.
+AI setup is optional. Rectangle, Ellipse, Text, Box, and the rest of the editor stay available when no provider is chosen. On a static host the assistant is unavailable, and the page explains that it does not ask for a provider key. `pnpm dev` and `pnpm preview` still offer the setup form.
 
 - Hosted: choose xAI, or another hosted provider. Enter the model and the API key that provider requires. An xAI address is fixed. Another hosted provider needs an https address.
 - Local: choose Local model, then look for Ollama. The application lists models from an Ollama app that is already running and lets you pick one. It does not install or configure Ollama.
@@ -29,4 +30,4 @@ Developers can still put the same choices in a git-ignored `.env`, using `.env.e
 
 ## Limits
 
-The assistant does not save a file, delete an object, or run a command outside the five actions. A circle, text, color, or other unsupported request is explained on screen and does not change the scene. A request that does not validate does not change the scene either.
+The assistant does not save a file, delete an object, or run a command outside those actions. A pixel canvas, a pen path, bones, or a timeline is explained on screen and does not change the scene. A request that does not validate does not change the scene either.

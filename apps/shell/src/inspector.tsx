@@ -50,6 +50,11 @@ export function Inspector({
   sizeError,
   onCommit,
   onClearError,
+  onFill,
+  onText,
+  canSendBackward,
+  canBringForward,
+  onOrder,
 }: {
   readonly hasShapes: boolean;
   readonly selected: EditorShape | null;
@@ -60,13 +65,20 @@ export function Inspector({
     value: number,
   ) => boolean;
   readonly onClearError: () => void;
+  readonly onFill: (fill: string) => void;
+  readonly onText: (text: string, fontSize: number) => boolean;
+  readonly canSendBackward: boolean;
+  readonly canBringForward: boolean;
+  readonly onOrder: (direction: "forward" | "backward") => void;
 }) {
   if (!selected) {
     return (
       <aside className="uvcp-inspector">
         <h2>Inspector</h2>
         <p className="uvcp-inspector-empty">
-          {hasShapes ? "Select an object." : "Add a rectangle or a box."}
+          {hasShapes
+            ? "Select an object."
+            : "Add a rectangle, an ellipse, text, or a box."}
         </p>
       </aside>
     );
@@ -75,6 +87,39 @@ export function Inspector({
     <aside className="uvcp-inspector">
       <h2>{shapeLabel(selected)}</h2>
       <p className="uvcp-units">Scene units. Rotation is degrees.</p>
+      <label className="uvcp-field">
+        <span>Fill</span>
+        <input
+          type="color"
+          value={selected.fill}
+          disabled={disabled}
+          onChange={(event) => onFill(event.target.value)}
+        />
+      </label>
+      {selected.kind === "text" && selected.fontSize !== null ? (
+        <TextFields
+          text={selected.text ?? ""}
+          fontSize={selected.fontSize}
+          disabled={disabled}
+          onText={onText}
+        />
+      ) : null}
+      <div className="uvcp-order">
+        <button
+          type="button"
+          disabled={disabled || !canSendBackward}
+          onClick={() => onOrder("backward")}
+        >
+          Send backward
+        </button>
+        <button
+          type="button"
+          disabled={disabled || !canBringForward}
+          onClick={() => onOrder("forward")}
+        >
+          Bring forward
+        </button>
+      </div>
       <div className="uvcp-fields">
         <MeasureField
           label="Width"
@@ -113,6 +158,55 @@ export function Inspector({
         </p>
       ) : null}
     </aside>
+  );
+}
+
+function TextFields({
+  text,
+  fontSize,
+  disabled,
+  onText,
+}: {
+  readonly text: string;
+  readonly fontSize: number;
+  readonly disabled: boolean;
+  readonly onText: (text: string, fontSize: number) => boolean;
+}) {
+  const [words, setWords] = useState(text);
+  const [size, setSize] = useState(String(fontSize));
+  useEffect(() => {
+    setWords(text);
+    setSize(String(fontSize));
+  }, [text, fontSize]);
+  return (
+    <form
+      className="uvcp-text-fields"
+      onSubmit={(event) => {
+        event.preventDefault();
+        onText(words, Number(size));
+      }}
+    >
+      <label className="uvcp-field">
+        <span>Text</span>
+        <input
+          value={words}
+          disabled={disabled}
+          onChange={(event) => setWords(event.target.value)}
+        />
+      </label>
+      <label className="uvcp-field">
+        <span>Font size</span>
+        <input
+          value={size}
+          disabled={disabled}
+          inputMode="decimal"
+          onChange={(event) => setSize(event.target.value)}
+        />
+      </label>
+      <button type="submit" disabled={disabled}>
+        Apply text
+      </button>
+    </form>
   );
 }
 

@@ -9,11 +9,24 @@ const INVALID_ID = "Scene id is not accepted.";
 const DUPLICATE_ID = "Scene contains a duplicate id.";
 const INVALID_HIERARCHY = "Scene hierarchy is not accepted.";
 const INVALID_EXTENT = "Scene extent is not accepted.";
+const INVALID_FILL = "Scene fill is not accepted.";
+const INVALID_TEXT = "Scene text is not accepted.";
 const UNKNOWN_NODE = "Scene node was not found.";
 
 const ID_BYTES_MAX = 64;
+const TEXT_MAX = 400;
+const FONT_SIZE_MAX = 512;
+const FILL_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
-export type SceneKind = "rectangle" | "box";
+export type SceneKind = "rectangle" | "box" | "ellipse" | "text";
+
+// Schema 1 documents have no fill. These are the colors the sheet already used.
+export const DEFAULT_FILL: Readonly<Record<SceneKind, string>> = {
+  rectangle: "#dbe7ff",
+  ellipse: "#d1fae5",
+  text: "#1e293b",
+  box: "#dbe7ff",
+};
 
 export type Triple = readonly [number, number, number];
 
@@ -30,6 +43,29 @@ export type RectangleNode = {
   readonly transform: Transform;
   readonly width: number;
   readonly height: number;
+  readonly fill: string;
+};
+
+export type EllipseNode = {
+  readonly id: string;
+  readonly kind: "ellipse";
+  readonly childIds: readonly string[];
+  readonly transform: Transform;
+  readonly width: number;
+  readonly height: number;
+  readonly fill: string;
+};
+
+export type TextNode = {
+  readonly id: string;
+  readonly kind: "text";
+  readonly childIds: readonly string[];
+  readonly transform: Transform;
+  readonly width: number;
+  readonly height: number;
+  readonly fill: string;
+  readonly text: string;
+  readonly fontSize: number;
 };
 
 export type BoxNode = {
@@ -40,9 +76,10 @@ export type BoxNode = {
   readonly width: number;
   readonly height: number;
   readonly depth: number;
+  readonly fill: string;
 };
 
-export type SceneNode = RectangleNode | BoxNode;
+export type SceneNode = RectangleNode | EllipseNode | TextNode | BoxNode;
 
 export type Scene = {
   readonly rootIds: readonly string[];
@@ -57,9 +94,26 @@ type InsertShape = {
   readonly width: unknown;
   readonly height: unknown;
   readonly depth: unknown;
+  readonly fill: unknown;
+  readonly hasFill: boolean;
+  readonly text: unknown;
+  readonly fontSize: unknown;
   readonly position: unknown;
   readonly rotation: unknown;
   readonly scale: unknown;
+};
+
+type NodeParts = {
+  readonly id: string;
+  readonly kind: SceneKind;
+  readonly childIds: readonly string[];
+  readonly transform: Transform;
+  readonly width: number;
+  readonly height: number;
+  readonly depth: number | undefined;
+  readonly fill: string;
+  readonly text: string | undefined;
+  readonly fontSize: number | undefined;
 };
 
 export function createScene(): Scene {
@@ -84,15 +138,24 @@ export function insertNode(scene: Scene, input: unknown): Scene {
   if (depth !== undefined) {
     assertPositive(depth);
   }
-  const node = freezeNode(
-    shape.id,
-    shape.kind,
-    Object.freeze([]),
+  const fill = shape.hasFill
+    ? acceptFill(shape.fill)
+    : DEFAULT_FILL[shape.kind];
+  const text = shape.kind === "text" ? acceptText(shape.text) : undefined;
+  const fontSize =
+    shape.kind === "text" ? acceptFontSize(shape.fontSize) : undefined;
+  const node = freezeNode({
+    id: shape.id,
+    kind: shape.kind,
+    childIds: Object.freeze([]),
     transform,
     width,
     height,
     depth,
-  );
+    fill,
+    text,
+    fontSize,
+  });
   const rootIds = scene.rootIds.slice();
   const nodes = copyNodes(scene);
   const nextList = parent.slice();
@@ -144,6 +207,67 @@ export function replaceExtents(
   return publish(scene.rootIds, nodes);
 }
 
+export function replaceFill(scene: Scene, id: unknown, fill: unknown): Scene {
+  const node = existingNode(scene, id);
+  const next = acceptFill(fill);
+  if (next === node.fill) {
+    return scene;
+  }
+  const nodes = copyNodes(scene);
+  nodes[node.id] = rebuild(node, { fill: next });
+  return publish(scene.rootIds, nodes);
+}
+
+export function replaceText(scene: Scene, id: unknown, value: unknown): Scene {
+  const node = existingNode(scene, id);
+  if (node.kind !== "text") {
+    throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
+  }
+  if (!isRecord(value)) {
+    throw new DomainError("INVALID_TEXT", INVALID_TEXT);
+  }
+  assertClosed(value, ["text", "fontSize"]);
+  const text = acceptText(value.text);
+  const fontSize = acceptFontSize(value.fontSize);
+  if (text === node.text && fontSize === node.fontSize) {
+    return scene;
+  }
+  const nodes = copyNodes(scene);
+  nodes[node.id] = rebuild(node, { text, fontSize });
+  return publish(scene.rootIds, nodes);
+}
+
+export function reorderNode(scene: Scene, id: unknown, index: unknown): Scene {
+  const node = existingNode(scene, id);
+  const parentId = parentIdOf(scene, node.id);
+  const list =
+    parentId === null
+      ? scene.rootIds
+      : (scene.nodes[parentId]?.childIds ?? emptyIds());
+  const current = list.indexOf(node.id);
+  if (current < 0) {
+    throw new DomainError("INVALID_HIERARCHY", INVALID_HIERARCHY);
+  }
+  const destination = indexInRange(index, list.length - 1);
+  if (destination === current) {
+    return scene;
+  }
+  const next = list.slice();
+  next.splice(current, 1);
+  next.splice(destination, 0, node.id);
+  const frozen = Object.freeze(next);
+  if (parentId === null) {
+    return publish(frozen, scene.nodes);
+  }
+  const parent = scene.nodes[parentId];
+  if (!parent) {
+    throw new DomainError("INVALID_HIERARCHY", INVALID_HIERARCHY);
+  }
+  const nodes = copyNodes(scene);
+  nodes[parentId] = rebuild(parent, { childIds: frozen });
+  return publish(scene.rootIds, nodes);
+}
+
 export function deleteNode(scene: Scene, id: unknown): Scene {
   const node = existingNode(scene, id);
   const removed = subtreeIds(scene, node.id);
@@ -171,23 +295,25 @@ function insertShape(input: unknown): InsertShape {
     throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
   }
   const kind = input.kind;
-  if (kind !== "rectangle" && kind !== "box") {
+  if (!isKind(kind)) {
     throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
   }
-  const allowed =
-    kind === "box"
-      ? [
-          "id",
-          "kind",
-          "parentId",
-          "index",
-          "transform",
-          "width",
-          "height",
-          "depth",
-        ]
-      : ["id", "kind", "parentId", "index", "transform", "width", "height"];
-  assertClosed(input, allowed);
+  const required = [
+    "id",
+    "kind",
+    "parentId",
+    "index",
+    "transform",
+    "width",
+    "height",
+  ];
+  if (kind === "box") {
+    required.push("depth");
+  }
+  if (kind === "text") {
+    required.push("text", "fontSize");
+  }
+  assertFields(input, required, ["fill"]);
   if (typeof input.id !== "string") {
     throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
   }
@@ -206,6 +332,10 @@ function insertShape(input: unknown): InsertShape {
     width: input.width,
     height: input.height,
     depth: kind === "box" ? input.depth : undefined,
+    fill: input.fill,
+    hasFill: Object.hasOwn(input, "fill"),
+    text: kind === "text" ? input.text : undefined,
+    fontSize: kind === "text" ? input.fontSize : undefined,
     position: input.transform.position,
     rotation: input.transform.rotation,
     scale: input.transform.scale,
@@ -364,27 +494,11 @@ function withoutId(ids: readonly string[], id: string): readonly string[] {
 }
 
 function withChildIds(node: SceneNode, childIds: readonly string[]): SceneNode {
-  return freezeNode(
-    node.id,
-    node.kind,
-    childIds,
-    node.transform,
-    node.width,
-    node.height,
-    node.kind === "box" ? node.depth : undefined,
-  );
+  return rebuild(node, { childIds });
 }
 
 function withTransform(node: SceneNode, transform: Transform): SceneNode {
-  return freezeNode(
-    node.id,
-    node.kind,
-    node.childIds,
-    transform,
-    node.width,
-    node.height,
-    node.kind === "box" ? node.depth : undefined,
-  );
+  return rebuild(node, { transform });
 }
 
 function withExtents(
@@ -393,51 +507,109 @@ function withExtents(
   height: number,
   depth: number | undefined,
 ): SceneNode {
-  return freezeNode(
-    node.id,
-    node.kind,
-    node.childIds,
-    node.transform,
+  return rebuild(node, {
     width,
     height,
-    depth,
-  );
+    ...(depth !== undefined ? { depth } : {}),
+  });
 }
 
-function freezeNode(
-  id: string,
-  kind: SceneKind,
-  childIds: readonly string[],
-  transform: Transform,
-  width: number,
-  height: number,
-  depth: number | undefined,
+function rebuild(
+  node: SceneNode,
+  patch: {
+    readonly childIds?: readonly string[];
+    readonly transform?: Transform;
+    readonly width?: number;
+    readonly height?: number;
+    readonly depth?: number;
+    readonly fill?: string;
+    readonly text?: string;
+    readonly fontSize?: number;
+  },
 ): SceneNode {
-  const frozenChildren = Object.isFrozen(childIds)
-    ? childIds
-    : Object.freeze(childIds.slice());
-  if (kind === "rectangle") {
+  return freezeNode({
+    id: node.id,
+    kind: node.kind,
+    childIds: patch.childIds ?? node.childIds,
+    transform: patch.transform ?? node.transform,
+    width: patch.width ?? node.width,
+    height: patch.height ?? node.height,
+    depth: node.kind === "box" ? (patch.depth ?? node.depth) : undefined,
+    fill: patch.fill ?? node.fill,
+    text: node.kind === "text" ? (patch.text ?? node.text) : undefined,
+    fontSize:
+      node.kind === "text" ? (patch.fontSize ?? node.fontSize) : undefined,
+  });
+}
+
+function freezeNode(parts: NodeParts): SceneNode {
+  const childIds = Object.isFrozen(parts.childIds)
+    ? parts.childIds
+    : Object.freeze(parts.childIds.slice());
+  const shared = {
+    id: parts.id,
+    childIds,
+    transform: parts.transform,
+    width: parts.width,
+    height: parts.height,
+    fill: parts.fill,
+  };
+  if (parts.kind === "rectangle" || parts.kind === "ellipse") {
+    return Object.freeze({ ...shared, kind: parts.kind });
+  }
+  if (parts.kind === "text") {
+    if (parts.text === undefined || parts.fontSize === undefined) {
+      throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
+    }
     return Object.freeze({
-      id,
-      kind,
-      childIds: frozenChildren,
-      transform,
-      width,
-      height,
+      ...shared,
+      kind: "text",
+      text: parts.text,
+      fontSize: parts.fontSize,
     });
   }
-  if (depth === undefined) {
+  if (parts.depth === undefined) {
     throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
   }
   return Object.freeze({
-    id,
-    kind,
-    childIds: frozenChildren,
-    transform,
-    width,
-    height,
-    depth,
+    ...shared,
+    kind: "box",
+    depth: parts.depth,
   });
+}
+
+export function acceptFill(value: unknown): string {
+  if (typeof value !== "string" || !FILL_PATTERN.test(value)) {
+    throw new DomainError("INVALID_FILL", INVALID_FILL);
+  }
+  return value.toLowerCase();
+}
+
+export function acceptText(value: unknown): string {
+  if (typeof value !== "string") {
+    throw new DomainError("INVALID_TEXT", INVALID_TEXT);
+  }
+  const text = value.normalize("NFC");
+  let count = 0;
+  for (const char of text) {
+    const code = char.codePointAt(0);
+    if (code === undefined || code <= 0x1f || code === 0x7f) {
+      throw new DomainError("INVALID_TEXT", INVALID_TEXT);
+    }
+    count += 1;
+  }
+  if (count > TEXT_MAX) {
+    throw new DomainError("INVALID_TEXT", INVALID_TEXT);
+  }
+  return text;
+}
+
+export function acceptFontSize(value: unknown): number {
+  const size = canonicalizeFiniteNumber(value);
+  if (!(size > 0) || size > FONT_SIZE_MAX) {
+    throw new DomainError("INVALID_TEXT", INVALID_TEXT);
+  }
+  return size;
 }
 
 function freezeTriple(value: readonly [number, number, number]): Triple {
@@ -475,16 +647,37 @@ function assertClosed(
   value: Record<string, unknown>,
   allowed: readonly string[],
 ): void {
+  assertFields(value, allowed, []);
+}
+
+function assertFields(
+  value: Record<string, unknown>,
+  required: readonly string[],
+  optional: readonly string[],
+): void {
   for (const key of Object.keys(value)) {
-    if (!allowed.includes(key)) {
+    if (!required.includes(key) && !optional.includes(key)) {
       throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
     }
   }
-  for (const key of allowed) {
+  for (const key of required) {
     if (!Object.hasOwn(value, key)) {
       throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
     }
   }
+}
+
+function isKind(value: unknown): value is SceneKind {
+  return (
+    value === "rectangle" ||
+    value === "box" ||
+    value === "ellipse" ||
+    value === "text"
+  );
+}
+
+function emptyIds(): readonly string[] {
+  return Object.freeze([]);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

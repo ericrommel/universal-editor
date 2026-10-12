@@ -1,7 +1,11 @@
 import {
+  acceptFill,
+  acceptFontSize,
+  acceptText,
   canonicalizeFiniteNumber,
   canonicalizeFiniteTriple,
   createScene,
+  DEFAULT_FILL,
   DomainError,
   insertNode,
   type Scene,
@@ -12,7 +16,8 @@ import {
 import { decodeUtf8Fatal, encodeUtf8 } from "./utf8.ts";
 
 const FORMAT_ID = "universal-visual-creation-scene";
-const SCHEMA_TOKEN = "1";
+const SCHEMA_V1 = "1";
+const SCHEMA_V2 = "2";
 const BYTE_LIMIT = 1048576;
 const ID_BYTES_MAX = 64;
 
@@ -48,6 +53,9 @@ type RawNode = {
   readonly width: unknown;
   readonly height: unknown;
   readonly depth: unknown;
+  readonly fill: unknown;
+  readonly text: unknown;
+  readonly fontSize: unknown;
 };
 
 type CanonicalNode = {
@@ -60,7 +68,12 @@ type CanonicalNode = {
   readonly width: number;
   readonly height: number;
   readonly depth: number | undefined;
+  readonly fill: string;
+  readonly text: string | undefined;
+  readonly fontSize: number | undefined;
 };
+
+type DocumentSchema = 1 | 2;
 
 const INTRINSIC_PROTOTYPES: ReadonlySet<object> = new Set([
   Object.prototype,
@@ -85,7 +98,7 @@ export function readScene(input: Uint8Array): Scene {
   const text = decodeDocument(input);
   const parsed = parseDocument(text);
   const shape = documentShape(parsed.value, parsed.schemaSource);
-  const nodes = canonicalNodes(shape.nodes);
+  const nodes = canonicalNodes(shape.nodes, shape.schema);
   acceptDocumentIds(shape.roots, nodes);
   const planned = plannedTree(shape.roots, nodes);
   return assemble(planned);
@@ -383,7 +396,11 @@ function duplicateCheckFailed(): never {
 function documentShape(
   value: unknown,
   schemaSource: string | undefined,
-): { readonly roots: readonly string[]; readonly nodes: readonly RawNode[] } {
+): {
+  readonly schema: DocumentSchema;
+  readonly roots: readonly string[];
+  readonly nodes: readonly RawNode[];
+} {
   if (!isRecord(value)) {
     throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
   }
@@ -406,12 +423,7 @@ function documentShape(
   if (!Object.hasOwn(value, "schemaVersion")) {
     throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
   }
-  if (schemaSource !== SCHEMA_TOKEN) {
-    throw new DomainError(
-      "UNSUPPORTED_SCHEMA_VERSION",
-      UNSUPPORTED_SCHEMA_VERSION,
-    );
-  }
+  const schema = schemaOf(schemaSource);
   if (!Object.hasOwn(value, "roots") || !Array.isArray(value.roots)) {
     throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
   }
@@ -427,25 +439,46 @@ function documentShape(
   }
   const nodes: RawNode[] = [];
   for (const node of value.nodes) {
-    nodes.push(rawNode(node));
+    nodes.push(rawNode(node, schema));
   }
-  return { roots, nodes };
+  return { schema, roots, nodes };
 }
 
-function rawNode(value: unknown): RawNode {
+function schemaOf(source: string | undefined): DocumentSchema {
+  if (source === SCHEMA_V1) {
+    return 1;
+  }
+  if (source === SCHEMA_V2) {
+    return 2;
+  }
+  throw new DomainError(
+    "UNSUPPORTED_SCHEMA_VERSION",
+    UNSUPPORTED_SCHEMA_VERSION,
+  );
+}
+
+function rawNode(value: unknown, schema: DocumentSchema): RawNode {
   if (!isRecord(value)) {
     throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
   }
   const kind = value.kind;
-  if (kind !== "rectangle" && kind !== "box") {
+  if (
+    !isKind(kind) ||
+    (schema === 1 && kind !== "rectangle" && kind !== "box")
+  ) {
     throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
   }
-  assertClosed(
-    value,
-    kind === "box"
-      ? ["id", "kind", "children", "transform", "width", "height", "depth"]
-      : ["id", "kind", "children", "transform", "width", "height"],
-  );
+  const required = ["id", "kind", "children", "transform", "width", "height"];
+  if (kind === "box") {
+    required.push("depth");
+  }
+  if (schema === 2) {
+    required.push("fill");
+  }
+  if (kind === "text") {
+    required.push("text", "fontSize");
+  }
+  assertFields(value, required, []);
   if (typeof value.id !== "string" || !Array.isArray(value.children)) {
     throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
   }
@@ -470,10 +503,16 @@ function rawNode(value: unknown): RawNode {
     width: value.width,
     height: value.height,
     depth: kind === "box" ? value.depth : undefined,
+    fill: schema === 2 ? value.fill : undefined,
+    text: kind === "text" ? value.text : undefined,
+    fontSize: kind === "text" ? value.fontSize : undefined,
   };
 }
 
-function canonicalNodes(nodes: readonly RawNode[]): CanonicalNode[] {
+function canonicalNodes(
+  nodes: readonly RawNode[],
+  schema: DocumentSchema,
+): CanonicalNode[] {
   const canonical: CanonicalNode[] = [];
   for (const node of nodes) {
     canonical.push({
@@ -487,6 +526,10 @@ function canonicalNodes(nodes: readonly RawNode[]): CanonicalNode[] {
       height: canonicalizeFiniteNumber(node.height),
       depth:
         node.kind === "box" ? canonicalizeFiniteNumber(node.depth) : undefined,
+      fill: schema === 1 ? DEFAULT_FILL[node.kind] : acceptFill(node.fill),
+      text: node.kind === "text" ? acceptText(node.text) : undefined,
+      fontSize:
+        node.kind === "text" ? acceptFontSize(node.fontSize) : undefined,
     });
   }
   for (const node of canonical) {
@@ -619,9 +662,14 @@ function insertInput(
     },
     width: node.width,
     height: node.height,
+    fill: node.fill,
   };
   if (node.kind === "box" && node.depth !== undefined) {
     input.depth = node.depth;
+  }
+  if (node.kind === "text") {
+    input.text = node.text;
+    input.fontSize = node.fontSize;
   }
   return input;
 }
@@ -646,7 +694,7 @@ function canonicalText(scene: Scene): string {
   for (const node of ordered) {
     nodes.push(jsonNode(node));
   }
-  return `{"formatId":${jsonString(FORMAT_ID)},"schemaVersion":1,"roots":[${roots.join(",")}],"nodes":[${nodes.join(",")}]}`;
+  return `{"formatId":${jsonString(FORMAT_ID)},"schemaVersion":2,"roots":[${roots.join(",")}],"nodes":[${nodes.join(",")}]}`;
 }
 
 function orderedNodes(scene: Scene): SceneNode[] {
@@ -696,13 +744,7 @@ function orderedNodes(scene: Scene): SceneNode[] {
 
 function jsonNode(node: SceneNode): string {
   const keys = Object.keys(node);
-  const allowed =
-    node.kind === "box"
-      ? ["id", "kind", "childIds", "transform", "width", "height", "depth"]
-      : ["id", "kind", "childIds", "transform", "width", "height"];
-  if (node.kind !== "rectangle" && node.kind !== "box") {
-    throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
-  }
+  const allowed = storedKeys(node.kind);
   for (const key of keys) {
     if (!allowed.includes(key)) {
       throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
@@ -715,9 +757,41 @@ function jsonNode(node: SceneNode): string {
   const transform = `{"position":[${jsonTriple(node.transform.position)}],"rotation":[${jsonTriple(node.transform.rotation)}],"scale":[${jsonTriple(node.transform.scale)}]}`;
   const base = `{"id":${jsonString(node.id)},"kind":${jsonString(node.kind)},"children":[${children.join(",")}],"transform":${transform},"width":${jsonNumber(node.width)},"height":${jsonNumber(node.height)}`;
   if (node.kind === "box") {
-    return `${base},"depth":${jsonNumber(node.depth)}}`;
+    return `${base},"depth":${jsonNumber(node.depth)},"fill":${jsonString(node.fill)}}`;
   }
-  return `${base}}`;
+  if (node.kind === "text") {
+    return `${base},"fill":${jsonString(node.fill)},"text":${jsonString(node.text)},"fontSize":${jsonNumber(node.fontSize)}}`;
+  }
+  return `${base},"fill":${jsonString(node.fill)}}`;
+}
+
+function storedKeys(kind: SceneKind): readonly string[] {
+  if (kind === "box") {
+    return [
+      "id",
+      "kind",
+      "childIds",
+      "transform",
+      "width",
+      "height",
+      "depth",
+      "fill",
+    ];
+  }
+  if (kind === "text") {
+    return [
+      "id",
+      "kind",
+      "childIds",
+      "transform",
+      "width",
+      "height",
+      "fill",
+      "text",
+      "fontSize",
+    ];
+  }
+  return ["id", "kind", "childIds", "transform", "width", "height", "fill"];
 }
 
 function jsonTriple(value: Triple): string {
@@ -770,16 +844,33 @@ function assertClosed(
   value: Record<string, unknown>,
   allowed: readonly string[],
 ): void {
+  assertFields(value, allowed, []);
+}
+
+function assertFields(
+  value: Record<string, unknown>,
+  required: readonly string[],
+  optional: readonly string[],
+): void {
   for (const key of Object.keys(value)) {
-    if (!allowed.includes(key)) {
+    if (!required.includes(key) && !optional.includes(key)) {
       throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
     }
   }
-  for (const key of allowed) {
+  for (const key of required) {
     if (!Object.hasOwn(value, key)) {
       throw new DomainError("INVALID_SHAPE", INVALID_SHAPE);
     }
   }
+}
+
+function isKind(value: unknown): value is SceneKind {
+  return (
+    value === "rectangle" ||
+    value === "box" ||
+    value === "ellipse" ||
+    value === "text"
+  );
 }
 
 function hasUtf8Bom(input: Uint8Array): boolean {

@@ -5,6 +5,7 @@ import { readScene } from "@uvcp/persistence";
 import {
   addShape,
   canDelete,
+  canOrder,
   canRedo,
   canUndo,
   commitPresent,
@@ -13,19 +14,25 @@ import {
   deleteSelected,
   dragPosition,
   editorErrorMessage,
+  editText,
   exportDocument,
   exportReadableDocument,
   moveShape,
   openDocument,
+  orderShape,
+  paintShape,
   placeShape,
   redo,
   replacePresent,
   resizedDepth,
   resizedFrame,
+  resizedRotatedFrame,
   resizeShape,
   rotateShape,
   SCENE_BYTE_LIMIT,
   SCENE_TOO_LARGE,
+  SHEET_HEIGHT,
+  SHEET_WIDTH,
   selectShape,
   shapeAt,
   shapesOf,
@@ -307,6 +314,56 @@ test("new shapes land on separate slots and a saved file is indented", () => {
   assert.deepEqual(opened.history.present.scene.rootIds, ["s1", "s2"]);
 });
 
+test("the first four shapes sit apart on the page", () => {
+  let history = createHistory();
+  for (const kind of ["rectangle", "ellipse", "text", "box"]) {
+    history = addShape(history, kind);
+  }
+  const shapes = shapesOf(history.present);
+  assert.equal(shapes.length, 4);
+  for (let left = 0; left < shapes.length; left += 1) {
+    for (let right = left + 1; right < shapes.length; right += 1) {
+      const a = shapes[left];
+      const b = shapes[right];
+      if (a === undefined || b === undefined) {
+        throw new Error("missing shape");
+      }
+      const apart =
+        a.x + a.width <= b.x ||
+        b.x + b.width <= a.x ||
+        a.y + a.height <= b.y ||
+        b.y + b.height <= a.y;
+      assert.equal(apart, true);
+    }
+  }
+  const box = shapes[3];
+  assert.ok(box !== undefined);
+  assert.ok(box.x + box.width <= SHEET_WIDTH);
+  assert.ok(box.y + box.height <= SHEET_HEIGHT);
+});
+
+test("a rotated resize keeps the handle on the pointer", () => {
+  const next = resizedRotatedFrame(
+    { x: 0, y: 0, width: 160, height: 100 },
+    90,
+    "e",
+    { x: 80, y: 170 },
+  );
+  assert.equal(next.width, 200);
+  assert.equal(next.height, 100);
+  const centerX = next.x + next.width / 2;
+  const centerY = next.y + next.height / 2;
+  assert.ok(Math.abs(centerX - 80) < 0.02);
+  assert.ok(Math.abs(centerY + next.width / 2 - 170) < 0.02);
+  const flat = resizedRotatedFrame(
+    { x: 0, y: 0, width: 160, height: 100 },
+    0,
+    "se",
+    { x: 200, y: 180 },
+  );
+  assert.deepEqual(flat, { x: 0, y: 0, width: 200, height: 180 });
+});
+
 test("handles keep a positive extent and a drag stays on the page", () => {
   const shrunk = resizedFrame(
     { x: 10, y: 20, width: 100, height: 40 },
@@ -434,4 +491,68 @@ test("moving a finely scaled child keeps its extents", () => {
   assert.equal(child?.height, 0.2);
   assert.equal(child?.kind === "box" && child.depth, 0.2);
   assert.equal(child?.transform.position[0], 2);
+  // 0.2 * 3 is not a value that divides back to 0.2.
+  assert.notEqual(shown.depth / 3, 0.2);
+  const resized = placeShape(
+    history.present,
+    "child",
+    {
+      x: shown.x,
+      y: shown.y,
+      width: shown.width + 3,
+      height: shown.height,
+    },
+    shown.depth,
+  );
+  const resizedChild = resized.scene.nodes.child;
+  assert.equal(resizedChild?.width, (shown.width + 3) / 3);
+  assert.equal(resizedChild?.height, 0.2);
+  assert.equal(resizedChild?.kind === "box" && resizedChild.depth, 0.2);
+});
+
+test("ellipse, text, fill, and order survive undo and a saved document", () => {
+  let history = addShape(createHistory(), "ellipse");
+  history = addShape(history, "text");
+  history = addShape(history, "rectangle");
+  assert.deepEqual(
+    shapesOf(history.present).map((shape) => shape.kind),
+    ["ellipse", "text", "rectangle"],
+  );
+  assert.equal(canOrder(history.present, "forward"), false);
+  assert.equal(canOrder(history.present, "backward"), true);
+  const text = shapesOf(history.present).find((shape) => shape.kind === "text");
+  assert.equal(text?.text, "Text");
+  assert.equal(text?.fontSize, 32);
+  const painted = commitPresent(
+    history,
+    paintShape(history.present, "s2", "#ff00aa"),
+  );
+  const edited = commitPresent(
+    painted,
+    editText(painted.present, "s2", "Hello <b>", 28),
+  );
+  assert.equal(shapesOf(edited.present)[1]?.fill, "#ff00aa");
+  assert.equal(shapesOf(edited.present)[1]?.text, "Hello <b>");
+  const ordered = commitPresent(
+    edited,
+    orderShape(edited.present, "s1", "forward"),
+  );
+  assert.deepEqual(ordered.present.scene.rootIds, ["s2", "s1", "s3"]);
+  assert.equal(orderShape(ordered.present, "s3", "forward"), ordered.present);
+  const bytes = exportDocument(ordered.present);
+  const opened = openDocument(createHistory(), bytes.byteLength, () => bytes);
+  assert.equal(opened.message, null);
+  const restored = shapesOf(opened.history.present);
+  assert.equal(restored.find((shape) => shape.id === "s2")?.text, "Hello <b>");
+  assert.equal(restored.find((shape) => shape.id === "s2")?.fill, "#ff00aa");
+  assert.equal(restored.find((shape) => shape.id === "s1")?.kind, "ellipse");
+  const undone = undo(ordered);
+  assert.deepEqual(undone.present.scene.rootIds, ["s1", "s2", "s3"]);
+  const ellipse = shapesOf(history.present)[0];
+  assert.ok(ellipse !== undefined);
+  assert.equal(
+    shapeAt([ellipse], ellipse.x + ellipse.width / 2, ellipse.y + 1),
+    "s1",
+  );
+  assert.equal(shapeAt([ellipse], ellipse.x + 1, ellipse.y + 1), null);
 });

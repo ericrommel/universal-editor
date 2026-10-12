@@ -2,6 +2,7 @@ import { assistantMessages, parseActions, type SceneAction } from "@uvcp/ai";
 import {
   DomainError,
   insertNode,
+  replaceFill,
   replaceTransform,
   type SceneNode,
 } from "@uvcp/core";
@@ -74,8 +75,17 @@ function applyOne(
   switch (action.type) {
     case "createRectangle":
       return created(document, action, "rectangle");
+    case "createEllipse":
+      return created(document, action, "ellipse");
+    case "createText":
+      return created(document, action, "text");
     case "createBox":
       return created(document, action, "box");
+    case "setFill":
+      return {
+        scene: replaceFill(document.scene, action.id, action.fill),
+        selectedId: action.id,
+      };
     case "move": {
       requiredNode(document, action.id);
       const moved = moveShape(document, action.id, action.x, action.y);
@@ -103,8 +113,11 @@ function applyOne(
 
 function created(
   document: EditorDocument,
-  action: Extract<SceneAction, { type: "createRectangle" | "createBox" }>,
-  kind: "rectangle" | "box",
+  action: Extract<
+    SceneAction,
+    { type: "createRectangle" | "createEllipse" | "createText" | "createBox" }
+  >,
+  kind: "rectangle" | "ellipse" | "text" | "box",
 ): EditorDocument {
   const scene = insertNode(document.scene, {
     id: action.id,
@@ -115,6 +128,9 @@ function created(
     height: action.height,
     ...(kind === "box" && action.type === "createBox"
       ? { depth: action.depth }
+      : {}),
+    ...(kind === "text" && action.type === "createText"
+      ? { text: action.text, fontSize: action.fontSize }
       : {}),
     transform: {
       position: [action.x, action.y, 0],
@@ -130,9 +146,9 @@ function resized(
   action: Extract<SceneAction, { type: "resize" }>,
 ): EditorDocument {
   const node = requiredNode(document, action.id);
-  if (node.kind === "rectangle") {
+  if (node.kind !== "box") {
     if (action.depth !== undefined) {
-      throw new ActionError(assistantMessages.rectangleDepth);
+      throw new ActionError(assistantMessages.noDepth);
     }
     return placed(document, action.id, action.width, action.height, null);
   }
@@ -184,8 +200,14 @@ function sentence(action: SceneAction): string {
   switch (action.type) {
     case "createRectangle":
       return `Created rectangle ${action.id}.`;
+    case "createEllipse":
+      return `Created ellipse ${action.id}.`;
+    case "createText":
+      return `Created text ${action.id}.`;
     case "createBox":
       return `Created box ${action.id}.`;
+    case "setFill":
+      return `Set the fill of ${action.id}.`;
     case "move":
       return `Moved ${action.id}.`;
     case "resize":

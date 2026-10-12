@@ -3,6 +3,7 @@ import {
   addShape,
   applyAssistantActions,
   canDelete,
+  canOrder,
   canRedo,
   canUndo,
   commitPresent,
@@ -11,6 +12,7 @@ import {
   type EditorHistory,
   type EditorShape,
   editorErrorMessage,
+  editText,
   exportDocument,
   exportGltfFile,
   exportReadableDocument,
@@ -19,6 +21,8 @@ import {
   GLTF_TOO_LARGE,
   importGltfFile,
   openDocument,
+  orderShape,
+  paintShape,
   placeShape,
   redo,
   replacePresent,
@@ -136,7 +140,11 @@ export function CreationApp() {
       }
       if (event.key === "Escape") {
         event.preventDefault();
-        show(replacePresent(current, selectShape(current.present, null)));
+        const settled =
+          current.present.scene === current.anchor.scene
+            ? current
+            : undo(current);
+        show(replacePresent(settled, selectShape(settled.present, null)));
         return;
       }
       if (!event.ctrlKey) {
@@ -290,6 +298,9 @@ export function CreationApp() {
             height: shape.height,
             depth: shape.depth,
             rotation: shape.rotation,
+            fill: shape.fill,
+            text: shape.text,
+            fontSize: shape.fontSize,
           })),
         }),
       });
@@ -333,6 +344,20 @@ export function CreationApp() {
             onClick={() => show(addShape(historyRef.current, "rectangle"))}
           >
             Rectangle
+          </button>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => show(addShape(historyRef.current, "ellipse"))}
+          >
+            Ellipse
+          </button>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => show(addShape(historyRef.current, "text"))}
+          >
+            Text
           </button>
           <button
             type="button"
@@ -598,6 +623,54 @@ export function CreationApp() {
             sizeError={sizeNotice}
             onCommit={commitMeasure}
             onClearError={() => setSizeNotice(null)}
+            onFill={(fill) => {
+              const current = historyRef.current;
+              const id = current.present.selectedId;
+              if (id === null) {
+                return;
+              }
+              try {
+                show(
+                  commitPresent(current, paintShape(current.present, id, fill)),
+                );
+              } catch (error) {
+                setSizeNotice(editorErrorMessage(error));
+              }
+            }}
+            onText={(words, fontSize) => {
+              const current = historyRef.current;
+              const id = current.present.selectedId;
+              if (id === null) {
+                return false;
+              }
+              try {
+                show(
+                  commitPresent(
+                    current,
+                    editText(current.present, id, words, fontSize),
+                  ),
+                );
+                return true;
+              } catch (error) {
+                setSizeNotice(editorErrorMessage(error));
+                return false;
+              }
+            }}
+            canSendBackward={canOrder(history.present, "backward")}
+            canBringForward={canOrder(history.present, "forward")}
+            onOrder={(direction) => {
+              const current = historyRef.current;
+              const id = current.present.selectedId;
+              if (id === null || !canOrder(current.present, direction)) {
+                return;
+              }
+              show(
+                commitPresent(
+                  current,
+                  orderShape(current.present, id, direction),
+                ),
+              );
+            }}
           />
         </div>
       </div>
@@ -627,8 +700,9 @@ function FirstGuide({ onDismiss }: { readonly onDismiss: () => void }) {
       <h2 id="uvcp-guide-title">Start with a shape</h2>
       <ol>
         <li>
-          Choose Rectangle or Box. Drag a shape to move it, and use the handles
-          to change its size. A box has a depth handle.
+          Choose Rectangle, Ellipse, Text, or Box. Drag a shape to move it, and
+          use the handles to change its size. A box has a depth handle. Fill,
+          words, and order are in the inspector.
         </li>
         <li>
           The object list shows which object is selected. Delete removes that

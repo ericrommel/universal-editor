@@ -186,6 +186,9 @@ test("the assistant request refuses another origin and a bad summary", async () 
       height: 100,
       depth: null,
       rotation: 0,
+      fill: "#dbe7ff",
+      text: null,
+      fontSize: null,
     },
   ]);
   assert.equal(facts?.length, 1);

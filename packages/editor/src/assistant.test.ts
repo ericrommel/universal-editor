@@ -21,6 +21,9 @@ const createdShapes = [
     height: 100,
     depth: null,
     rotation: 0,
+    fill: "#dbe7ff",
+    text: null,
+    fontSize: null,
   },
   {
     id: "b1",
@@ -31,6 +34,9 @@ const createdShapes = [
     height: 80,
     depth: 48,
     rotation: 15,
+    fill: "#dbe7ff",
+    text: null,
+    fontSize: null,
   },
 ] as const;
 
@@ -44,6 +50,9 @@ const editedShapes = [
     height: 90,
     depth: null,
     rotation: 30,
+    fill: "#dbe7ff",
+    text: null,
+    fontSize: null,
   },
   {
     id: "b1",
@@ -54,6 +63,9 @@ const editedShapes = [
     height: 70,
     depth: 40,
     rotation: 45,
+    fill: "#dbe7ff",
+    text: null,
+    fontSize: null,
   },
 ] as const;
 

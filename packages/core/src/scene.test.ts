@@ -5,7 +5,10 @@ import {
   createScene,
   deleteNode,
   insertNode,
+  reorderNode,
   replaceExtents,
+  replaceFill,
+  replaceText,
   replaceTransform,
 } from "./scene.ts";
 
@@ -306,6 +309,109 @@ test("a rejected insert does not mutate the scene or Object.prototype", () => {
   assert.equal(Object.hasOwn(stored.nodes, protoId), true);
   assert.equal(stored.nodes[protoId]?.id, protoId);
   assert.deepEqual(Object.getOwnPropertyNames(Object.prototype), names);
+});
+
+test("ellipse and text share the scene and keep a closed fill", () => {
+  let scene = insertNode(createScene(), {
+    ...rectangle("card", null, 0),
+    kind: "ellipse",
+    fill: "#A1B2C3",
+  });
+  scene = insertNode(scene, {
+    id: "title",
+    kind: "text",
+    parentId: null,
+    index: 1,
+    transform: transform(),
+    width: 80,
+    height: 24,
+    text: "Hello <b>there</b>",
+    fontSize: 18,
+  });
+  const ellipse = scene.nodes.card;
+  const title = scene.nodes.title;
+  assert.equal(ellipse?.kind, "ellipse");
+  assert.equal(ellipse?.fill, "#a1b2c3");
+  assert.equal(Object.hasOwn(ellipse ?? {}, "depth"), false);
+  assert.equal(title?.kind, "text");
+  assert.equal(title?.kind === "text" && title.text, "Hello <b>there</b>");
+  assert.equal(title?.kind === "text" && title.fontSize, 18);
+  assert.equal(title?.fill, "#1e293b");
+  const painted = replaceFill(scene, "title", "#112233");
+  assert.equal(painted.nodes.title?.fill, "#112233");
+  assert.equal(scene.nodes.title?.fill, "#1e293b");
+  assert.equal(replaceFill(painted, "title", "#112233"), painted);
+  const rewritten = replaceText(painted, "title", {
+    text: "Cafe\u0301",
+    fontSize: 20,
+  });
+  assert.equal(
+    rewritten.nodes.title?.kind === "text" && rewritten.nodes.title.text,
+    "Caf\u00e9",
+  );
+  const badFill = expectError(() =>
+    replaceFill(scene, "card", `url(${SENTINEL})`),
+  );
+  assert.equal(badFill.code, "INVALID_FILL");
+  assert.equal(badFill.message, "Scene fill is not accepted.");
+  assert.equal(scene.nodes.card?.fill, "#a1b2c3");
+  assert.equal(
+    expectError(() => replaceText(scene, "card", { text: "no", fontSize: 12 }))
+      .code,
+    "INVALID_SHAPE",
+  );
+  assert.equal(
+    expectError(() =>
+      replaceText(scene, "title", { text: "line\n", fontSize: 12 }),
+    ).code,
+    "INVALID_TEXT",
+  );
+  assert.equal(
+    expectError(() =>
+      insertNode(scene, {
+        id: "huge",
+        kind: "text",
+        parentId: null,
+        index: 2,
+        transform: transform(),
+        width: 10,
+        height: 10,
+        text: "a".repeat(401),
+        fontSize: 12,
+      }),
+    ).code,
+    "INVALID_TEXT",
+  );
+  assert.equal(
+    expectError(() =>
+      insertNode(scene, {
+        ...rectangle("deep", null, 2),
+        kind: "ellipse",
+        depth: 4,
+      }),
+    ).code,
+    "INVALID_SHAPE",
+  );
+});
+
+test("reorder moves a sibling and leaves another parent alone", () => {
+  let scene = insertNode(createScene(), rectangle("a", null, 0));
+  scene = insertNode(scene, rectangle("b", null, 1));
+  scene = insertNode(scene, rectangle("c", null, 2));
+  const forward = reorderNode(scene, "a", 2);
+  assert.deepEqual(forward.rootIds, ["b", "c", "a"]);
+  assert.equal(reorderNode(forward, "a", 2), forward);
+  assert.equal(
+    expectError(() => reorderNode(scene, "b", 3)).code,
+    "INVALID_HIERARCHY",
+  );
+  assert.deepEqual(scene.rootIds, ["a", "b", "c"]);
+  const parent = insertNode(scene, rectangle("p", null, 3));
+  const withChild = insertNode(parent, rectangle("c1", "p", 0));
+  const nested = insertNode(withChild, rectangle("c2", "p", 1));
+  const childForward = reorderNode(nested, "c1", 1);
+  assert.deepEqual(childForward.nodes.p?.childIds, ["c2", "c1"]);
+  assert.deepEqual(nested.nodes.p?.childIds, ["c1", "c2"]);
 });
 
 test("operations return a new scene", () => {

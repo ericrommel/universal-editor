@@ -47,7 +47,7 @@ export async function runFirstUse(page, origin, productionPolicy, root) {
   assert.equal(await page.locator("canvas").count(), 0);
   await page
     .locator(".uvcp-inspector")
-    .getByText("Add a rectangle or a box.")
+    .getByText("Add a rectangle, an ellipse, text, or a box.")
     .waitFor();
 
   await page.getByRole("button", { name: "AI setup", exact: true }).click();
@@ -94,10 +94,26 @@ export async function runFirstUse(page, origin, productionPolicy, root) {
   assert.equal(await undo.isDisabled(), false);
   assert.equal(await redo.isDisabled(), true);
   assert.equal(await remove.isDisabled(), false);
+  assert.equal(
+    await page.getByRole("button", { name: "Send backward" }).isDisabled(),
+    true,
+  );
+  assert.equal(
+    await page.getByRole("button", { name: "Bring forward" }).isDisabled(),
+    true,
+  );
 
   await page.getByRole("button", { name: "Box", exact: true }).click();
   await page.locator('[data-shape-id="s2"] polygon.uvcp-face-top').waitFor();
   await page.locator('[data-shape-id="s2"] polygon.uvcp-face-side').waitFor();
+  assert.equal(
+    await page.getByRole("button", { name: "Bring forward" }).isDisabled(),
+    true,
+  );
+  assert.equal(
+    await page.getByRole("button", { name: "Send backward" }).isDisabled(),
+    false,
+  );
   assert.equal(
     await page.locator('[data-shape-id="s2"] rect.uvcp-face-front').count(),
     1,
@@ -197,6 +213,28 @@ export async function runFirstUse(page, origin, productionPolicy, root) {
     const match = /rotate\(([-\d.]+)/.exec(transform);
     return match !== null && Math.abs(Number(match[1]) - 90) < 0.05;
   });
+  const east = page.locator('[data-handle="e"]');
+  const eastBox = await east.boundingBox();
+  assert.ok(eastBox !== null);
+  const releaseX = eastBox.x + eastBox.width / 2;
+  const releaseY = eastBox.y + eastBox.height / 2 + 48;
+  await page.mouse.move(releaseX, releaseY - 48);
+  await page.mouse.down();
+  await page.mouse.move(releaseX, releaseY);
+  await page.mouse.up();
+  const landed = await east.boundingBox();
+  assert.ok(landed !== null);
+  const handleX = landed.x + landed.width / 2;
+  const handleY = landed.y + landed.height / 2;
+  assert.ok(
+    Math.abs(handleX - releaseX) < 3,
+    `east handle x ${handleX} expected ${releaseX}`,
+  );
+  assert.ok(
+    Math.abs(handleY - releaseY) < 3,
+    `east handle y ${handleY} expected ${releaseY}`,
+  );
+  await undo.click();
   await undo.click();
   await page.waitForFunction(() => {
     const turned = document.querySelector('[data-shape-id="s1"]');
@@ -223,7 +261,7 @@ export async function runFirstUse(page, origin, productionPolicy, root) {
   await remove.click();
   await page
     .locator(".uvcp-inspector")
-    .getByText("Add a rectangle or a box.")
+    .getByText("Add a rectangle, an ellipse, text, or a box.")
     .waitFor();
   await page.getByLabel("Scene file").setInputFiles(scenePath);
   await page.getByText("Opened the scene.").waitFor();
@@ -268,6 +306,39 @@ export async function runFirstUse(page, origin, productionPolicy, root) {
   } finally {
     fs.rmSync(badPath, { force: true });
   }
+
+  await page.getByRole("button", { name: "Ellipse", exact: true }).click();
+  await page.locator("svg ellipse.uvcp-face-front").waitFor();
+  await page.getByRole("button", { name: "Text", exact: true }).click();
+  await page
+    .locator("svg text.uvcp-text")
+    .filter({ hasText: "Text" })
+    .waitFor();
+  await page.getByLabel("Fill").fill("#ff0000");
+  await page.waitForFunction(() => {
+    const node = document.querySelector("svg text.uvcp-text");
+    return node !== null && node.getAttribute("fill") === "#ff0000";
+  });
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await page.waitForFunction(() => {
+    const node = document.querySelector("svg text.uvcp-text");
+    return node !== null && node.getAttribute("fill") === "#1e293b";
+  });
+  await page
+    .getByRole("textbox", { name: "Text", exact: true })
+    .fill("Hello <b>");
+  await page.getByRole("button", { name: "Apply text", exact: true }).click();
+  await page
+    .locator("svg text.uvcp-text")
+    .filter({ hasText: "Hello <b>" })
+    .waitFor();
+  assert.equal(await page.locator("svg script").count(), 0);
+  await page.getByRole("option", { name: /^Ellipse / }).click();
+  await page.getByLabel("Fill").fill("#00ff00");
+  await page.waitForFunction(() => {
+    const node = document.querySelector("svg ellipse.uvcp-face-front");
+    return node !== null && getComputedStyle(node).fill === "rgb(0, 255, 0)";
+  });
 
   let dialogType = "";
   page.once("dialog", async (dialog) => {
