@@ -10,6 +10,7 @@ import {
   type EditorHistory,
   type EditorShape,
   editorErrorMessage,
+  editText,
   exportDocument,
   exportGltfFile,
   exportSelectedGltf,
@@ -18,6 +19,8 @@ import {
   importGltfFile,
   moveShape,
   openDocument,
+  orderShape,
+  paintShape,
   redo,
   replacePresent,
   resizeShape,
@@ -192,6 +195,9 @@ export function CreationApp() {
             height: shape.height,
             depth: shape.depth,
             rotation: shape.rotation,
+            fill: shape.fill,
+            text: shape.text,
+            fontSize: shape.fontSize,
           })),
         }),
       });
@@ -238,7 +244,7 @@ export function CreationApp() {
             </label>
             <Command
               label="Apply"
-              tip="Ask the assistant to create, move, resize, or rotate."
+              tip="Ask the assistant to create or change a rectangle, ellipse, text, or box."
               disabled={pending}
               onClick={() => undefined}
               submit
@@ -268,6 +274,18 @@ export function CreationApp() {
           tip="Add a rectangle to the page."
           disabled={pending}
           onClick={() => show(addShape(history, "rectangle"))}
+        />
+        <Command
+          label="Ellipse"
+          tip="Add an ellipse to the page."
+          disabled={pending}
+          onClick={() => show(addShape(history, "ellipse"))}
+        />
+        <Command
+          label="Text"
+          tip="Add text to the page."
+          disabled={pending}
+          onClick={() => show(addShape(history, "text"))}
         />
         <Command
           label="Box"
@@ -402,10 +420,11 @@ export function CreationApp() {
             }
           }}
         >
-          {sheet.map((shape) => (
+          {sheet.map((shape, index) => (
             <ShapeView
               key={shape.id}
               shape={shape}
+              clipId={`uvcp-clip-${index}`}
               selected={shape.id === history.present.selectedId}
               onPointerDown={(event) => {
                 if (pendingRef.current) {
@@ -479,7 +498,7 @@ export function CreationApp() {
         <aside className="uvcp-editor-properties">
           {selected ? (
             <ShapeFields
-              key={`${selected.id}:${selected.width}:${selected.height}:${selected.depth ?? ""}:${selected.rotation}`}
+              key={`${selected.id}:${selected.width}:${selected.height}:${selected.depth ?? ""}:${selected.rotation}:${selected.fill}:${selected.text ?? ""}:${selected.fontSize ?? ""}`}
               shape={selected}
               disabled={pending}
               onResize={(id, width, height, depth, degrees) => {
@@ -498,12 +517,44 @@ export function CreationApp() {
                   setNotice(editorErrorMessage(error));
                 }
               }}
+              onFill={(id, fill) => {
+                try {
+                  show(
+                    commitPresent(
+                      history,
+                      paintShape(history.present, id, fill),
+                    ),
+                  );
+                } catch (error) {
+                  setNotice(editorErrorMessage(error));
+                }
+              }}
+              onText={(id, text, fontSize) => {
+                try {
+                  show(
+                    commitPresent(
+                      history,
+                      editText(history.present, id, text, fontSize),
+                    ),
+                  );
+                } catch (error) {
+                  setNotice(editorErrorMessage(error));
+                }
+              }}
+              onOrder={(id, direction) => {
+                show(
+                  commitPresent(
+                    history,
+                    orderShape(history.present, id, direction),
+                  ),
+                );
+              }}
             />
           ) : (
             <p>
               {shapes.length === 0
-                ? "Add a rectangle or a box."
-                : "Select a shape."}
+                ? "Add a rectangle, an ellipse, text, or a box."
+                : "Select an object."}
             </p>
           )}
           {notice ? <p role="status">{notice}</p> : null}
@@ -655,14 +706,21 @@ function FirstGuide({ onDismiss }: { readonly onDismiss: () => void }) {
     <section className="uvcp-guide" aria-labelledby="uvcp-guide-title">
       <h2 id="uvcp-guide-title">Start with a shape</h2>
       <ol>
-        <li>Choose Rectangle or Box, then drag the shape to move it.</li>
-        <li>Select a shape and edit its size. Rotation is in degrees.</li>
+        <li>
+          Choose Rectangle, Ellipse, Text, or Box, then drag it to move it.
+        </li>
+        <li>
+          Select an object and edit its fill. Text also has words and a font
+          size. Rotation is in degrees. Bring forward paints it above its
+          siblings.
+        </li>
         <li>
           Save downloads scene.json. This tab keeps the project until you leave
           or refresh. Open reads a scene file back.
         </li>
         <li>
-          Import glTF and Export glTF move rectangles and boxes to another tool.
+          Import glTF and Export glTF move rectangles and boxes. An ellipse or
+          text stays in scene.json.
         </li>
         <li>
           AI setup is optional. On the hosted page it stays off. In the local
@@ -682,8 +740,8 @@ function AssistantUnavailable({ onClose }: { readonly onClose: () => void }) {
       <h2 id="uvcp-ai-unavailable">Assistant</h2>
       <p>
         The assistant runs in the local application on this computer. This page
-        does not ask for a provider key. Rectangle, Box, Save, Open, and glTF
-        keep working.
+        does not ask for a provider key. Rectangle, ellipse, text, box, Save,
+        Open, and glTF keep working.
       </p>
       <button type="button" onClick={onClose}>
         Close
@@ -694,12 +752,14 @@ function AssistantUnavailable({ onClose }: { readonly onClose: () => void }) {
 
 function ShapeView({
   shape,
+  clipId,
   selected,
   onPointerDown,
   onPointerMove,
   onPointerUp,
 }: {
   readonly shape: EditorShape;
+  readonly clipId: string;
   readonly selected: boolean;
   readonly onPointerDown: (event: ReactPointerEvent<SVGGElement>) => void;
   readonly onPointerMove: (event: ReactPointerEvent<SVGGElement>) => void;
@@ -708,6 +768,7 @@ function ShapeView({
   const shift = shape.depth === null ? null : boxShift(shape.depth);
   const centerX = shape.x + shape.width / 2;
   const centerY = shape.y + shape.height / 2;
+  const mark = selected ? "uvcp-shape uvcp-shape-selected" : "uvcp-shape";
   return (
     <g
       transform={`rotate(${shape.rotation} ${centerX} ${centerY})`}
@@ -721,18 +782,57 @@ function ShapeView({
           y={shape.y + shift.dy}
           width={shape.width}
           height={shape.height}
+          fill={shape.fill}
           className="uvcp-shape-depth"
         />
       ) : null}
-      <rect
-        x={shape.x}
-        y={shape.y}
-        width={shape.width}
-        height={shape.height}
-        className={selected ? "uvcp-shape uvcp-shape-selected" : "uvcp-shape"}
-      >
-        <title>{shape.id}</title>
-      </rect>
+      {shape.kind === "ellipse" ? (
+        <ellipse
+          cx={centerX}
+          cy={centerY}
+          rx={shape.width / 2}
+          ry={shape.height / 2}
+          fill={shape.fill}
+          className={mark}
+        >
+          <title>{shape.id}</title>
+        </ellipse>
+      ) : (
+        <rect
+          x={shape.x}
+          y={shape.y}
+          width={shape.width}
+          height={shape.height}
+          fill={shape.kind === "text" ? "none" : shape.fill}
+          className={mark}
+        >
+          <title>{shape.id}</title>
+        </rect>
+      )}
+      {shape.kind === "text" &&
+      shape.text !== null &&
+      shape.fontSize !== null ? (
+        <>
+          <clipPath id={clipId}>
+            <rect
+              x={shape.x}
+              y={shape.y}
+              width={shape.width}
+              height={shape.height}
+            />
+          </clipPath>
+          <text
+            x={shape.x + 8}
+            y={shape.y + shape.fontSize}
+            fill={shape.fill}
+            fontSize={shape.fontSize}
+            clipPath={`url(#${clipId})`}
+            className="uvcp-text"
+          >
+            {shape.text}
+          </text>
+        </>
+      ) : null}
     </g>
   );
 }
@@ -741,6 +841,9 @@ function ShapeFields({
   shape,
   disabled,
   onResize,
+  onFill,
+  onText,
+  onOrder,
 }: {
   readonly shape: EditorShape;
   readonly disabled: boolean;
@@ -751,6 +854,9 @@ function ShapeFields({
     depth: number | null,
     degrees: number,
   ) => void;
+  readonly onFill: (id: string, fill: string) => void;
+  readonly onText: (id: string, text: string, fontSize: number) => void;
+  readonly onOrder: (id: string, direction: "forward" | "backward") => void;
 }) {
   const [width, setWidth] = useState(String(shape.width));
   const [height, setHeight] = useState(String(shape.height));
@@ -758,58 +864,115 @@ function ShapeFields({
     shape.depth === null ? "" : String(shape.depth),
   );
   const [rotation, setRotation] = useState(formatDegrees(shape.rotation));
+  const [text, setText] = useState(shape.text ?? "");
+  const [fontSize, setFontSize] = useState(
+    shape.fontSize === null ? "" : String(shape.fontSize),
+  );
   return (
-    <form
-      onSubmit={(event) => {
-        event.preventDefault();
-        onResize(
-          shape.id,
-          Number(width),
-          Number(height),
-          shape.depth === null ? null : Number(depth),
-          Number(rotation),
-        );
-      }}
-    >
+    <div className="uvcp-inspector">
       <p>{shape.kind}</p>
       <label>
-        Width
+        Fill
         <input
-          value={width}
+          type="color"
+          value={shape.fill}
           disabled={disabled}
-          onChange={(event) => setWidth(event.target.value)}
+          onChange={(event) => onFill(shape.id, event.target.value)}
         />
       </label>
-      <label>
-        Height
-        <input
-          value={height}
-          disabled={disabled}
-          onChange={(event) => setHeight(event.target.value)}
-        />
-      </label>
-      {shape.depth === null ? null : (
+      {shape.kind === "text" ? (
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            onText(shape.id, text, Number(fontSize));
+          }}
+        >
+          <label>
+            Text
+            <input
+              value={text}
+              disabled={disabled}
+              onChange={(event) => setText(event.target.value)}
+            />
+          </label>
+          <label>
+            Font size
+            <input
+              value={fontSize}
+              disabled={disabled}
+              onChange={(event) => setFontSize(event.target.value)}
+            />
+          </label>
+          <button type="submit" disabled={disabled}>
+            Apply text
+          </button>
+        </form>
+      ) : null}
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          onResize(
+            shape.id,
+            Number(width),
+            Number(height),
+            shape.depth === null ? null : Number(depth),
+            Number(rotation),
+          );
+        }}
+      >
         <label>
-          Depth
+          Width
           <input
-            value={depth}
+            value={width}
             disabled={disabled}
-            onChange={(event) => setDepth(event.target.value)}
+            onChange={(event) => setWidth(event.target.value)}
           />
         </label>
-      )}
-      <label>
-        Rotation (degrees)
-        <input
-          value={rotation}
-          disabled={disabled}
-          onChange={(event) => setRotation(event.target.value)}
-        />
-      </label>
-      <button type="submit" disabled={disabled}>
-        Apply size
+        <label>
+          Height
+          <input
+            value={height}
+            disabled={disabled}
+            onChange={(event) => setHeight(event.target.value)}
+          />
+        </label>
+        {shape.depth === null ? null : (
+          <label>
+            Depth
+            <input
+              value={depth}
+              disabled={disabled}
+              onChange={(event) => setDepth(event.target.value)}
+            />
+          </label>
+        )}
+        <label>
+          Rotation (degrees)
+          <input
+            value={rotation}
+            disabled={disabled}
+            onChange={(event) => setRotation(event.target.value)}
+          />
+        </label>
+        <button type="submit" disabled={disabled}>
+          Apply size
+        </button>
+      </form>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => onOrder(shape.id, "backward")}
+      >
+        Send backward
       </button>
-    </form>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => onOrder(shape.id, "forward")}
+      >
+        Bring forward
+      </button>
+    </div>
   );
 }
 

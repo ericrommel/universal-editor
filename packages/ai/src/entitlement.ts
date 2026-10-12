@@ -1,7 +1,8 @@
 export const capabilities = {
   "ai.scene.basic": {
     tier: "included",
-    summary: "Create rectangles and boxes, and move, resize, or rotate them.",
+    summary:
+      "Create rectangles, ellipses, text, and boxes, set a fill, and move, resize, or rotate them.",
   },
   "ai.scene.arrange": {
     tier: "paid",

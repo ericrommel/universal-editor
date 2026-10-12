@@ -225,6 +225,31 @@ test("a triangle fan is not a rectangle or a box", async () => {
   await expectCode(bytes, "UNSUPPORTED_NODE");
 });
 
+test("ellipse and text are not written as rectangles", async () => {
+  const scene = insertNode(createScene(), {
+    id: "mark",
+    kind: "ellipse",
+    parentId: null,
+    index: 0,
+    width: 4,
+    height: 3,
+    transform: {
+      position: [0, 0, 0],
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1],
+    },
+  });
+  await assert.rejects(exportDocument("gltf", scene), (error: unknown) => {
+    assert.ok(error instanceof DomainError);
+    assert.equal(error.code, "UNSUPPORTED_NODE");
+    assert.equal(
+      error.message,
+      "Interchange node is not a rectangle or a box.",
+    );
+    return true;
+  });
+});
+
 test("an unknown format id is rejected", async () => {
   await expectCode(new Uint8Array([1, 2, 3]), "UNSUPPORTED_FORMAT", "step");
 });

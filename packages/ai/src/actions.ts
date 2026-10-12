@@ -3,13 +3,16 @@ import { assistantMessages, LIMITS } from "./messages.ts";
 
 export type SceneFact = {
   readonly id: string;
-  readonly kind: "rectangle" | "box";
+  readonly kind: "rectangle" | "box" | "ellipse" | "text";
   readonly x: number;
   readonly y: number;
   readonly width: number;
   readonly height: number;
   readonly depth: number | null;
   readonly rotation: number;
+  readonly fill: string;
+  readonly text: string | null;
+  readonly fontSize: number | null;
 };
 
 export type SceneAction =
@@ -23,6 +26,26 @@ export type SceneAction =
       readonly rotation: number;
     }
   | {
+      readonly type: "createEllipse";
+      readonly id: string;
+      readonly x: number;
+      readonly y: number;
+      readonly width: number;
+      readonly height: number;
+      readonly rotation: number;
+    }
+  | {
+      readonly type: "createText";
+      readonly id: string;
+      readonly x: number;
+      readonly y: number;
+      readonly width: number;
+      readonly height: number;
+      readonly rotation: number;
+      readonly text: string;
+      readonly fontSize: number;
+    }
+  | {
       readonly type: "createBox";
       readonly id: string;
       readonly x: number;
@@ -31,6 +54,11 @@ export type SceneAction =
       readonly height: number;
       readonly depth: number;
       readonly rotation: number;
+    }
+  | {
+      readonly type: "setFill";
+      readonly id: string;
+      readonly fill: string;
     }
   | {
       readonly type: "move";
@@ -62,11 +90,17 @@ export type ProposedCall = {
 
 export const basicToolNames = [
   "createRectangle",
+  "createEllipse",
+  "createText",
   "createBox",
+  "setFill",
   "move",
   "resize",
   "rotate",
 ] as const;
+
+const FILL_PATTERN = /^#[0-9a-fA-F]{6}$/;
+const TEXT_MAX = 400;
 
 const AI_ID = /^[A-Za-z0-9][A-Za-z0-9-]{0,31}$/;
 
@@ -182,8 +216,14 @@ function readAction(value: unknown): SceneAction | string {
   switch (value.type) {
     case "createRectangle":
       return readCreate(value, "rectangle");
+    case "createEllipse":
+      return readCreate(value, "ellipse");
+    case "createText":
+      return readCreate(value, "text");
     case "createBox":
       return readCreate(value, "box");
+    case "setFill":
+      return readSetFill(value);
     case "move":
       return readMove(value);
     case "resize":
@@ -197,12 +237,15 @@ function readAction(value: unknown): SceneAction | string {
 
 function readCreate(
   value: Record<string, unknown>,
-  kind: "rectangle" | "box",
+  kind: "rectangle" | "ellipse" | "box" | "text",
 ): SceneAction | string {
-  const keys =
-    kind === "box"
-      ? ["id", "x", "y", "width", "height", "depth", "rotation"]
-      : ["id", "x", "y", "width", "height", "rotation"];
+  const keys = ["id", "x", "y", "width", "height", "rotation"];
+  if (kind === "box") {
+    keys.push("depth");
+  }
+  if (kind === "text") {
+    keys.push("text", "fontSize");
+  }
   if (!closed(value, ["type", ...keys])) {
     return assistantMessages.badValue;
   }
@@ -224,11 +267,47 @@ function readCreate(
   if (kind === "rectangle") {
     return { type: "createRectangle", id, x, y, width, height, rotation };
   }
+  if (kind === "ellipse") {
+    return { type: "createEllipse", id, x, y, width, height, rotation };
+  }
+  if (kind === "text") {
+    const text = readPlainText(value.text);
+    const fontSize = readFinite(value.fontSize);
+    if (text === null || fontSize === null) {
+      return assistantMessages.badValue;
+    }
+    return {
+      type: "createText",
+      id,
+      x,
+      y,
+      width,
+      height,
+      rotation,
+      text,
+      fontSize,
+    };
+  }
   const depth = readFinite(value.depth);
   if (depth === null) {
     return missingOrBad(value.depth);
   }
   return { type: "createBox", id, x, y, width, height, depth, rotation };
+}
+
+function readSetFill(value: Record<string, unknown>): SceneAction | string {
+  if (!closed(value, ["type", "id", "fill"])) {
+    return assistantMessages.badValue;
+  }
+  const id = readAiId(value.id);
+  const fill = readFill(value.fill);
+  if (id === null) {
+    return assistantMessages.badId;
+  }
+  if (fill === null) {
+    return assistantMessages.badValue;
+  }
+  return { type: "setFill", id, fill };
 }
 
 function readMove(value: Record<string, unknown>): SceneAction | string {
@@ -289,7 +368,12 @@ function readFact(value: unknown): SceneFact | null {
   if (!isRecord(value)) {
     return null;
   }
-  if (value.kind !== "rectangle" && value.kind !== "box") {
+  if (
+    value.kind !== "rectangle" &&
+    value.kind !== "ellipse" &&
+    value.kind !== "text" &&
+    value.kind !== "box"
+  ) {
     return null;
   }
   const id = readFactId(value.id);
@@ -298,36 +382,103 @@ function readFact(value: unknown): SceneFact | null {
   const width = readFinite(value.width);
   const height = readFinite(value.height);
   const rotation = readFinite(value.rotation);
+  const fill = readFill(value.fill);
   if (
     id === null ||
     x === null ||
     y === null ||
     width === null ||
     height === null ||
-    rotation === null
+    rotation === null ||
+    fill === null
   ) {
     return null;
   }
-  if (value.kind === "rectangle") {
-    if (value.depth !== null) {
+  if (value.kind === "box") {
+    const depth = readFinite(value.depth);
+    if (depth === null || value.text !== null || value.fontSize !== null) {
       return null;
     }
     return {
       id,
-      kind: "rectangle",
+      kind: "box",
+      x,
+      y,
+      width,
+      height,
+      depth,
+      rotation,
+      fill,
+      text: null,
+      fontSize: null,
+    };
+  }
+  if (value.depth !== null) {
+    return null;
+  }
+  if (value.kind === "text") {
+    const text = readPlainText(value.text);
+    const fontSize = readFinite(value.fontSize);
+    if (text === null || fontSize === null) {
+      return null;
+    }
+    return {
+      id,
+      kind: "text",
       x,
       y,
       width,
       height,
       depth: null,
       rotation,
+      fill,
+      text,
+      fontSize,
     };
   }
-  const depth = readFinite(value.depth);
-  if (depth === null) {
+  if (value.text !== null || value.fontSize !== null) {
     return null;
   }
-  return { id, kind: "box", x, y, width, height, depth, rotation };
+  return {
+    id,
+    kind: value.kind,
+    x,
+    y,
+    width,
+    height,
+    depth: null,
+    rotation,
+    fill,
+    text: null,
+    fontSize: null,
+  };
+}
+
+function readPlainText(value: unknown): string | null {
+  // @uvcp/ai cannot import @uvcp/core. insertNode accepts the same text again.
+  if (typeof value !== "string") {
+    return null;
+  }
+  const text = value.normalize("NFC");
+  let count = 0;
+  for (const char of text) {
+    const code = char.codePointAt(0);
+    if (code === undefined || code <= 0x1f || code === 0x7f) {
+      return null;
+    }
+    count += 1;
+  }
+  if (count > TEXT_MAX) {
+    return null;
+  }
+  return text;
+}
+
+function readFill(value: unknown): string | null {
+  if (typeof value !== "string" || !FILL_PATTERN.test(value)) {
+    return null;
+  }
+  return value.toLowerCase();
 }
 
 function missingOrBad(...values: unknown[]): string {

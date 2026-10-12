@@ -36,6 +36,44 @@ const toolDefinitions = [
     },
   },
   {
+    name: "createEllipse",
+    description:
+      "Create an ellipse. x and y are its top-left. Width and height are greater than zero. rotation is degrees clockwise.",
+    parameters: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        id: { type: "string" },
+        x: { type: "number" },
+        y: { type: "number" },
+        width: { type: "number" },
+        height: { type: "number" },
+        rotation: { type: "number" },
+      },
+      required: ["id", "width", "height"],
+    },
+  },
+  {
+    name: "createText",
+    description:
+      "Create plain text. text is characters, not HTML. fontSize is greater than zero. x and y are the top-left of the text box.",
+    parameters: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        id: { type: "string" },
+        x: { type: "number" },
+        y: { type: "number" },
+        width: { type: "number" },
+        height: { type: "number" },
+        rotation: { type: "number" },
+        text: { type: "string" },
+        fontSize: { type: "number" },
+      },
+      required: ["id", "width", "height", "text", "fontSize"],
+    },
+  },
+  {
     name: "createBox",
     description:
       "Create a box. x and y are its top-left. Width, height, and depth are greater than zero. rotation is degrees clockwise.",
@@ -52,6 +90,19 @@ const toolDefinitions = [
         rotation: { type: "number" },
       },
       required: ["id", "width", "height", "depth"],
+    },
+  },
+  {
+    name: "setFill",
+    description: "Set an existing object's fill to a #rrggbb color.",
+    parameters: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        id: { type: "string" },
+        fill: { type: "string" },
+      },
+      required: ["id", "fill"],
     },
   },
   {
@@ -101,7 +152,7 @@ const toolDefinitions = [
   {
     name: "explainLimit",
     description:
-      "Use alone when the request needs a shape or action other than creating, moving, resizing, or rotating a rectangle or box. reason is shape or command.",
+      "Use alone when the request needs a shape or action other than creating, recoloring, moving, resizing, or rotating a rectangle, ellipse, text, or box. reason is shape or command.",
     parameters: {
       type: "object",
       additionalProperties: false,

@@ -2,15 +2,16 @@ import type { SceneFact } from "./actions.ts";
 
 const INSTRUCTIONS = [
   "You edit the open scene by calling tools.",
-  "Objects are rectangles and boxes.",
-  "x increases right and y increases down. x and y are the top-left of the shape.",
+  "Objects are rectangles, ellipses, text, and boxes in one scene.",
+  "x increases right and y increases down. x and y are the top-left of the object.",
   "Width, height, and box depth are greater than zero, in the same units as the current scene.",
   "Existing shapes are often about 80 to 200 units across.",
-  "Rotation is degrees clockwise around the shape center.",
+  "Rotation is degrees clockwise around the object center.",
+  "Fill is a #rrggbb color. Text is plain characters, not HTML, and fontSize is greater than zero.",
   "Use an existing id to change an object. Choose a new short id to create one.",
-  "A simple composition is several create, move, resize, or rotate calls in this turn.",
-  "If the request asks for a different shape, call explainLimit with reason shape and call no other tool.",
-  "If the request asks for anything other than creating, moving, resizing, or rotating a rectangle or a box, call explainLimit with reason command and call no other tool.",
+  "A simple composition is several create, setFill, move, resize, or rotate calls in this turn.",
+  "If the request asks for a pixel canvas, a pen path, bones, or another shape, call explainLimit with reason shape and call no other tool.",
+  "If the request asks for anything other than creating, recoloring, moving, resizing, or rotating a rectangle, ellipse, text, or box, call explainLimit with reason command and call no other tool.",
   "Do not answer an impossible request with text or with zero tools.",
 ].join(" ");
 
