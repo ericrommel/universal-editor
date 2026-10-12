@@ -8,7 +8,9 @@ This document is the development process for the Universal Visual Creation Platf
 
 Acceptance is professional review by the roles affected by the change. There is no Product Owner gate. Do not stop work to wait for one.
 
-Modules describe the product. A later module does not wait for an earlier module to be marked GREEN.
+Modules describe the product. A later module does not wait for an earlier module to close.
+
+Older ADRs, preparation notes, and the archived specification may name a Product Owner, Definition of Ready, or GREEN. That history is not a current gate.
 
 ## 2. Branches
 
@@ -56,3 +58,17 @@ Do not log secrets, tokens, or document contents. Do not add telemetry. Do not w
 A security finding is fixed or recorded as blocking before merge.
 
 The secure-development rules in `AGENTS.md` still apply.
+
+## 6. Roadmap
+
+The module issues are the roadmap. Each one is one product outcome. The archived specification holds the original objective wording. It does not add a gate, and it does not replace the issue.
+
+An outcome is complete when that behavior is on `master` and the change that put it there was accepted under this process. Close the module issue then. If only part of the outcome is on `master`, leave the issue open and say what is present and what is still missing. Do not open a second issue to record the part that already landed. Closing every child does not close the module.
+
+A child issue is a product or engineering deliverable that can be built and reviewed on its own. Link it to the module with a GitHub sub-issue. A title prefix is not that link.
+
+Preparation, specialist review, evidence, verification, and status checks are comments on the module issue or the pull request. They are not issues. When an older issue is only that kind of work, or it repeats its parent, close it and say what supersedes it. Leave the earlier comments in place.
+
+Judge status from `master` and the accepted decisions. An old issue body does not keep an outcome open after it is on `master`, and it does not block later work.
+
+The project board mirrors the issues when the available credentials can edit it. When they cannot, the issue is the record. Say that on the issue. Do not keep a second status list in the repository.

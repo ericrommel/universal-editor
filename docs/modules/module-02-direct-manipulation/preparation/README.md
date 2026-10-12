@@ -1,10 +1,10 @@
 # Module 2 preparation
 
-**Status:** Integrated preparation inputs for issue #8. Not a specification. Not Product Owner approval. Implementation stays unauthorized.
+**Status:** Historical preparation notes from 2026-10-06. Not a specification and not a gate. Direct manipulation on `master` is the editor workspace.
 **Role:** Project Manager. The notes below are the specialist records. This file records how they fit. It does not replace them.
 **Date:** 2026-10-06
 
-Archive section 9.3 stays context. Its identifiers are not operational requirements. Pull request #33 is not an approved Module 1 contract.
+Archive section 9.3 stays context. Its identifiers are not operational requirements. Where a sentence below disagrees with `master`, `master` wins.
 
 | Note | Issue | Role |
 | --- | --- | --- |
@@ -59,16 +59,10 @@ From the evidence note. No threshold was set.
 | Interactive under a reference workload | Blocked on issue #41. An observation is not a pass |
 | Earlier approved modules stay green | `pnpm verify` on `ubuntu-24.04` and `windows-2025` |
 
-## Still for the Product Owner
+## Later behavior
 
-No decision here is required to keep these notes. Issue #40 asks later, after a Product Owner-approved Module 1 contract. The choices that note has to present are:
-
-- The numeric frame. The design note recommends Y up, right-handed, intrinsic XYZ, degrees. The editor and architecture notes refuse to interpret triples until that choice is accepted. The recommendation is not accepted.
-- Whether the viewport replaces the foundation content root, as the design note recommends.
-- The four open disagreements above.
-- Whether save-and-reopen stays outside Module 2, as these notes recommend.
-- Authorization to implement. That remains issue #42, and it still requires Module 1 to be GREEN.
+On 2026-10-06 these notes had not chosen a numeric frame, a viewport, the disagreements above, save and reopen, or implementation. The editor on `master` is the later behavior. This file does not restate it.
 
 ## Out of this package
 
-No application code, tests, fixtures, dependencies, workflow edits, or ADR. Issues #40, #41, and #42 stay blocked.
+These notes added no application code. The preparation issues are historical.

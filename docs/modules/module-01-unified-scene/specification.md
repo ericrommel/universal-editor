@@ -1,6 +1,6 @@
 # Module 1 — Unified Scene
 
-**Status:** Approved for implementation on 2026-10-06. Module 0 is GREEN. Module 1 is not GREEN. Sections 1 through 11 are the approved contract. Approval does not accept the module.
+**Status:** The outcome of this contract is on `master`. Sections 1 through 11 are the historical rectangle and box contract. ADR-0011 adds later scene behavior. This file is not a gate, and it is not the current description of every scene kind.
 
 The preparation decision is `preparation/reconciliation.md`. This file is the normative contract. ADR-0009 is the package decision.
 
@@ -285,8 +285,6 @@ The test plan is `test-plan.md`. Developers implement those checks with `node:te
 
 No browser session is required for this specification. No screenshot is required.
 
-## 12. Product Owner gate
+## 12. Acceptance record
 
-Approving this specification adopts the scope in sections 3 and 4, the catalog in section 8, and the document in section 9. That approval is the authorization to implement Module 1. It does not make Module 1 GREEN.
-
-The Product Owner approved this specification on 2026-10-06: https://github.com/ericrommel/universal-editor/issues/7#issuecomment-6013883562. Implementation of this contract is authorized. Module 1 stays open until the later acceptance gate.
+This specification was approved as the implementation contract on 2026-10-06: https://github.com/ericrommel/universal-editor/issues/7#issuecomment-6013883562. That approval adopted sections 3, 4, 8, and 9. The outcome of the contract is on `master`. Later acceptance follows `docs/engineering/development-process.md`. This section is not a second gate.

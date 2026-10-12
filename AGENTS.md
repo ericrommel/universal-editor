@@ -16,9 +16,9 @@ Independent primary sessions may be used when useful. Sessions should use the re
 
 `main` is protected. Do not commit to it, and do not merge this line into it.
 
-`master` is the working integration branch. Feature branches merge into `master` after the required role reviews and a green `pnpm verify`. On `master`, roles review and accept the work. There is no Product Owner gate on this line. The protected `main` line still follows `docs/engineering/development-process.md`.
+`master` is the working integration branch. Feature branches merge into `master` after the required role reviews and a green `pnpm verify`. On `master`, roles review and accept the work. There is no Product Owner gate.
 
-The process and the scene assistant are recorded in `docs/engineering/working-line.md` and `docs/engineering/adr/0010-scene-assistant.md`.
+Acceptance, branches, and roadmap tracking are `docs/engineering/development-process.md`. `docs/engineering/working-line.md` is the branch note.
 
 ## Team
 
@@ -320,19 +320,17 @@ If verification cannot be performed, state exactly what was not verified and why
 
 ## Work Tracking
 
-GitHub Issues and the project board are the persistent operational record of project work.
+Roadmap modules, child issues, and status follow `docs/engineering/development-process.md`. Do not open an issue for preparation, review, evidence, or verification.
 
-Do not rely on session output as the only record of completed work, decisions, findings, or verification.
+GitHub issues are the operational record. Do not rely on session output as the only record of completed work, decisions, findings, or verification.
 
-For work associated with a GitHub Issue:
+For work associated with a GitHub issue:
 
-- move the issue to the appropriate active status when work begins;
-- perform repository changes on the task's dedicated branch;
-- keep the issue and related Pull Request traceable to each other;
-- when work reaches a review gate, post a concise completion summary to the issue;
-- include relevant decisions, artifacts, verification performed, known limitations, risks, and unresolved questions;
-- link or reference the Pull Request containing the proposed repository changes;
-- move the issue to the appropriate review status when a pull request is open.
+- use a dedicated branch and a pull request into `master`;
+- keep the issue and the pull request linked;
+- post a short completion summary on the issue when the work is ready for review, including decisions, verification, limitations, and risks;
+- close the issue when its outcome is on `master`;
+- update the project board when the available credentials can edit it. When they cannot, say so on the issue. The issue remains the record.
 
 ## Repository Workflow
 
