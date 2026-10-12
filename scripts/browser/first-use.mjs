@@ -103,6 +103,25 @@ export async function runFirstUse(page, origin, productionPolicy, root) {
     true,
   );
 
+  // The pointer has left, so the create-tool bubble is hidden. Escape clears
+  // the selection on that key instead of dismissing an invisible tooltip.
+  await page.mouse.move(640, 400);
+  await page
+    .getByRole("tooltip", { name: "Rectangle", exact: true })
+    .waitFor({ state: "hidden" });
+  await page.keyboard.press("Escape");
+  assert.equal(await remove.isDisabled(), true);
+  await page.getByRole("option", { name: "Rectangle s1" }).click();
+  assert.equal(await remove.isDisabled(), false);
+
+  // A tooltip that is actually showing still takes the first Escape.
+  await undo.focus();
+  const undoTip = page.getByRole("tooltip", { name: "Undo (Ctrl+Z)" });
+  await undoTip.waitFor();
+  await page.keyboard.press("Escape");
+  await undoTip.waitFor({ state: "hidden" });
+  assert.equal(await remove.isDisabled(), false);
+
   await page.getByRole("button", { name: "Box", exact: true }).click();
   await page.locator('[data-shape-id="s2"] polygon.uvcp-face-top').waitFor();
   await page.locator('[data-shape-id="s2"] polygon.uvcp-face-side').waitFor();

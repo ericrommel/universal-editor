@@ -159,10 +159,7 @@ export function CreationApp() {
           menu.hidePopover();
           return;
         }
-        if (
-          target instanceof Element &&
-          target.closest(".uvcp-tip:not([data-dismissed])") !== null
-        ) {
+        if (target instanceof Element && openTip(target)) {
           return;
         }
         event.preventDefault();
@@ -969,5 +966,20 @@ function isTyping(target: EventTarget | null): boolean {
     target instanceof HTMLInputElement ||
     target instanceof HTMLTextAreaElement ||
     target instanceof HTMLSelectElement
+  );
+}
+
+// A pointer click hides the bubble and leaves focus in the tip. Escape
+// dismisses only a bubble the user can see. Keep this aligned with tipIsOpen.
+function openTip(target: Element): boolean {
+  const tip = target.closest(".uvcp-tip");
+  if (!(tip instanceof HTMLElement) || tip.hasAttribute("data-dismissed")) {
+    return false;
+  }
+  if (tip.matches(":hover")) {
+    return true;
+  }
+  return (
+    tip.matches(":focus-within") && !tip.hasAttribute("data-pointer-focus")
   );
 }

@@ -347,6 +347,20 @@ export function FileMenu({
   );
 }
 
+// A pointer click hides the bubble and leaves focus in the tip. Escape
+// dismisses only a bubble the user can see. Keep this aligned with openTip.
+function tipIsOpen(tip: HTMLElement): boolean {
+  if (tip.hasAttribute("data-dismissed")) {
+    return false;
+  }
+  if (tip.matches(":hover")) {
+    return true;
+  }
+  return (
+    tip.matches(":focus-within") && !tip.hasAttribute("data-pointer-focus")
+  );
+}
+
 function placeMenu(
   button: HTMLButtonElement | null,
   menu: HTMLDivElement | null,
@@ -472,7 +486,7 @@ export function Tip({
       }
     }
     function onKeyDown(event: globalThis.KeyboardEvent) {
-      if (event.key !== "Escape" || dismissed) {
+      if (event.key !== "Escape" || !tipIsOpen(anchor)) {
         return;
       }
       setDismissed(true);
@@ -494,7 +508,7 @@ export function Tip({
       anchor.removeEventListener("focusout", onFocusOut);
       anchor.removeEventListener("keydown", onKeyDown);
     };
-  }, [dismissed]);
+  }, []);
 
   return (
     <span
