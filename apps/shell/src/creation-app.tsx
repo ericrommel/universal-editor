@@ -26,7 +26,6 @@ import {
   SCENE_BYTE_LIMIT,
   SCENE_TOO_LARGE,
   selectShape,
-  shapesOf,
   sheetShapes,
   undo,
 } from "@uvcp/editor";
@@ -279,9 +278,8 @@ export function CreationApp() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           instruction: text,
-          // The assistant writes each node's own numbers. On the page those
-          // match a root whose scale is 1. A child is relative to its parent.
-          facts: shapesOf(historyRef.current.present).map((shape) => ({
+          // The same sheet numbers the page and the inspector show.
+          facts: sheetShapes(historyRef.current.present).map((shape) => ({
             id: shape.id,
             kind: shape.kind,
             x: shape.x,
