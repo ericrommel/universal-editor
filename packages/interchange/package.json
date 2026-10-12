@@ -7,7 +7,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@gltf-transform/core": "4.5.0",
+    "@gltf-transform/core": "4.5.1",
     "@uvcp/core": "workspace:*",
     "gl-matrix": "3.4.3"
   }
