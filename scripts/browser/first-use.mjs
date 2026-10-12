@@ -20,6 +20,26 @@ export async function runFirstUse(page, origin, productionPolicy, root) {
   await page.getByRole("heading", { level: 1, name: PRODUCT }).waitFor();
   await page.getByRole("heading", { name: "Start with a shape" }).waitFor();
   await page.getByText(AI_UNAVAILABLE).waitFor();
+  await page.getByRole("button", { name: "Rectangle", exact: true }).click();
+  await page.locator('[data-shape-id="s1"] rect.uvcp-face-front').waitFor();
+  const guideCoversShape = await page.evaluate(() => {
+    const rect = document.querySelector(
+      '[data-shape-id="s1"] rect.uvcp-face-front',
+    );
+    const guide = document.querySelector(".uvcp-guide");
+    if (rect === null || guide === null) {
+      return true;
+    }
+    const box = rect.getBoundingClientRect();
+    const hit = document.elementFromPoint(
+      box.x + box.width / 2,
+      box.y + box.height / 2,
+    );
+    return hit !== null && guide.contains(hit);
+  });
+  assert.equal(guideCoversShape, false);
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await page.locator('[data-shape-id="s1"]').waitFor({ state: "hidden" });
   await page.getByRole("heading", { name: "Assistant" }).waitFor({
     state: "hidden",
   });
@@ -259,6 +279,7 @@ export async function runFirstUse(page, origin, productionPolicy, root) {
 }
 
 async function assertNoHorizontalOverflow(page, widths) {
+  assert.equal(await page.locator(".uvcp-disclosure-panel").isHidden(), true);
   for (const width of widths) {
     await page.setViewportSize({ width, height: 800 });
     const extra = await page.evaluate(() => {

@@ -432,8 +432,8 @@ export function CreationApp() {
             <summary>3D file</summary>
             <div className="uvcp-disclosure-panel">
               <p>
-                Moves rectangles and boxes to another tool. Drawing does not
-                need this.
+                Import or export rectangles and boxes. Drawing does not need
+                this.
               </p>
               <FileButton
                 label="Import glTF"
